@@ -12,7 +12,7 @@ test : all
 run : mhcHumanVariants mhcHumanVariantsNsRemoved
 
 mhcHumanVariants : all
-	cd main//mhcHumanVariants && make all
+	cd main/mhcHumanVariants && make all
 	
 mhcHumanVariantsNsRemoved : all
-	cd main//mhcHumanVariantsNsRemoved && make all
+	cd main/mhcHumanVariantsNsRemoved && make all
