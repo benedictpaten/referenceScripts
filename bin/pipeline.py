@@ -18,6 +18,8 @@ from jobTree.src.bioio import setLoggingFromOptions
 from cactus.shared.config import CactusWorkflowExperiment
 from cactus.shared.common import runCactusWorkflow
 
+from cactusTools.shared.common import runCactusAddReferenceSequence
+
 from sonLib.bioio import getTempFile, getTempDirectory
 from sonLib.bioio import fastaRead, fastaWrite
 from sonLib.bioio import system
@@ -29,8 +31,8 @@ def getRootPathString():
     function for finding external location
     """
     import os
-    import referencePaper.bin.pipeline
-    i = os.path.abspath(referencePaper.bin.pipeline.__file__)
+    import referenceScripts.bin.pipeline
+    i = os.path.abspath(referenceScripts.bin.pipeline.__file__)
     return os.path.split(os.path.split(i)[0])[0] #os.path.split(os.path.split(os.path.split(i)[0])[0])[0]
 
 def getCactusDiskString(alignmentFile):
@@ -52,7 +54,8 @@ class MakeAlignment(Target):
     def run(self):
         if not os.path.isdir(self.outputDir):
             os.mkdir(self.outputDir)
-        outputFile = os.path.join(self.outputDir, "cactusAlignment")
+        cactusAlignmentName = "cactusAlignment"
+        outputFile = os.path.join(self.outputDir, cactusAlignmentName)
         if not os.path.exists(outputFile):
             config = ET.parse(os.path.join(getRootPathString(), "lib", "cactus_workflow_config.xml")).getroot()
             
@@ -81,7 +84,7 @@ class MakeAlignment(Target):
                                                  sequences=self.haplotypeSequences, 
                                                  newickTreeString=self.newickTree, 
                                                  requiredSpecies=self.requiredSpecies,
-                                                 databaseName="cactusAlignment",
+                                                 databaseName=cactusAlignmentName,
                                                  outputDir=self.getLocalTempDir(),
                                                  configFile=tempConfigFile)
             cactusWorkflowExperiment.writeExperimentFile(tempExperimentFile)
@@ -94,13 +97,15 @@ class MakeAlignment(Target):
             #Check if the jobtree completed sucessively.
             runJobTreeStatusAndFailIfNotComplete(tempJobTreeDir)
             logger.info("Checked the job tree dir")
+            #Now add the reference sequence
+            runCactusAddReferenceSequence(cactusDisk=getCactusDiskString(outputFile))
             #Now copy the true assembly back to the output
             system("mv %s %s/experiment.xml" % (tempExperimentFile, self.outputDir))
             system("mv %s %s/config.xml" % (tempConfigFile, self.outputDir))
             #Compute the stats
             system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir, self.outputDir))
             #Copy across the final alignment
-            system("mv %s %s" % (os.path.join(self.getLocalTempDir(), "cactusAlignment"), outputFile))
+            system("mv %s %s" % (os.path.join(self.getLocalTempDir(), cactusAlignmentName), outputFile))
             #We're done!
         self.addChildTarget(MakeStats(outputFile, self.outputDir))
     
@@ -159,43 +164,7 @@ class MakeStats(Target):
         if not os.path.exists(outputFile):
             system("cactus_MAFGenerator --cactusDisk '%s' --flowerName 0 --outputFile %s --orderByReference" % (getCactusDiskString(self.alignment), tempOutputFile))
             system("mv %s %s" % (tempOutputFile, outputFile))
-        outputFile = os.path.join(self.outputDir, "adjacenciesVsPseudoAdjacenciesPerTerminalGroup.txt")
-        if not os.path.exists(outputFile):
-            system("python %s/scatterPlot.py %s reference.pseudo_adjacencies_per_terminal_group reference.true_pseudo_adjacencies_per_terminal_group %s" % \
-                   (binPath, tempOutputFile, treeStatsOutputFile))
-            system("mv %s %s" % (tempOutputFile, outputFile))
-            
-class MakeComparativeStats(Target):
-    def __init__(self, statsFiles, statsNames, outputDir):
-        Target.__init__(self)
-        self.statsFiles = statsFiles
-        self.statsNames = statsNames
-        self.outputDir = outputDir
         
-    def run(self):
-        binPath = os.path.join(getRootPathString(), "bin")
-        
-        statsString = " ".join([ "%s %s" % (i, j) for (i, j) in zip(self.statsFiles, self.statsNames) ])
-        
-        logger.info("The stats string for making comparative stats is: %s" % statsString)
-        
-        system("cactus_treeStatsToLatexTables.py --outputFile %s/cactusStatsLatexTables.tex %s" % (self.outputDir, statsString))
-                        
-        statsFileString = " ".join(self.statsFiles)                                                                   
-        system("python %s/tabulateFrequencies.py %s/contigLengths.txt reference2.contig_lengths_filtered %s" % (binPath, self.outputDir, statsString))
-    
-        system("python %s/tabulateFrequencies.py %s/blockLengths.txt blocks.lengths %s" % (binPath, self.outputDir, statsString))
-    
-        system("python %s/tabulateFrequencies.py %s/chainLengths.txt chains.base_block_lengths %s" % (binPath, self.outputDir, statsString))
-    
-        system("python %s/tabulateFrequencies.py %s/copyNumber.txt blocks.leaf_degrees %s" % (binPath, self.outputDir, statsString))
-    
-        system("python %s/tabulateFrequencies.py %s/flowerDepths.txt flowers.depths %s" % (binPath, self.outputDir, statsString))
-    
-        system("python %s/tabulateFrequencies.py %s/endsPerTerminalGroup.txt nets.total_end_numbers_per_terminal_group %s" % (binPath, self.outputDir, statsString))
-    
-        system("python %s/tabulateFrequencies.py %s/groupsPerNet.txt nets.total_groups_per_net %s" % (binPath, self.outputDir, statsString))
-    
 def main():
     ##########################################
     #Construct the arguments.
@@ -233,7 +202,7 @@ def _test():
     return doctest.testmod()
 
 if __name__ == '__main__':
-    from referencePaper.bin.pipeline import *
+    from referenceScripts.bin.pipeline import *
     _test()
     main()
 
