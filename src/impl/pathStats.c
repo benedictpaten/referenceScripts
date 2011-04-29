@@ -156,7 +156,6 @@ void getScaffoldPathsLengths(stHash *scaffoldPaths, stHash *scaffoldPathToScaffo
     }
     stSortedSet_destruct(scaffoldPathSet);
     stList_destruct(scaffoldPathsList);
-    stHash_destruct(scaffoldPaths);
 }
 
 SampleStats *getSamplePathStats(Flower *flower,
@@ -211,6 +210,7 @@ SampleStats *getSamplePathStats(Flower *flower,
 
     //Cleanup
     stHash_destruct(scaffoldPaths);
+    stHash_destruct(scaffoldPathToScaffoldPathLengths);
     stList_destruct(contigPaths);
     stList_destruct(eventStrings);
 

@@ -43,10 +43,11 @@ def getCactusDiskString(alignmentFile):
 class MakeAlignment(Target):
     """Target runs the alignment.
     """
-    def __init__(self, requiredSpecies, outputDir, 
-                 referenceAlgorithm, minimumBlockDegree, options):
+    def __init__(self, options, outputDir, requiredSpecies,
+                 referenceAlgorithm, minimumBlockDegree):
         Target.__init__(self, cpu=1, memory=8000000000)
         self.requiredSpecies = requiredSpecies
+        self.outputDir = outputDir
         self.referenceAlgorithm = referenceAlgorithm
         self.minimumBlockDegree = minimumBlockDegree
         self.options = options
@@ -81,7 +82,7 @@ class MakeAlignment(Target):
             tempJobTreeDir = os.path.join(self.getLocalTempDir(), "jobTree")
             #Make the experiment file
             cactusWorkflowExperiment = CactusWorkflowExperiment(
-                                                 sequences=self.options.haplotypeSequences, 
+                                                 sequences=self.options.haplotypeSequences.split(), 
                                                  newickTreeString=self.options.newickTree, 
                                                  requiredSpecies=self.requiredSpecies,
                                                  databaseName=cactusAlignmentName,
@@ -98,14 +99,15 @@ class MakeAlignment(Target):
             runJobTreeStatusAndFailIfNotComplete(tempJobTreeDir)
             logger.info("Checked the job tree dir")
             #Now add the reference sequence
-            runCactusAddReferenceSequence(cactusDisk=getCactusDiskString(outputFile))
+            localCactusDisk = os.path.join(self.getLocalTempDir(), cactusAlignmentName)
+            runCactusAddReferenceSequence(cactusDiskDatabaseString=getCactusDiskString(localCactusDisk), referenceEventString=self.options.referenceSpecies.split()[0])
             #Now copy the true assembly back to the output
             system("mv %s %s/experiment.xml" % (tempExperimentFile, self.outputDir))
             system("mv %s %s/config.xml" % (tempConfigFile, self.outputDir))
             #Compute the stats
             system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir, self.outputDir))
             #Copy across the final alignment
-            system("mv %s %s" % (os.path.join(self.getLocalTempDir(), cactusAlignmentName), outputFile))
+            system("mv %s %s" % (localCactusDisk, outputFile))
             #We're done!
         self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
     
@@ -120,8 +122,8 @@ class MakeAlignments(Target):
         statsFiles = []
         statsNames = []
         for requiredSpecies in (None, self.options.requiredSpecies):
-            for referenceAlgorithm in self.referenceAlgorithms.split():
-                for minimumBlockDegree in [ int(i) for i in self.rangeOfMinimumBlockDegrees.split() ]:
+            for referenceAlgorithm in self.options.referenceAlgorithms.split():
+                for minimumBlockDegree in [ int(i) for i in self.options.rangeOfMinimumBlockDegrees.split() ]:
                     os.path.exists(self.options.outputDir)
                     def fn(i):
                         if i == None:
@@ -131,10 +133,8 @@ class MakeAlignments(Target):
                     statsNames.append(jobOutputDir)
                     absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
                     statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
-                    self.addChildTarget(MakeAlignment(options,
-                                                      self.requiredSpecies, absJobOutputDir, 
-                                                      referenceAlgorithm, minimumBlockDegree))
-        self.setFollowOnTarget(MakeComparativeStats(statsFiles, statsNames, self.outputDir))
+                    self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
+                                                      requiredSpecies, referenceAlgorithm, minimumBlockDegree))
 
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
@@ -163,18 +163,19 @@ class MakeStats(Target):
             if not os.path.exists(outputFile):
                 tempFile = os.path.join(self.getLocalTempDir(), "temp")
                 program(tempFile, getCactusDiskString(self.alignment))
-                system("mv %s %s" % tempFile, outputFile)
+                system("mv %s %s" % (tempFile, outputFile))
         
         #Now build the different stats files..
-        for outputFile, program, specialOptions in (("coverageStats.xml", "coverageStats", "--referenceName %s" % self.options.referenceString1), 
-                                                    ("pathStats_%s.xml" % self.options.referenceString1, "pathStats", "--referenceName %s" % self.options.referenceString1), 
-                                                    ("pathStats_%s.xml" % self.options.referenceString2, "pathStats", "--referenceName %s" % self.options.referenceString2),
-                                                    ("contiguityStats_%s.xml" % self.options.referenceString1, "contiguityStats", "--referenceName %s" % self.options.referenceString1), 
-                                                    ("contiguityStats_%s.xml" % self.options.referenceString2, "contiguityStats", "--referenceName %s" % self.options.referenceString2),
-                                                    ("snpStats_%s.xml" % self.options.referenceString1, "snpStats", "--referenceName %s" % self.options.referenceString1), 
-                                                    ("snpStats_%s.xml" % self.options.referenceString2, "snpStats", "--referenceName %s" % self.options.referenceString2),
-                                                    ("copyNumberStats.xml", "copyNumberStats", "--referenceName %s" % self.options.referenceString1)):
-            self.runScript(program, outputFile, specialOptions)
+        for outputFile, program in (("coverageStats.xml", "coverageStats"), 
+                                    ("copyNumberStats.xml", "copyNumberStats")):
+            outputFile = os.path.join(self.outputDir, outputFile)
+            self.runScript(program, outputFile, "--referenceEventString %s" % self.options.referenceSpecies.split()[0])
+        
+        for outputFile, program, in (("pathStats_%s.xml", "pathStats"), 
+                                     ("contiguityStats_%s.xml", "contiguityStats"), 
+                                     ("snpStats_%s.xml", "snpStats")):
+            for reference in self.options.referenceSpecies.split():
+                self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s" % reference)
         
 def main():
     ##########################################
@@ -190,8 +191,8 @@ def main():
     parser.add_option("--referenceAlgorithms", dest="referenceAlgorithms")
     parser.add_option("--requiredSpecies", dest="requiredSpecies")
     parser.add_option("--rangeOfMinimumBlockDegrees", dest="rangeOfMinimumBlockDegrees")
-    parser.add_option("--referenceSpecies1", dest="referenceSpecies1")
-    parser.add_option("--referenceSpecies2", dest="referenceSpecies2")
+    parser.add_option("--referenceSpecies", dest="referenceSpecies")
+    parser.add_option("--minimumNsForScaffoldGap", dest="minimumNsForScaffoldGap")
     
     Stack.addJobTreeOptions(parser)
     

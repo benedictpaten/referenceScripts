@@ -4,11 +4,12 @@ libPath = ${rootPath}lib
 dataPath = ${rootPath}data
 outputPath = ${rootPath}output
 
-newickTree=(qbl:0.000680,mann:0.000520);
-dataDir=${dataPath}/mhcHumanVariants
-sequences= ${dataDir}/qbl ${dataDir}/mann
-requiredSequences=qbl mann
+newickTree=(HUMAN:0.000680,CHIMP:0.000520);
+dataDir=${dataPath}/test
+sequences= ${dataDir}/HUMAN ${dataDir}/CHIMP
+requiredSequences=HUMAN CHIMP
 outputDir=${outputPath}/tests/little
+referenceSpecies=reference HUMAN
 
 minimumBlockDegreeRange=1 2
 #2 3
