@@ -14,7 +14,7 @@ commonSources = impl/referenceCommon.c
 
 extraLibs=${cactusLibPath}/cactusLib.a ${cactusToolsLibPath}/cactusMafs.a ${cactusToolsLibPath}/cactusTreeStats.a ${assemblaLibPath}/assemblaLib.a
 
-programs = pathStats linkageStats copyNumberStats substitutionStats coverageStats
+programs = pathStats contiguityStats copyNumberStats substitutionStats coverageStats
 
 all : ${programs:%=${binPath}/%}
 

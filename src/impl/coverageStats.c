@@ -15,59 +15,28 @@
 #include "cactusMafs.h"
 
 const char *sampleEventString;
-int32_t totalSites = 0;
-double totalCorrect = 0;
-int32_t totalErrors = 0;
-int32_t totalCalls = 0;
+int32_t *baseCoverages;
 
-static void getSnpStats(Block *block, FILE *fileHandle) {
+static void getMAFBlock2(Block *block, FILE *fileHandle) {
     if (block_getLength(block) >= minimumBlockLength) {
-        //Now get the column
-        Block_InstanceIterator *instanceIterator = block_getInstanceIterator(
-                block);
+        stSortedSet *otherSampleEvents =
+                    stSortedSet_construct3((int (*)(const void *, const void *))strcmp, NULL);
         Segment *segment;
-        char *referenceSeq = NULL;
-        char *sampleSeq = NULL;
-        while ((segment = block_getNext(instanceIterator)) != NULL) {
-            if (strcmp(event_getHeader(segment_getEvent(segment)),
-                    referenceEventString) == 0) {
-                if (referenceSeq != NULL) {
-                    goto end;
-                }
-                referenceSeq = segment_getString(segment);
+        Block_InstanceIterator *instanceIt = block_getInstanceIterator(block);
+        int32_t sampleNumber = 0;
+        while ((segment = block_getNext(instanceIt)) != NULL) {
+            const char *segmentEvent = event_getHeader(
+                    segment_getEvent(segment));
+            if (strcmp(segmentEvent, sampleEventString) == 0) {
+                sampleNumber++;
             }
-            if (strcmp(event_getHeader(segment_getEvent(segment)),
-                    sampleEventString) == 0) {
-                if (sampleSeq != NULL) {
-                    goto end;
-                }
-                sampleSeq = segment_getString(segment);
+            if (strcmp(segmentEvent, referenceEventString) != 0) {
+                stSortedSet_insert(otherSampleEvents, (void *)segmentEvent);
             }
         }
-
-        if (referenceSeq != NULL) {
-            //We're in gravy.
-            for (int32_t i = ignoreFirstNBasesOfBlock; i < block_getLength(
-                    block) - ignoreFirstNBasesOfBlock; i++) {
-                totalSites++;
-                if (sampleSeq != NULL) {
-                    totalCorrect += bitsScoreFn(sampleSeq[i], referenceSeq[i]);
-                    totalErrors += correctFn(sampleSeq[i], referenceSeq[i]) ? 0
-                            : 1;
-                    totalCalls++;
-                }
-            }
-        }
-
-        end:
-        //cleanup
-        if (referenceSeq != NULL) {
-            free(referenceSeq);
-        }
-        if (sampleSeq != NULL) {
-            free(sampleSeq);
-        }
-        block_destructInstanceIterator(instanceIterator);
+        block_destructInstanceIterator(instanceIt);
+        baseCoverages[stSortedSet_size(otherSampleEvents)] += block_getLength(block) * sampleNumber;
+        stSortedSet_destruct(otherSampleEvents);
     }
 }
 
@@ -83,7 +52,7 @@ int main(int argc, char *argv[]) {
     ///////////////////////////////////////////////////////////////////////////
 
     FILE *fileHandle = fopen(outputFile, "w");
-    fprintf(fileHandle, "<substitutionStats>\n");
+    fprintf(fileHandle, "<coverageStats>\n");
     EventTree_Iterator *eventIt = eventTree_getIterator(
             flower_getEventTree(flower));
     Event *event;
@@ -92,12 +61,10 @@ int main(int argc, char *argv[]) {
         if (sampleEventString != NULL && strcmp(sampleEventString, referenceEventString)
                 != 0) {
 
-            totalSites = 0;
-            totalCorrect = 0;
-            totalErrors = 0;
-            totalCalls = 0;
+            int32_t eventNumber = eventTree_getEventNumber(flower_getEventTree(flower));
+            baseCoverages = st_calloc(sizeof(int32_t), eventNumber+1);
 
-            getMAFsReferenceOrdered(flower, fileHandle, getSnpStats);
+            getMAFsReferenceOrdered(flower, fileHandle, getMAFBlock2);
 
             ///////////////////////////////////////////////////////////////////////////
             // Print outputs
@@ -106,17 +73,17 @@ int main(int argc, char *argv[]) {
             fprintf(fileHandle, "<statsForSample "
                     "sampleName=\"%s\" "
                     "referenceName=\"%s\" "
-                    "totalSites=\"%i\" "
-                "totalCorrect=\"%f\" "
-                "totalErrors=\"%i\" "
-                "totalCalls=\"%i\" />\n",
-                sampleEventString, referenceEventString,
-                totalSites, totalCorrect, totalErrors, totalCalls);
-
+                    "baseCoverages=\"",
+                sampleEventString, referenceEventString);
+            for(int32_t i=1; i<eventNumber; i++) {
+                fprintf(fileHandle, "%i ", baseCoverages[i]);
+            }
+            fprintf(fileHandle, "\"/>\n");
+            free(baseCoverages);
         }
     }
     eventTree_destructIterator(eventIt);
-    fprintf(fileHandle, "</substitutionStats>\n");
+    fprintf(fileHandle, "</coverageStats>\n");
 
     st_logInfo("Finished writing out the stats.\n");
     fclose(fileHandle);

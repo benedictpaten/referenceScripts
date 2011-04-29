@@ -18,6 +18,8 @@ from jobTree.src.bioio import setLoggingFromOptions
 from cactus.shared.config import CactusWorkflowExperiment
 from cactus.shared.common import runCactusWorkflow
 
+from cactusTools.shared.common import runCactusTreeStats
+from cactusTools.shared.common import runCactusMAFGenerator
 from cactusTools.shared.common import runCactusAddReferenceSequence
 
 from sonLib.bioio import getTempFile, getTempDirectory
@@ -41,15 +43,13 @@ def getCactusDiskString(alignmentFile):
 class MakeAlignment(Target):
     """Target runs the alignment.
     """
-    def __init__(self, newickTree, haplotypeSequences, requiredSpecies,
-                 outputDir, referenceAlgorithm, minimumBlockDegree):
+    def __init__(self, requiredSpecies, outputDir, 
+                 referenceAlgorithm, minimumBlockDegree, options):
         Target.__init__(self, cpu=1, memory=8000000000)
-        self.newickTree = newickTree
-        self.haplotypeSequences = haplotypeSequences
         self.requiredSpecies = requiredSpecies
-        self.outputDir = outputDir
         self.referenceAlgorithm = referenceAlgorithm
         self.minimumBlockDegree = minimumBlockDegree
+        self.options = options
     
     def run(self):
         if not os.path.isdir(self.outputDir):
@@ -81,8 +81,8 @@ class MakeAlignment(Target):
             tempJobTreeDir = os.path.join(self.getLocalTempDir(), "jobTree")
             #Make the experiment file
             cactusWorkflowExperiment = CactusWorkflowExperiment(
-                                                 sequences=self.haplotypeSequences, 
-                                                 newickTreeString=self.newickTree, 
+                                                 sequences=self.options.haplotypeSequences, 
+                                                 newickTreeString=self.options.newickTree, 
                                                  requiredSpecies=self.requiredSpecies,
                                                  databaseName=cactusAlignmentName,
                                                  outputDir=self.getLocalTempDir(),
@@ -107,39 +107,31 @@ class MakeAlignment(Target):
             #Copy across the final alignment
             system("mv %s %s" % (os.path.join(self.getLocalTempDir(), cactusAlignmentName), outputFile))
             #We're done!
-        self.addChildTarget(MakeStats(outputFile, self.outputDir))
+        self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
     
 class MakeAlignments(Target):
     """Makes alignments using pipeline.
     """
-    def __init__(self, newickTree, haplotypeSequences, requiredSpecies,
-                 outputDir, configFile, referenceAlgorithms,
-                 rangeOfMinimumBlockDegrees):
+    def __init__(self, options):
         Target.__init__(self)
-        self.newickTree = newickTree
-        self.haplotypeSequences = haplotypeSequences
-        self.outputDir = outputDir
-        self.configFile = configFile
-        self.requiredSpecies = requiredSpecies
-        self.referenceAlgorithms = referenceAlgorithms
-        self.rangeOfMinimumBlockDegrees = rangeOfMinimumBlockDegrees
-    
+        self.options = options
+        
     def run(self):
         statsFiles = []
         statsNames = []
-        for requiredSpecies in (None, self.requiredSpecies):
-            for referenceAlgorithm in self.referenceAlgorithms:
-                for minimumBlockDegree in self.rangeOfMinimumBlockDegrees:
-                    os.path.exists(self.outputDir)
+        for requiredSpecies in (None, self.options.requiredSpecies):
+            for referenceAlgorithm in self.referenceAlgorithms.split():
+                for minimumBlockDegree in [ int(i) for i in self.rangeOfMinimumBlockDegrees.split() ]:
+                    os.path.exists(self.options.outputDir)
                     def fn(i):
                         if i == None:
                             return "no-required-species"
                         return "required-species"
                     jobOutputDir = "%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree)
                     statsNames.append(jobOutputDir)
-                    absJobOutputDir = os.path.join(self.outputDir, jobOutputDir)
+                    absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
                     statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
-                    self.addChildTarget(MakeAlignment(self.newickTree, self.haplotypeSequences, 
+                    self.addChildTarget(MakeAlignment(options,
                                                       self.requiredSpecies, absJobOutputDir, 
                                                       referenceAlgorithm, minimumBlockDegree))
         self.setFollowOnTarget(MakeComparativeStats(statsFiles, statsNames, self.outputDir))
@@ -147,23 +139,42 @@ class MakeAlignments(Target):
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
     """
-    def __init__(self, alignment, outputDir, cpu=4, memory=8000000000):
+    def __init__(self, alignment, outputDir, options, cpu=4, memory=8000000000):
         Target.__init__(self, cpu=cpu, memory=memory)
         self.alignment = alignment
         self.outputDir = outputDir
+        self.options = options
+    
+    def runScript(self, binaryName, outputFile, specialOptions):
+        if not os.path.exists(outputFile):
+            tempOutputFile = getTempFile(rootDir=self.getLocalTempDir())
+            os.remove(tempOutputFile)
+            system("%s --cactusDisk '%s' --outputFile %s --minimumNsForScaffoldGap %s %s" % 
+            (os.path.join(getRootPathString(), "bin", binaryName),
+             getCactusDiskString(self.alignment),
+             tempOutputFile, 
+             self.options.minimumNsForScaffoldGap, specialOptions))
+            system("mv %s %s" % (tempOutputFile, outputFile))
         
     def run(self):
-        binPath = os.path.join(getRootPathString(), "bin")
+        for outputFile, program in (("treeStats.xml", runCactusTreeStats),
+                                    ("alignment.maf", runCactusMAFGenerator)):
+            outputFile = os.path.join(self.outputDir, outputFile)
+            if not os.path.exists(outputFile):
+                tempFile = os.path.join(self.getLocalTempDir(), "temp")
+                program(tempFile, getCactusDiskString(self.alignment))
+                system("mv %s %s" % tempFile, outputFile)
         
-        tempOutputFile = os.path.join(self.getLocalTempDir(), "tempOutput")
-        treeStatsOutputFile = os.path.join(self.outputDir, "treeStats.xml")
-        if not os.path.exists(treeStatsOutputFile):
-            system("cactus_treeStats --cactusDisk '%s' --flowerName 0 --outputFile %s --noPerColumnStats" % (getCactusDiskString(self.alignment), tempOutputFile))
-            system("mv %s %s" % (tempOutputFile, treeStatsOutputFile))
-        outputFile = os.path.join(self.outputDir, "output.maf")
-        if not os.path.exists(outputFile):
-            system("cactus_MAFGenerator --cactusDisk '%s' --flowerName 0 --outputFile %s --orderByReference" % (getCactusDiskString(self.alignment), tempOutputFile))
-            system("mv %s %s" % (tempOutputFile, outputFile))
+        #Now build the different stats files..
+        for outputFile, program, specialOptions in (("coverageStats.xml", "coverageStats", "--referenceName %s" % self.options.referenceString1), 
+                                                    ("pathStats_%s.xml" % self.options.referenceString1, "pathStats", "--referenceName %s" % self.options.referenceString1), 
+                                                    ("pathStats_%s.xml" % self.options.referenceString2, "pathStats", "--referenceName %s" % self.options.referenceString2),
+                                                    ("contiguityStats_%s.xml" % self.options.referenceString1, "contiguityStats", "--referenceName %s" % self.options.referenceString1), 
+                                                    ("contiguityStats_%s.xml" % self.options.referenceString2, "contiguityStats", "--referenceName %s" % self.options.referenceString2),
+                                                    ("snpStats_%s.xml" % self.options.referenceString1, "snpStats", "--referenceName %s" % self.options.referenceString1), 
+                                                    ("snpStats_%s.xml" % self.options.referenceString2, "snpStats", "--referenceName %s" % self.options.referenceString2),
+                                                    ("copyNumberStats.xml", "copyNumberStats", "--referenceName %s" % self.options.referenceString1)):
+            self.runScript(program, outputFile, specialOptions)
         
 def main():
     ##########################################
@@ -179,6 +190,8 @@ def main():
     parser.add_option("--referenceAlgorithms", dest="referenceAlgorithms")
     parser.add_option("--requiredSpecies", dest="requiredSpecies")
     parser.add_option("--rangeOfMinimumBlockDegrees", dest="rangeOfMinimumBlockDegrees")
+    parser.add_option("--referenceSpecies1", dest="referenceSpecies1")
+    parser.add_option("--referenceSpecies2", dest="referenceSpecies2")
     
     Stack.addJobTreeOptions(parser)
     
@@ -188,13 +201,7 @@ def main():
     if len(args) != 0:
         raise RuntimeError("Unrecognised input arguments: %s" % " ".join(args))
     
-    Stack(MakeAlignments(newickTree=options.newickTree, 
-                         haplotypeSequences=options.haplotypeSequences.split(), 
-                         requiredSpecies=options.requiredSpecies,
-                         outputDir=options.outputDir,
-                         configFile=options.configFile, 
-                         referenceAlgorithms=options.referenceAlgorithms.split(),
-                         rangeOfMinimumBlockDegrees=[ int(i) for i in options.rangeOfMinimumBlockDegrees.split() ])).startJobTree(options)
+    Stack(MakeAlignments(options)).startJobTree(options)
     logger.info("Done with job tree")
 
 def _test():
