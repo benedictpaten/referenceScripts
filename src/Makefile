@@ -10,11 +10,11 @@ binPath=${rootPath}/bin
 
 libSources = impl/*.c
 libHeaders = inc/*.h
-commonSources = impl/assemblaCommon.c
+commonSources = impl/referenceCommon.c
 
 extraLibs=${cactusLibPath}/cactusLib.a ${cactusToolsLibPath}/cactusMafs.a ${cactusToolsLibPath}/cactusTreeStats.a ${assemblaLibPath}/assemblaLib.a
 
-programs = pathStats
+programs = pathStats linkageStats copyNumberStats
 
 all : ${programs:%=${binPath}/%}
 
