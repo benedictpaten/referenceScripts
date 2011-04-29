@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
     while ((event = eventTree_getNext(eventIt)) != NULL) {
         sampleEventString = event_getHeader(event);
-        if (eventString != NULL && strcmp(eventString, referenceEventString)
+        if (sampleEventString != NULL && strcmp(sampleEventString, referenceEventString)
                 != 0) {
             //The pairs to represent the mafs.
             setOfPairs = stHash_construct3(
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
                 if (assemblyNumber < referenceNumber) {
                     totalCopyNumberDeficientColumns += columnCount[0];
                     totalCopyNumberDeficientBases += columnCount[0]
-                            * (minHapNumber - assemblyNumber);
+                            * (referenceNumber - assemblyNumber);
                     if (assemblyNumber > 0) {
                         totalCopyNumberDeficientColumnsGreaterThanZero
                                 += columnCount[0];

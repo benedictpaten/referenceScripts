@@ -14,11 +14,11 @@ commonSources = impl/referenceCommon.c
 
 extraLibs=${cactusLibPath}/cactusLib.a ${cactusToolsLibPath}/cactusMafs.a ${cactusToolsLibPath}/cactusTreeStats.a ${assemblaLibPath}/assemblaLib.a
 
-programs = pathStats linkageStats copyNumberStats
+programs = pathStats linkageStats copyNumberStats substitutionStats coverageStats
 
 all : ${programs:%=${binPath}/%}
 
-${binPath}/%: ${basicLibsDependencies} ${extraLibs}
+${binPath}/%: ${libSources} ${libHeaders} ${basicLibsDependencies} ${extraLibs}
 	${cxx} ${cflags} -I ${cactusLibPath} -I ${cactusToolsLibPath} -I ${assemblaLibPath} -I ${libPath} -I inc -o ${binPath}/$* impl/$*.c ${commonSources} ${extraLibs} ${basicLibs} 
 
 clean : ${programs:%=%.clean} 
