@@ -144,17 +144,19 @@ void getBlockLengths(Flower *flower,
     flower_destructGroupIterator(groupIt);
 }
 
-void getScaffoldPathsLengths(stHash *scaffoldPaths, stHash *scaffoldPathToScaffoldPathLengths, stList *scaffoldPathLengths) {
+void getScaffoldPathsLengths(stHash *scaffoldPaths, stList *scaffoldPathLengths) {
     stList *scaffoldPathsList = stHash_getValues(scaffoldPaths);
-    stSortedSet *scaffoldPathSet = stSortedSet_construct();
     for(int32_t i=0; i<stList_length(scaffoldPathsList);i++) {
         stSortedSet *scaffoldPath = stList_get(scaffoldPathsList, i);
-        if(stSortedSet_search(scaffoldPathSet, scaffoldPath) == NULL) {
-            stList_append(scaffoldPathLengths, stIntTuple_construct(1,
-                    stIntTuple_getPosition(stHash_search(scaffoldPathToScaffoldPathLengths, scaffoldPath), 0)));
+        stSortedSetIterator *contigPathIt = stSortedSet_getIterator(scaffoldPath);
+        stList *contigPath;
+        int32_t j=0;
+        while((contigPath = stSortedSet_getNext(contigPathIt)) != NULL) {
+            j += contigPathLength(contigPath);
         }
+        stSortedSet_destructIterator(contigPathIt);
+        stList_append(scaffoldPathLengths, stIntTuple_construct(1, j));
     }
-    stSortedSet_destruct(scaffoldPathSet);
     stList_destruct(scaffoldPathsList);
 }
 
@@ -174,7 +176,6 @@ SampleStats *getSamplePathStats(Flower *flower,
     //Calculate the haplotype paths.
     stList *contigPaths = getContigPaths(flower, sampleEventString, eventStrings);
     stHash *scaffoldPaths = getScaffoldPaths(contigPaths, eventStrings, capCodeParameters);
-    stHash *scaffoldPathToScaffoldPathLengths = getMaximalScaffoldPathLengths(contigPaths, eventStrings, capCodeParameters);
 
     //Now calculate the stats for the ends of the contig paths.
     for (int32_t i = 0; i < stList_length(contigPaths); i++) {
@@ -204,13 +205,12 @@ SampleStats *getSamplePathStats(Flower *flower,
     sampleStats->totalInterJoins /= 2;
 
     //Add the lengths for the scaffold paths.
-    getScaffoldPathsLengths(scaffoldPaths, scaffoldPathToScaffoldPathLengths, sampleStats->scaffoldPathLengthDistribution);
+    getScaffoldPathsLengths(scaffoldPaths, sampleStats->scaffoldPathLengthDistribution);
     getBlockLengths(flower, sampleEventString, referenceEventString, sampleStats->blockLengthDistribution);
     getSequenceLengths(flower, sampleEventString, sampleStats->sampleSequenceLengthDistribution);
 
     //Cleanup
     stHash_destruct(scaffoldPaths);
-    stHash_destruct(scaffoldPathToScaffoldPathLengths);
     stList_destruct(contigPaths);
     stList_destruct(eventStrings);
 
