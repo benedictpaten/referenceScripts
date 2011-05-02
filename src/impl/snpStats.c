@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
         if (sampleEventString != NULL && strcmp(sampleEventString, referenceEventString)
                 != 0) {
 
-            totalSites = 0;
+            totalSites = getTotalLengthOfAdjacencies(flower, referenceEventString);
             totalCorrect = 0;
             totalErrors = 0;
             totalCalls = 0;

@@ -30,7 +30,7 @@ static void getMAFBlock2(Block *block, FILE *fileHandle) {
             if (strcmp(segmentEvent, sampleEventString) == 0) {
                 sampleNumber++;
             }
-            if (strcmp(segmentEvent, referenceEventString) != 0) {
+            else if (strcmp(segmentEvent, referenceEventString) != 0) {
                 stSortedSet_insert(otherSampleEvents, (void *)segmentEvent);
             }
         }
@@ -64,6 +64,8 @@ int main(int argc, char *argv[]) {
             int32_t eventNumber = eventTree_getEventNumber(flower_getEventTree(flower));
             baseCoverages = st_calloc(sizeof(int32_t), eventNumber+1);
 
+            baseCoverages[0] = getTotalLengthOfAdjacencies(flower, sampleEventString);
+
             getMAFsReferenceOrdered(flower, fileHandle, getMAFBlock2);
 
             ///////////////////////////////////////////////////////////////////////////
@@ -75,7 +77,7 @@ int main(int argc, char *argv[]) {
                     "referenceName=\"%s\" "
                     "baseCoverages=\"",
                 sampleEventString, referenceEventString);
-            for(int32_t i=1; i<eventNumber; i++) {
+            for(int32_t i=0; i<eventNumber; i++) {
                 fprintf(fileHandle, "%i ", baseCoverages[i]);
             }
             fprintf(fileHandle, "\"/>\n");

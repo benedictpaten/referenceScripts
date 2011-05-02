@@ -171,7 +171,7 @@ class MakeStats(Target):
             outputFile = os.path.join(self.outputDir, outputFile)
             self.runScript(program, outputFile, "--referenceEventString %s" % self.options.referenceSpecies.split()[0])
         
-        for outputFile, program, in (("pathStats_%s.xml", "pathStats"), 
+        for outputFile, program, in (#("pathStats_%s.xml", "pathStats"), 
                                      ("contiguityStats_%s.xml", "contiguityStats"), 
                                      ("snpStats_%s.xml", "snpStats")):
             for reference in self.options.referenceSpecies.split():

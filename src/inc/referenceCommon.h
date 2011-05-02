@@ -12,6 +12,12 @@
 #include "adjacencyClassification.h"
 
 /*
+ * Returns the sum of bases contained within adjacencies for the sequences
+ * with the given event names.
+ */
+int32_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName);
+
+/*
  * Global parameters shared by all the scripts.
  */
 extern CapCodeParameters *capCodeParameters;

@@ -18,6 +18,14 @@
 #include "referenceCommon.h"
 
 /*
+ * Function used to account for sequence within adjacencies.
+ */
+
+int32_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName) {
+    return 1;
+}
+
+/*
  * Global parameters.
  */
 
