@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
                 int32_t assemblyNumber = stIntTuple_getPosition(copyNumber, 1);
                 assert(assemblyNumber >= 0);
                 assert(columnCount != NULL);
-                assert(columnCount[0] >= 1);
+                assert(columnCount[0] >= 0);
                 fprintf(
                         fileHandle,
                         "<copyNumberCategory referenceCopyNumber=\"%i\" assemblyCopyNumber=\"%i\" columnCount=\"%i\"/>\n",

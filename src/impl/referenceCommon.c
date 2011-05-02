@@ -16,13 +16,36 @@
 #include "cactus.h"
 #include "adjacencyClassification.h"
 #include "referenceCommon.h"
+#include "linkage.h"
 
 /*
  * Function used to account for sequence within adjacencies.
  */
 
 int32_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName) {
-    return 1;
+    stList *eventStrings = stList_construct();
+    stList_append(eventStrings, (void *)eventName);
+    stSortedSet *metaSequences = getMetaSequencesForEvents(flower, eventStrings);
+    stSortedSetIterator *metaSequenceIterator = stSortedSet_getIterator(metaSequences);
+    MetaSequence *metaSequence;
+    int32_t totalLength = 0;
+    while((metaSequence = stSortedSet_getNext(metaSequenceIterator)) != NULL) {
+        stSortedSet *orderedSegments = getOrderedSegmentsForSequence(flower, metaSequence);
+        stSortedSetIterator *segmentIt = stSortedSet_getIterator(orderedSegments);
+        Segment *segment;
+        int32_t i=0;
+        while((segment = stSortedSet_getNext(segmentIt)) != NULL) {
+            i += segment_getLength(segment);
+        }
+        stSortedSet_destruct(orderedSegments);
+        assert(metaSequence_getLength(metaSequence) - i >= 0);
+        totalLength += metaSequence_getLength(metaSequence) - i;
+    }
+    stSortedSet_destructIterator(metaSequenceIterator);
+    stSortedSet_destruct(metaSequences);
+    stList_destruct(eventStrings);
+    assert(totalLength >= 0);
+    return totalLength;
 }
 
 /*
