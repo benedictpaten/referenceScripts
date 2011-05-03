@@ -11,10 +11,7 @@ dataM :
 test : all
 	cd tests/little && make all
 
-run : mhcHumanVariants mhcHumanVariantsNsRemoved
-
-mhcHumanVariants : all
-	cd main/mhcHumanVariants && make all
+run : mhcHumanVariantsNsRemoved
 	
 mhcHumanVariantsNsRemoved : all
 	cd main/mhcHumanVariantsNsRemoved && make all
@@ -22,5 +19,4 @@ mhcHumanVariantsNsRemoved : all
 clean : 
 	cd src && make clean
 	cd tests/little && make clean
-	cd main/mhcHumanVariants && make clean
 	cd main/mhcHumanVariantsNsRemoved && make clean
