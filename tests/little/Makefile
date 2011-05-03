@@ -4,10 +4,11 @@ libPath = ${rootPath}lib
 dataPath = ${rootPath}data
 outputPath = ${rootPath}output
 
-newickTree=(HUMAN:0.000680,CHIMP:0.000520);
+newickTree=((HUMAN:0.000680, HUMAN2:0.000680):0.0000001,CHIMP:0.000520);
 dataDir=${dataPath}/test
-sequences= ${dataDir}/HUMAN ${dataDir}/CHIMP
-requiredSequences=HUMAN CHIMP
+sequences= ${dataDir}/HUMAN ${dataDir}/HUMAN ${dataDir}/CHIMP
+#CHIMP
+requiredSequences=HUMAN HUMAN2
 outputDir=${outputPath}/tests/little
 referenceSpecies=reference HUMAN
 

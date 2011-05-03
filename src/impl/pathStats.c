@@ -230,7 +230,7 @@ int32_t getN50(stList *lengths, int32_t genomeLength) {
             return j;
         }
     }
-    return -1; //this should not happen!
+    return 0; //this should not happen!
 }
 
 int32_t getSum(stList *lengths) {
