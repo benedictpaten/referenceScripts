@@ -6,7 +6,7 @@ outputPath = ${rootPath}output
 
 newickTree=(panTro2:0.007060,(hg19:0.002000,mann:0.002000,NA12878:0.002000):0.005850);
 dataDir=${dataPath}/mhcHumanVariantsNsRemoved
-sequences= ${dataPath}/panTro2 ${dataPath}/hg19 ${dataPath}/mann ${dataPath}/NA12878.fa
+sequences= ${dataDir}/panTro2 ${dataDir}/hg19 ${dataDir}/mann ${dataDir}/NA12878.fa
 requiredSequences=hg19 mann NA12878
 outputDir=${outputPath}/tests/big
 referenceSpecies=reference
