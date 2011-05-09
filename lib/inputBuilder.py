@@ -18,5 +18,5 @@ def fn(file):
     return i
 
 print "NEWICK_TREE:" + options.outGroupTree.replace("x", "(" + ",".join([ "%s:%f" % (fn(sequence), float(options.branchLength)) for sequence in args ]) + ")")
-print "ARGS: " + " ".join([ "%s" % fn(sequence) for sequence  in args ]) 
+print "REQUIRED_SPECIES_ARGS: " + " ".join([ "%s" % fn(sequence) for sequence  in args ]) 
 print "FILES: " + " ".join([ os.path.join(options.filePath, i) for i in args ])

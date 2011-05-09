@@ -55,9 +55,9 @@ void sampleStats_destruct(SampleStats *sampleStats) {
     free(sampleStats);
 }
 
-void getHaplotypePathStatsP(Cap *cap, stList *eventStrings, CapCodeParameters *capCodeParameters, SampleStats *sampleStats) {
+void getHaplotypePathStatsP(Cap *cap, stList *referenceEventStrings, stList *contaminationEventStrings, CapCodeParameters *capCodeParameters, SampleStats *sampleStats) {
     int32_t insertLength, deleteLength;
-    switch (getCapCode(cap, eventStrings, &insertLength, &deleteLength, capCodeParameters)) {
+    switch (getCapCode(cap, referenceEventStrings, contaminationEventStrings, &insertLength, &deleteLength, capCodeParameters)) {
         case HAP_NOTHING:
             return;
         case CONTIG_END:
@@ -170,12 +170,13 @@ SampleStats *getSamplePathStats(Flower *flower,
 
     SampleStats *sampleStats = sampleStats_construct();
 
-    stList *eventStrings = stList_construct(); //This is the holder of the event strings
-    stList_append(eventStrings, (char *)referenceEventString);
+    stList *referenceEventStrings = stList_construct(); //This is the holder of the event strings
+    stList_append(referenceEventStrings, (char *)referenceEventString);
+    stList *emptyList = stList_construct();
 
     //Calculate the haplotype paths.
-    stList *contigPaths = getContigPaths(flower, sampleEventString, eventStrings);
-    stHash *scaffoldPaths = getScaffoldPaths(contigPaths, eventStrings, capCodeParameters);
+    stList *contigPaths = getContigPaths(flower, sampleEventString, referenceEventStrings);
+    stHash *scaffoldPaths = getScaffoldPaths(contigPaths, referenceEventStrings, emptyList, capCodeParameters);
 
     //Now calculate the stats for the ends of the contig paths.
     for (int32_t i = 0; i < stList_length(contigPaths); i++) {
@@ -183,8 +184,8 @@ SampleStats *getSamplePathStats(Flower *flower,
         stList_append(sampleStats->contigPathLengthDistribution, stIntTuple_construct(1, contigPathLength(contigPath)));
         for (int32_t j = 0; j < stList_length(contigPath); j++) {
             Segment *segment = stList_get(contigPath, j);
-            getHaplotypePathStatsP(segment_get5Cap(segment), eventStrings, capCodeParameters, sampleStats);
-            getHaplotypePathStatsP(segment_get3Cap(segment), eventStrings, capCodeParameters, sampleStats);
+            getHaplotypePathStatsP(segment_get5Cap(segment), referenceEventStrings, emptyList, capCodeParameters, sampleStats);
+            getHaplotypePathStatsP(segment_get3Cap(segment), referenceEventStrings, emptyList, capCodeParameters, sampleStats);
         }
     }
     //Normalise stats
@@ -212,7 +213,8 @@ SampleStats *getSamplePathStats(Flower *flower,
     //Cleanup
     stHash_destruct(scaffoldPaths);
     stList_destruct(contigPaths);
-    stList_destruct(eventStrings);
+    stList_destruct(referenceEventStrings);
+    stList_destruct(emptyList);
 
     return sampleStats;
 }
