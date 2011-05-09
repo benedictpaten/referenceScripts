@@ -9,7 +9,7 @@ dataDir=${dataPath}/test
 sequences= ${dataDir}/CHIMP ${dataDir}/HUMAN ${dataDir}/HUMAN2 ${dataDir}/HUMAN3
 requiredSequences=HUMAN HUMAN2 HUMAN3
 outputDir=${outputPath}/tests/little
-referenceSpecies=reference HUMAN
+referenceSpecies=reference
 
 minimumBlockDegreeRange=1 2
 #2 3
