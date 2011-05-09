@@ -9,7 +9,7 @@ dataDir=${dataPath}/mhcHumanVariantsNsRemoved
 sequences= ${dataDir}/panTro2 ${dataDir}/hg19 ${dataDir}/mann ${dataDir}/NA12878.fa
 requiredSequences=hg19 mann NA12878
 outputDir=${outputPath}/tests/big
-referenceSpecies=reference
+referenceSpecies=reference hg19
 minimumBlockDegreeRange=1 2 3
 #algorithms: greedy maxCardinality maxWeight blossom5
 referenceAlgorithms = maxCardinality maxWeight
