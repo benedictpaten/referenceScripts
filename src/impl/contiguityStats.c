@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     int32_t *samples = st_malloc(sizeof(int32_t) * bucketNumber);
 
     FILE *fileHandle = fopen(outputFile, "w");
-    fprintf(fileHandle, "<linkageStats>");
+    fprintf(fileHandle, "<contiguityStats>");
 
     EventTree_Iterator *eventIt = eventTree_getIterator(flower_getEventTree(flower));
     Event *event;
@@ -73,12 +73,13 @@ int main(int argc, char *argv[]) {
                     pMaxSize = maxSize + 1;
                 }
             }
-            fprintf(fileHandle, "\n</linkageStats>\n");
+            fprintf(fileHandle, "</statsForSample>");
         }
     }
     eventTree_destructIterator(eventIt);
 
-    fprintf(fileHandle, "</statsForSample>");
+
+    fprintf(fileHandle, "\n</contiguityStats>\n");
     st_logInfo("Finished writing out the stats.\n");
     fclose(fileHandle);
 
