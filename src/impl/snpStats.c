@@ -28,7 +28,6 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
         Segment *segment;
         char *referenceSeq = NULL;
         char *sampleSeq = NULL;
-        goto end;
         while ((segment = block_getNext(instanceIterator)) != NULL) {
             if (strcmp(event_getHeader(segment_getEvent(segment)),
                     referenceEventString) == 0) {
