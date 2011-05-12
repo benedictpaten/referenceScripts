@@ -121,5 +121,10 @@ int main(int argc, char *argv[]) {
     st_logInfo("Finished writing out the stats.\n");
     fclose(fileHandle);
 
+    flower = NULL;
+    cactusDisk_destruct(cactusDisk);
+
+    //while(1);
+
     return 0;
 }

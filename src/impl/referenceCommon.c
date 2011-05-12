@@ -37,6 +37,7 @@ int32_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName) {
         while((segment = stSortedSet_getNext(segmentIt)) != NULL) {
             i += segment_getLength(segment);
         }
+        stSortedSet_destructIterator(segmentIt);
         stSortedSet_destruct(orderedSegments);
         assert(metaSequence_getLength(metaSequence) - i >= 0);
         totalLength += metaSequence_getLength(metaSequence) - i;
