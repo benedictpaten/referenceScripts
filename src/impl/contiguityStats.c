@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
                             /bucketSize);
                     cumulativeCorrect += correct[i];
                     cumulativeSamples += samples[i];
-                    fprintf(fileHandle, "\t<bucket from=\"%i\" to=\"%i\" correct=\"%i\" samples=\"%i\" correctPerSample=\"%f\" cumulativeCorrect=\"%i\" cumulativeSamples=\"%i\" cummulateCorrectPerSample=\"%f\"/>\n",
+                    fprintf(fileHandle, "\t<bucket from=\"%i\" to=\"%i\" correct=\"%i\" samples=\"%i\" correctPerSample=\"%f\" cumulativeCorrect=\"%i\" cumulativeSamples=\"%i\" cumulativeCorrectPerSample=\"%f\"/>\n",
                             pMaxSize, maxSize, correct[i], samples[i], ((float) correct[i])/samples[i], cumulativeCorrect, cumulativeSamples, ((float) cumulativeCorrect)/cumulativeSamples);
                     pMaxSize = maxSize + 1;
                 }
