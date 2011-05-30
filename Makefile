@@ -20,4 +20,4 @@ clean :
 	cd src && make clean
 	cd tests/little && make clean
 	cd tests/big && make clean
-	cd main/mhcHumanVariantsNsRemoved && make clean
+	#cd main/mhcHumanVariantsNsRemoved && make clean
