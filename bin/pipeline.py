@@ -98,17 +98,36 @@ class MakeAlignment(Target):
             #Check if the jobtree completed sucessively.
             runJobTreeStatusAndFailIfNotComplete(tempJobTreeDir)
             logger.info("Checked the job tree dir")
-            #Now add the reference sequence
-            localCactusDisk = os.path.join(self.getLocalTempDir(), cactusAlignmentName)
-            runCactusAddReferenceSequence(cactusDiskDatabaseString=getCactusDiskString(localCactusDisk), referenceEventString=self.options.referenceSpecies.split()[0])
             #Now copy the true assembly back to the output
             system("mv %s %s/experiment.xml" % (tempExperimentFile, self.outputDir))
             system("mv %s %s/config.xml" % (tempConfigFile, self.outputDir))
+            #Copy across the final alignment
+            localCactusDisk = os.path.join(self.getLocalTempDir(), cactusAlignmentName)
+            #Compress and copy
+            cwd = os.getcwd()
+            os.chdir(self.getLocalTempDir())
+            system("tar -cvf preReference.tar ./%s" % cactusAlignmentName)
+            os.chdir(cwd)
+            system("cp %s/preReference.tar %s/" % (self.getLocalTempDir(), self.outputDir))
+            #Now add the reference sequence
+            runCactusAddReferenceSequence(cactusDiskDatabaseString=getCactusDiskString(localCactusDisk), referenceEventString=self.options.referenceSpecies.split()[0]) #Moved this due to problems
+            #Move the final db
+            system("mv %s %s" % (localCactusDisk, outputFile))
             #Compute the stats
             system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir, self.outputDir))
-            #Copy across the final alignment
-            system("mv %s %s" % (localCactusDisk, outputFile))
             #We're done!
+        self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
+
+class AddReferenceSequence(MakeAlignment):
+    def run(self):
+        #Now add the reference sequence
+        localCactusDisk = os.path.join(self.getLocalTempDir(), cactusAlignmentName)
+        runCactusAddReferenceSequence(cactusDiskDatabaseString=getCactusDiskString(localCactusDisk), referenceEventString=self.options.referenceSpecies.split()[0])
+        #Compute the stats
+        system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir, self.outputDir))
+        #Copy across the final alignment
+        system("mv %s %s" % (localCactusDisk, outputFile))
+        #We're done!
         self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
     
 class MakeAlignments(Target):
