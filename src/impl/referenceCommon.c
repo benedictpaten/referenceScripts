@@ -24,26 +24,33 @@
 
 int32_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName) {
     stList *eventStrings = stList_construct();
-    stList_append(eventStrings, (void *)eventName);
-    stSortedSet *metaSequences = getMetaSequencesForEvents(flower, eventStrings);
-    stSortedSetIterator *metaSequenceIterator = stSortedSet_getIterator(metaSequences);
+    stList_append(eventStrings, (void *) eventName);
+
+    int64_t totalLength = 0;
+
+    //First sum the length of the sequences
+    stSortedSet *metaSequences =
+            getMetaSequencesForEvents(flower, eventStrings);
+    stSortedSetIterator *metaSequenceIterator = stSortedSet_getIterator(
+            metaSequences);
     MetaSequence *metaSequence;
-    int32_t totalLength = 0;
-    while((metaSequence = stSortedSet_getNext(metaSequenceIterator)) != NULL) {
-        stSortedSet *orderedSegments = getOrderedSegmentsForSequence(flower, metaSequence);
-        stSortedSetIterator *segmentIt = stSortedSet_getIterator(orderedSegments);
-        Segment *segment;
-        int32_t i=0;
-        while((segment = stSortedSet_getNext(segmentIt)) != NULL) {
-            i += segment_getLength(segment);
-        }
-        stSortedSet_destructIterator(segmentIt);
-        stSortedSet_destruct(orderedSegments);
-        assert(metaSequence_getLength(metaSequence) - i >= 0);
-        totalLength += metaSequence_getLength(metaSequence) - i;
+    while ((metaSequence = stSortedSet_getNext(metaSequenceIterator)) != NULL) {
+        totalLength += metaSequence_getLength(metaSequence);
     }
     stSortedSet_destructIterator(metaSequenceIterator);
     stSortedSet_destruct(metaSequences);
+    //Now subtract of the length of the sequences
+    stSortedSet *orderedSegments = getOrderedSegments(flower);
+    stSortedSetIterator *segmentIt = stSortedSet_getIterator(orderedSegments);
+    Segment *segment;
+    while ((segment = stSortedSet_getNext(segmentIt)) != NULL) {
+        if(strcmp(event_getHeader(segment_getEvent(segment)), eventName) == 0) {
+            totalLength -= segment_getLength(segment);
+        }
+    }
+    stSortedSet_destructIterator(segmentIt);
+    stSortedSet_destruct(orderedSegments);
+
     stList_destruct(eventStrings);
     assert(totalLength >= 0);
     return totalLength;
@@ -99,7 +106,8 @@ void basicUsage(const char *programName) {
     fprintf(stderr, "-t --minimumBlockLength : Minimum block length\n");
     fprintf(stderr, "-u --ignoreFirstNBasesOfBlock : Minimum block length\n");
     fprintf(stderr, "-v --minimumIdentity : Minimum identity of the block\n");
-    fprintf(stderr,
+    fprintf(
+            stderr,
             "-w --printIndelPositions : Print out valid columns containing only one haplotype\n");
     fprintf(stderr, "-x --bucketNumber : Number of buckets\n");
     fprintf(stderr, "-y --upperLinkageBound : Upper linkage bound\n");

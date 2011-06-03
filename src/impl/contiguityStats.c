@@ -41,6 +41,8 @@ int main(int argc, char *argv[]) {
     FILE *fileHandle = fopen(outputFile, "w");
     fprintf(fileHandle, "<contiguityStats>");
 
+    stSortedSet *sortedSegments = getOrderedSegments(flower);
+
     EventTree_Iterator *eventIt = eventTree_getIterator(flower_getEventTree(flower));
     Event *event;
     while((event = eventTree_getNext(eventIt)) != NULL) {
@@ -51,7 +53,6 @@ int main(int argc, char *argv[]) {
                 correct[i] = 0.0;
                 samples[i] = 0.0;
             }
-
             stList *eventStrings = stList_construct(); //This is the holder of the event strings
             stList_append(eventStrings, (char *)eventString);
             stSortedSet *sequences = getMetaSequencesForEvents(flower, eventStrings);
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
                 int32_t i = sampleNumber * (((double)metaSequence_getLength(metaSequence))/metaSequencesLength);
                 samplePoints(flower, metaSequence, referenceEventString,
                         i, correct, samples,
-                        bucketNumber, bucketSize);
+                        bucketNumber, bucketSize, sortedSegments);
             }
             stSortedSet_destructIterator(it);
             stSortedSet_destruct(sequences);
