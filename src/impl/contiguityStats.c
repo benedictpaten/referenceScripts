@@ -11,6 +11,17 @@
 #include "referenceCommon.h"
 #include "linkage.h"
 
+int64_t sumMetaSequenceLengths(stSortedSet *sequences) {
+    int64_t j=0;
+    stSortedSetIterator *it = stSortedSet_getIterator(sequences);
+    MetaSequence *i;
+    while((i = stSortedSet_getNext(it)) != NULL) {
+        j += metaSequence_getLength(i);
+    }
+    stSortedSet_destructIterator(it);
+    return j;
+}
+
 int main(int argc, char *argv[]) {
     //////////////////////////////////////////////
     //Parse the inputs
@@ -44,11 +55,13 @@ int main(int argc, char *argv[]) {
             stList *eventStrings = stList_construct(); //This is the holder of the event strings
             stList_append(eventStrings, (char *)eventString);
             stSortedSet *sequences = getMetaSequencesForEvents(flower, eventStrings);
+            int64_t metaSequencesLength = sumMetaSequenceLengths(sequences);
             stSortedSetIterator *it = stSortedSet_getIterator(sequences);
             MetaSequence *metaSequence;
             while ((metaSequence = stSortedSet_getNext(it)) != NULL) {
+                int32_t i = sampleNumber * (((double)metaSequence_getLength(metaSequence))/metaSequencesLength);
                 samplePoints(flower, metaSequence, referenceEventString,
-                        sampleNumber, correct, samples,
+                        i, correct, samples,
                         bucketNumber, bucketSize);
             }
             stSortedSet_destructIterator(it);
