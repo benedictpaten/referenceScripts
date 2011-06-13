@@ -270,14 +270,17 @@ char *concatenateList(stList *list) {
 void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
         const char *referenceEventString,
         CapCodeParameters *capCodeParameters) {
-    int32_t genomeLength = getGenomeLength(flower, referenceEventString);
+
+    int32_t referenceGenomeLength = getGenomeLength(flower, referenceEventString);
 
     EventTree_Iterator *eventIt = eventTree_getIterator(flower_getEventTree(flower));
     Event *event;
     while((event = eventTree_getNext(eventIt)) != NULL) {
         const char *eventString = event_getHeader(event);
         if(eventString != NULL && strcmp(eventString, referenceEventString) != 0) {
-            SampleStats *sampleStats = getSamplePathStats(flower, eventString, referenceEventString, capCodeParameters);
+            SampleStats *sampleStats = getSamplePathStats(flower, referenceEventString, eventString, capCodeParameters);
+
+            int32_t genomeLength = getGenomeLength(flower, eventString);
 
             char *insertionDistributionString = concatenateList(sampleStats->insertionDistribution);
             char *deletionDistributionString = concatenateList(sampleStats->deletionDistribution);
@@ -324,8 +327,8 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
                     sampleStats->totalDeletions +
                     sampleStats->totalInsertionAndDeletions +
                     sampleStats->totalHangingInsertions,
-                    getSum(sampleStats->sampleSequenceLengthDistribution),
                     genomeLength,
+                    referenceGenomeLength,
                     getN50(sampleStats->sampleSequenceLengthDistribution, genomeLength),
                     getN50(sampleStats->blockLengthDistribution, genomeLength),
                     getN50(sampleStats->contigPathLengthDistribution, genomeLength),
