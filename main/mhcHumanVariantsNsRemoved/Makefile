@@ -14,9 +14,9 @@ sequences= ${dataDir}/panTro2 ${dataDir}/NA12878.fa ${dataDir}/NA12891.fa ${data
 requiredSequences=NA12878 NA12891 NA12892 NA19238 NA19239 NA19240 apd cox dbb hg19 mann mcf qbl ssto
 outputDir=${outputPath}/main/mhcHumanVariantsNsRemoved
 referenceSpecies=reference hg19
-minimumBlockDegreeRange=1 2
+minimumBlockDegreeRange=1 2 3
 #algorithms: greedy maxCardinality maxWeight blossom5
-referenceAlgorithms = maxCardinality maxWeight
+referenceAlgorithms = maxCardinality maxWeight greedy
 
 include ../../include.mk
 
