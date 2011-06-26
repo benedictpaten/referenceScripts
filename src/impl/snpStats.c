@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
             totalErrors = 0;
             totalCalls = 0;
 
-            getMAFsReferenceOrdered(flower, fileHandle, getSnpStats);
+            getMAFs(flower, fileHandle, getSnpStats);
 
             ///////////////////////////////////////////////////////////////////////////
             // Print outputs

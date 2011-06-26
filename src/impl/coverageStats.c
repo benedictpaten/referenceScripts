@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
             baseCoverages[0] = getTotalLengthOfAdjacencies(flower, sampleEventString);
 
-            getMAFsReferenceOrdered(flower, fileHandle, getMAFBlock2);
+            getMAFs(flower, fileHandle, getMAFBlock2);
 
             ///////////////////////////////////////////////////////////////////////////
             // Print outputs

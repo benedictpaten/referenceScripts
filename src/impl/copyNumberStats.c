@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
             addToPairs(0, 1, getTotalLengthOfAdjacencies(flower, sampleEventString));
 
             //Pass over the blocks.
-            getMAFsReferenceOrdered(flower, fileHandle, getMAFBlock2);
+            getMAFs(flower, fileHandle, getMAFBlock2);
             //Now calculate the linkage stats
             stList *copyNumbers = stHash_getKeys(setOfPairs);
             stList_sort(copyNumbers, (int(*)(const void *, const void *)) stIntTuple_cmpFn);
