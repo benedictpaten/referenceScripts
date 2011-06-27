@@ -11,7 +11,7 @@
 		</iterations>
 	</alignment>
 
-	<normal max_number_of_chains="30" rounds="2">
+	<normal max_number_of_chains="0" rounds="2">
 	</normal>
 
 	<phylogeny>
