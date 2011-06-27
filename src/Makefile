@@ -12,7 +12,7 @@ libSources = impl/*.c
 libHeaders = inc/*.h
 commonSources = impl/referenceCommon.c
 
-extraLibs=${cactusLibPath}/cactusLib.a ${cactusLibPath}/cactusReference.a ${cactusToolsLibPath}/cactusMafs.a ${cactusToolsLibPath}/cactusTreeStats.a ${assemblaLibPath}/assemblaLib.a
+extraLibs=${cactusToolsLibPath}/cactusMafs.a ${cactusToolsLibPath}/cactusTreeStats.a ${assemblaLibPath}/assemblaLib.a ${cactusLibPath}/cactusReference.a ${cactusLibPath}/cactusLib.a
 
 programs = pathStats contiguityStats copyNumberStats snpStats coverageStats
 
