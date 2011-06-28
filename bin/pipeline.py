@@ -43,12 +43,16 @@ class MakeAlignment(Target):
     """Target runs the alignment.
     """
     def __init__(self, options, outputDir, requiredSpecies,
-                 referenceAlgorithm, minimumBlockDegree):
+                 referenceAlgorithm, minimumBlockDegree, 
+                 blastAlignmentString, baseLevel, maxNumberOfChains):
         Target.__init__(self, cpu=1, memory=8000000000)
         self.requiredSpecies = requiredSpecies
         self.outputDir = outputDir
         self.referenceAlgorithm = referenceAlgorithm
         self.minimumBlockDegree = int(minimumBlockDegree)
+        self.blastAlignmentString = blastAlignmentString
+        self.baseLevel = baseLevel
+        self.maxNumberOfChains = maxNumberOfChains
         self.options = options
     
     def run(self):
@@ -63,11 +67,26 @@ class MakeAlignment(Target):
             config.find("reference").attrib["matching_algorithm"] = self.referenceAlgorithm
             
             #Do the minimum block degree configuration
+            iterations = config.find("alignment").find("iterations")
+            blastIteration = iterations.findall("iteration")[0]
+            baseIteration = iterations.findall("iteration")[1]
+            
             minimumBlastBlockDegree = self.minimumBlockDegree
             if minimumBlastBlockDegree <= 1:
                 minimumBlastBlockDegree = 2
-            config.find("alignment").find("iterations").findall("iteration")[0].find("core").attrib["minimumBlockDegree"] = str(minimumBlastBlockDegree)
-            config.find("alignment").find("iterations").findall("iteration")[1].attrib["minimumBlockDegree"] = str(self.minimumBlockDegree)
+            blastIteration.find("core").attrib["minimumBlockDegree"] = str(minimumBlastBlockDegree)
+            baseIteration.attrib["minimumBlockDegree"] = str(self.minimumBlockDegree)
+            
+            #Set the blast string
+            blastIteration.find("blast").attrib["blastString"] = blastIteration.find("blast").attrib["blastString"].replace("PARAMETERS", self.blastAlignmentString)
+            blastIteration.find("blast").attrib["selfBlastString"] = blastIteration.find("blast").attrib["selfBlastString"].replace("PARAMETERS", self.blastAlignmentString)
+            
+            #Get rid of the base level, if needed
+            if not self.baseLevel:
+                iterations.remove(baseIteration)
+            
+            #Set the number of chains to allow in a level, during promotion
+            config.find("normal").attrib["max_number_of_chains"] = str(self.maxNumberOfChains)
             
             #Write the config file
             tempConfigFile = os.path.join(self.getLocalTempDir(), "config.xml")
@@ -122,17 +141,23 @@ class MakeAlignments(Target):
         for requiredSpecies in (None, self.options.requiredSpecies):
             for referenceAlgorithm in self.options.referenceAlgorithms.split():
                 for minimumBlockDegree in [ int(i) for i in self.options.rangeOfMinimumBlockDegrees.split() ]:
-                    os.path.exists(self.options.outputDir)
-                    def fn(i):
-                        if i == None:
-                            return "no-required-species"
-                        return "required-species"
-                    jobOutputDir = "%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree)
-                    statsNames.append(jobOutputDir)
-                    absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
-                    statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
-                    self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
-                                                      requiredSpecies, referenceAlgorithm, minimumBlockDegree))
+                    blastAlignmentStrings = self.options.blastAlignmentStrings.split("%")
+                    for blastAlignmentStringIndex in xrange(len(blastAlignmentStrings)):
+                        for baseLevel in [ bool(i) for i in self.options.baseLevel.split() ]:
+                            for maxNumberOfChains in [ int(i) for i in self.options.maxNumberOfChains.split() ]:
+                                os.path.exists(self.options.outputDir)
+                                def fn(i):
+                                    if i == None:
+                                        return "no-required-species"
+                                    return "required-species"
+                                jobOutputDir = "%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, baseLevel, maxNumberOfChains, blastAlignmentStringIndex)
+                                statsNames.append(jobOutputDir)
+                                absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
+                                statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
+                                self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
+                                                                  requiredSpecies, referenceAlgorithm, minimumBlockDegree, 
+                                                                  blastAlignmentStrings[blastAlignmentStringIndex], 
+                                                                  baseLevel, maxNumberOfChains))
 
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
@@ -191,6 +216,9 @@ def main():
     parser.add_option("--rangeOfMinimumBlockDegrees", dest="rangeOfMinimumBlockDegrees")
     parser.add_option("--referenceSpecies", dest="referenceSpecies")
     parser.add_option("--minimumNsForScaffoldGap", dest="minimumNsForScaffoldGap")
+    parser.add_option("--blastAlignmentStrings", dest="blastAlignmentStrings")
+    parser.add_option("--baseLevel", dest="baseLevel")
+    parser.add_option("--maxNumberOfChains", dest="maxNumberOfChains")
     
     Stack.addJobTreeOptions(parser)
     

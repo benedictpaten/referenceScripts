@@ -17,6 +17,9 @@ referenceSpecies=reference hg19
 minimumBlockDegreeRange=1 2 3
 #algorithms: greedy maxCardinality maxWeight blossom5
 referenceAlgorithms = maxCardinality maxWeight greedy
+baseLevel = 0 1
+maxNumberOfChains = 0 30
+blastAlignmentStrings = --nogapped %  % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
 
 include ../../include.mk
 
