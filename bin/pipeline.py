@@ -48,7 +48,7 @@ class MakeAlignment(Target):
         self.requiredSpecies = requiredSpecies
         self.outputDir = outputDir
         self.referenceAlgorithm = referenceAlgorithm
-        self.minimumBlockDegree = minimumBlockDegree
+        self.minimumBlockDegree = int(minimumBlockDegree)
         self.options = options
     
     def run(self):

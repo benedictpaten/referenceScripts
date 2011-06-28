@@ -141,10 +141,10 @@ int main(int argc, char *argv[]) {
                     totalCopyNumberExcessColumns, totalCopyNumberExcessBases,
                     ((float) totalCopyNumberExcessColumns) / totalColumnCount,
                     ((float) totalCopyNumberExcessBases) / totalBaseCount);
-            fprintf(fileHandle, "</copyNumberStats>\n");
+            fprintf(fileHandle, "</statsForSample>\n");
         }
     }
-    fprintf(fileHandle, "</statsForSample>\n");
+    fprintf(fileHandle, "</copyNumberStats>\n");
     fclose(fileHandle);
 
     st_logInfo("Got the copy number counts in %i seconds/\n", time(NULL) - startTime);
