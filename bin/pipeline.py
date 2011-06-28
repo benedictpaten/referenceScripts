@@ -143,14 +143,14 @@ class MakeAlignments(Target):
                 for minimumBlockDegree in [ int(i) for i in self.options.rangeOfMinimumBlockDegrees.split() ]:
                     blastAlignmentStrings = self.options.blastAlignmentStrings.split("%")
                     for blastAlignmentStringIndex in xrange(len(blastAlignmentStrings)):
-                        for baseLevel in [ bool(i) for i in self.options.baseLevel.split() ]:
+                        for baseLevel in [ bool(int(i)) for i in self.options.baseLevel.split() ]:
                             for maxNumberOfChains in [ int(i) for i in self.options.maxNumberOfChains.split() ]:
                                 os.path.exists(self.options.outputDir)
                                 def fn(i):
                                     if i == None:
                                         return "no-required-species"
                                     return "required-species"
-                                jobOutputDir = "%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, baseLevel, maxNumberOfChains, blastAlignmentStringIndex)
+                                jobOutputDir = "%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains)
                                 statsNames.append(jobOutputDir)
                                 absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
                                 statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
