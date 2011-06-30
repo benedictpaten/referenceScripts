@@ -44,7 +44,7 @@ class MakeAlignment(Target):
     """
     def __init__(self, options, outputDir, requiredSpecies,
                  referenceAlgorithm, minimumBlockDegree, 
-                 blastAlignmentString, baseLevel, maxNumberOfChains):
+                 blastAlignmentString, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound):
         Target.__init__(self, cpu=1, memory=8000000000)
         self.requiredSpecies = requiredSpecies
         self.outputDir = outputDir
@@ -53,6 +53,7 @@ class MakeAlignment(Target):
         self.blastAlignmentString = blastAlignmentString
         self.baseLevel = baseLevel
         self.maxNumberOfChains = maxNumberOfChains
+        self.maxNumberOfChainsToSolvePerRound = maxNumberOfChainsToSolvePerRound
         self.options = options
     
     def run(self):
@@ -87,6 +88,9 @@ class MakeAlignment(Target):
             
             #Set the number of chains to allow in a level, during promotion
             config.find("normal").attrib["max_number_of_chains"] = str(self.maxNumberOfChains)
+            
+            #Set the number of chains to order per round of the matching algorithm
+            config.find("reference").attrib["maxNumberOfChainsToSolvePerRound"]  = str(self.maxNumberOfChainsToSolvePerRound)
             
             #Write the config file
             tempConfigFile = os.path.join(self.getLocalTempDir(), "config.xml")
@@ -145,19 +149,20 @@ class MakeAlignments(Target):
                     for blastAlignmentStringIndex in xrange(len(blastAlignmentStrings)):
                         for baseLevel in [ bool(int(i)) for i in self.options.baseLevel.split() ]:
                             for maxNumberOfChains in [ int(i) for i in self.options.maxNumberOfChains.split() ]:
-                                os.path.exists(self.options.outputDir)
-                                def fn(i):
-                                    if i == None:
-                                        return "no-required-species"
-                                    return "required-species"
-                                jobOutputDir = "%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains)
-                                statsNames.append(jobOutputDir)
-                                absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
-                                statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
-                                self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
-                                                                  requiredSpecies, referenceAlgorithm, minimumBlockDegree, 
-                                                                  blastAlignmentStrings[blastAlignmentStringIndex], 
-                                                                  baseLevel, maxNumberOfChains))
+                                for maxNumberOfChainsToSolvePerRound in [ int(i) for i in self.options.maxNumberOfChainsToSolvePerRound.split() ]:
+                                    os.path.exists(self.options.outputDir)
+                                    def fn(i):
+                                        if i == None:
+                                            return "no-required-species"
+                                        return "required-species"
+                                    jobOutputDir = "%s-%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound)
+                                    statsNames.append(jobOutputDir)
+                                    absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
+                                    statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
+                                    self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
+                                                                      requiredSpecies, referenceAlgorithm, minimumBlockDegree, 
+                                                                      blastAlignmentStrings[blastAlignmentStringIndex], 
+                                                                      baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound))
 
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
@@ -219,6 +224,7 @@ def main():
     parser.add_option("--blastAlignmentStrings", dest="blastAlignmentStrings")
     parser.add_option("--baseLevel", dest="baseLevel")
     parser.add_option("--maxNumberOfChains", dest="maxNumberOfChains")
+    parser.add_option("--maxNumberOfChainsToSolvePerRound", dest="maxNumberOfChainsToSolvePerRound")
     
     Stack.addJobTreeOptions(parser)
     

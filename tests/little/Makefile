@@ -11,10 +11,11 @@ requiredSequences=HUMAN HUMAN2 HUMAN3
 outputDir=${outputPath}/tests/little
 referenceSpecies=reference HUMAN
 minimumBlockDegreeRange=1 2
-referenceAlgorithms = greedy maxCardinality
+referenceAlgorithms = maxCardinality
 baseLevel = 1
 maxNumberOfChains = 0
-blastAlignmentStrings = --nogapped %  % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
+blastAlignmentStrings = --nogapped % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
+maxNumberOfChainsToSolvePerRound = 10 1000
 
 #maxCardinality maxWeight blossom5
 
