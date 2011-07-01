@@ -8,11 +8,12 @@ minimumNsForScaffoldGap=15
 #########
 		
 pipeline :
-	rm -rf ./jobTree
+	rm -rf ./jobTree2
 	#Running pipeline to build comparisons
-	python ${binPath}/pipeline.py --maxNumberOfChainsToSolvePerRound '${maxNumberOfChainsToSolvePerRound}' --blastAlignmentStrings '${blastAlignmentStrings}' --baseLevel '${baseLevel}' --maxNumberOfChains '${maxNumberOfChains}' --referenceSpecies '${referenceSpecies}' --haplotypeSequences '${sequences}' --newickTree '${newickTree}' --outputDir ${outputDir} --configFile ${configFile} --referenceAlgorithms '${referenceAlgorithms}' --requiredSpecies '${requiredSequences}' --minimumNsForScaffoldGap ${minimumNsForScaffoldGap} --rangeOfMinimumBlockDegrees '${minimumBlockDegreeRange}' --jobTree ./jobTree ${jobTreeFlags}
-	jobTreeStatus --jobTree ./jobTree --failIfNotComplete
-	rm -rf ./jobTree
+	#python ${binPath}/pipeline.py --maxNumberOfChainsToSolvePerRound '${maxNumberOfChainsToSolvePerRound}' --blastAlignmentStrings '${blastAlignmentStrings}' --baseLevel '${baseLevel}' --maxNumberOfChains '${maxNumberOfChains}' --referenceSpecies '${referenceSpecies}' --haplotypeSequences '${sequences}' --newickTree '${newickTree}' --outputDir ${outputDir} --configFile ${configFile} --referenceAlgorithms '${referenceAlgorithms}' --requiredSpecies '${requiredSequences}' --minimumNsForScaffoldGap ${minimumNsForScaffoldGap} --rangeOfMinimumBlockDegrees '${minimumBlockDegreeRange}' --jobTree ./jobTree ${jobTreeFlags}
+	python ${binPath}/../pipeline2.py --maxNumberOfChainsToSolvePerRound '${maxNumberOfChainsToSolvePerRound}' --blastAlignmentStrings '${blastAlignmentStrings}' --baseLevel '${baseLevel}' --maxNumberOfChains '${maxNumberOfChains}' --referenceSpecies '${referenceSpecies}' --haplotypeSequences '${sequences}' --newickTree '${newickTree}' --outputDir ${outputDir} --configFile ${configFile} --referenceAlgorithms '${referenceAlgorithms}' --requiredSpecies '${requiredSequences}' --minimumNsForScaffoldGap ${minimumNsForScaffoldGap} --rangeOfMinimumBlockDegrees '${minimumBlockDegreeRange}' --jobTree ./jobTree2 ${jobTreeFlags}
+	jobTreeStatus --jobTree2 ./jobTree2 --failIfNotComplete
+	rm -rf ./jobTree2
 	
 basic : pipeline
 
