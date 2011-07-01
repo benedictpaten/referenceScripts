@@ -16,11 +16,13 @@
 
 const char *sampleEventString;
 int32_t *baseCoverages;
+int32_t *totalBaseCoverages;
+int32_t eventNumber;
 
 static void getMAFBlock2(Block *block, FILE *fileHandle) {
     if (block_getLength(block) >= minimumBlockLength) {
-        stSortedSet *otherSampleEvents =
-                    stSortedSet_construct3((int (*)(const void *, const void *))strcmp, NULL);
+        stSortedSet *otherSampleEvents = stSortedSet_construct3(
+                (int(*)(const void *, const void *)) strcmp, NULL);
         Segment *segment;
         Block_InstanceIterator *instanceIt = block_getInstanceIterator(block);
         int32_t sampleNumber = 0;
@@ -29,15 +31,29 @@ static void getMAFBlock2(Block *block, FILE *fileHandle) {
                     segment_getEvent(segment));
             if (strcmp(segmentEvent, sampleEventString) == 0) {
                 sampleNumber++;
-            }
-            else if (strcmp(segmentEvent, referenceEventString) != 0) {
-                stSortedSet_insert(otherSampleEvents, (void *)segmentEvent);
+            } else if (strcmp(segmentEvent, referenceEventString) != 0) {
+                stSortedSet_insert(otherSampleEvents, (void *) segmentEvent);
             }
         }
         block_destructInstanceIterator(instanceIt);
-        baseCoverages[stSortedSet_size(otherSampleEvents)] += block_getLength(block) * sampleNumber;
+        baseCoverages[stSortedSet_size(otherSampleEvents)] += block_getLength(
+                block) * sampleNumber;
         stSortedSet_destruct(otherSampleEvents);
     }
+}
+
+void printStatsForSample(bool addToTotalBaseCoverage, FILE *fileHandle) {
+    fprintf(fileHandle, "<statsForSample "
+        "sampleName=\"%s\" "
+        "referenceName=\"%s\" "
+        "baseCoverages=\"", sampleEventString, referenceEventString);
+    for (int32_t i = 0; i < eventNumber; i++) {
+        fprintf(fileHandle, "%i ", baseCoverages[i]);
+        if(addToTotalBaseCoverage) {
+            totalBaseCoverages[i] += baseCoverages[i];
+        }
+    }
+    fprintf(fileHandle, "\"/>\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -55,35 +71,33 @@ int main(int argc, char *argv[]) {
     fprintf(fileHandle, "<coverageStats>\n");
     EventTree_Iterator *eventIt = eventTree_getIterator(
             flower_getEventTree(flower));
+    eventNumber = eventTree_getEventNumber(
+                        flower_getEventTree(flower));
     Event *event;
+    totalBaseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
     while ((event = eventTree_getNext(eventIt)) != NULL) {
         sampleEventString = event_getHeader(event);
-        if (sampleEventString != NULL && strcmp(sampleEventString, referenceEventString)
-                != 0) {
+        if (sampleEventString != NULL && strcmp(sampleEventString,
+                referenceEventString) != 0) {
 
-            int32_t eventNumber = eventTree_getEventNumber(flower_getEventTree(flower));
-            baseCoverages = st_calloc(sizeof(int32_t), eventNumber+1);
+            baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
 
-            baseCoverages[0] = getTotalLengthOfAdjacencies(flower, sampleEventString);
+            baseCoverages[0] = getTotalLengthOfAdjacencies(flower,
+                    sampleEventString);
 
             getMAFs(flower, fileHandle, getMAFBlock2);
 
-            ///////////////////////////////////////////////////////////////////////////
-            // Print outputs
-            ///////////////////////////////////////////////////////////////////////////
+            printStatsForSample(1, fileHandle);
 
-            fprintf(fileHandle, "<statsForSample "
-                    "sampleName=\"%s\" "
-                    "referenceName=\"%s\" "
-                    "baseCoverages=\"",
-                sampleEventString, referenceEventString);
-            for(int32_t i=0; i<eventNumber; i++) {
-                fprintf(fileHandle, "%i ", baseCoverages[i]);
-            }
-            fprintf(fileHandle, "\"/>\n");
             free(baseCoverages);
         }
     }
+
+    //Do aggregate base coverages..
+    sampleEventString = "aggregate";
+    baseCoverages = totalBaseCoverages;
+    printStatsForSample(0, fileHandle);
+
     eventTree_destructIterator(eventIt);
     fprintf(fileHandle, "</coverageStats>\n");
 
