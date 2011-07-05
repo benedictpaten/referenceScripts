@@ -45,7 +45,7 @@ class MakeAlignment(Target):
     def __init__(self, options, outputDir, requiredSpecies,
                  referenceAlgorithm, minimumBlockDegree, 
                  blastAlignmentString, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound):
-        Target.__init__(self, cpu=1, memory=8000000000)
+        Target.__init__(self, cpu=1, memory=4000000000)
         self.requiredSpecies = requiredSpecies
         self.outputDir = outputDir
         self.referenceAlgorithm = referenceAlgorithm
@@ -167,7 +167,7 @@ class MakeAlignments(Target):
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
     """
-    def __init__(self, alignment, outputDir, options, cpu=4, memory=8000000000):
+    def __init__(self, alignment, outputDir, options, cpu=4, memory=4000000000):
         Target.__init__(self, cpu=cpu, memory=memory)
         self.alignment = alignment
         self.outputDir = outputDir
