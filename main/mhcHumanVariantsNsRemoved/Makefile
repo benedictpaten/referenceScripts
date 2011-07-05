@@ -20,7 +20,7 @@ referenceAlgorithms = maxCardinality maxWeight
 baseLevel = 0 1
 maxNumberOfChains = 30
 blastAlignmentStrings = --nogapped %  % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
-maxNumberOfChainsToSolvePerRound = 10 50 1000
+maxNumberOfChainsToSolvePerRound = 1 3 10 50 1000
 
 include ../../include.mk
 
