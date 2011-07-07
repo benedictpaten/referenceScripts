@@ -14,13 +14,15 @@ sequences= ${dataDir}/panTro2 ${dataDir}/NA12878.fa ${dataDir}/NA12891.fa ${data
 requiredSequences=NA12878 NA12891 NA12892 NA19238 NA19239 NA19240 apd cox dbb hg19 mann mcf qbl ssto
 outputDir=${outputPath}/main/mhcHumanVariantsNsRemoved
 referenceSpecies=reference hg19
-minimumBlockDegreeRange=1 2 3
+minimumBlockDegreeRange=1 2
 #algorithms: greedy maxCardinality maxWeight blossom5
 referenceAlgorithms = maxCardinality maxWeight
 baseLevel = 0 1
 maxNumberOfChains = 30
 blastAlignmentStrings = --nogapped %  % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
-maxNumberOfChainsToSolvePerRound = 1 3 10 50 1000
+maxNumberOfChainsToSolvePerRound = 1 10
+recalculateMatchingEachCycle = 0
+chainWeightCode = 0 1 2 3 4 5 6 7
 
 include ../../include.mk
 

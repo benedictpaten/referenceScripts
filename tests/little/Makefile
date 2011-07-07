@@ -10,12 +10,14 @@ sequences= ${dataDir}/CHIMP ${dataDir}/HUMAN ${dataDir}/HUMAN2 ${dataDir}/HUMAN3
 requiredSequences=HUMAN HUMAN2 HUMAN3
 outputDir=${outputPath}/tests/little
 referenceSpecies=reference HUMAN
-minimumBlockDegreeRange=1 2
+minimumBlockDegreeRange=1
 referenceAlgorithms = maxCardinality
 baseLevel = 1
 maxNumberOfChains = 0
 blastAlignmentStrings = --nogapped % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
-maxNumberOfChainsToSolvePerRound = 10 1000
+maxNumberOfChainsToSolvePerRound = 10
+recalculateMatchingEachCycle = 0 1
+chainWeightCode = 0 2
 
 #maxCardinality maxWeight blossom5
 

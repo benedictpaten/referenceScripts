@@ -44,7 +44,8 @@ class MakeAlignment(Target):
     """
     def __init__(self, options, outputDir, requiredSpecies,
                  referenceAlgorithm, minimumBlockDegree, 
-                 blastAlignmentString, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound):
+                 blastAlignmentString, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound,
+                 chainWeightCode, recalculateMatchingEachCycle):
         Target.__init__(self, cpu=1, memory=4000000000)
         self.requiredSpecies = requiredSpecies
         self.outputDir = outputDir
@@ -54,6 +55,8 @@ class MakeAlignment(Target):
         self.baseLevel = baseLevel
         self.maxNumberOfChains = maxNumberOfChains
         self.maxNumberOfChainsToSolvePerRound = maxNumberOfChainsToSolvePerRound
+        self.chainWeightCode = chainWeightCode
+        self.recalculateMatchingEachCycle = recalculateMatchingEachCycle
         self.options = options
     
     def run(self):
@@ -91,6 +94,12 @@ class MakeAlignment(Target):
             
             #Set the number of chains to order per round of the matching algorithm
             config.find("reference").attrib["maxNumberOfChainsToSolvePerRound"]  = str(self.maxNumberOfChainsToSolvePerRound)
+            
+            #Set the chain weight function
+            if bool(self.recalculateMatchingEachCycle):
+                config.find("reference").attrib["recalculateMatchingEachCycle"]="1"
+                
+            config.find("reference").attrib["chainWeightCode"] = str(self.chainWeightCode)
             
             #Write the config file
             tempConfigFile = os.path.join(self.getLocalTempDir(), "config.xml")
@@ -142,7 +151,7 @@ class MakeAlignments(Target):
     def run(self):
         statsFiles = []
         statsNames = []
-        for requiredSpecies in (None, self.options.requiredSpecies):
+        for requiredSpecies in (self.options.requiredSpecies,):
             for referenceAlgorithm in self.options.referenceAlgorithms.split():
                 for minimumBlockDegree in [ int(i) for i in self.options.rangeOfMinimumBlockDegrees.split() ]:
                     blastAlignmentStrings = self.options.blastAlignmentStrings.split("%")
@@ -150,19 +159,22 @@ class MakeAlignments(Target):
                         for baseLevel in [ bool(int(i)) for i in self.options.baseLevel.split() ]:
                             for maxNumberOfChains in [ int(i) for i in self.options.maxNumberOfChains.split() ]:
                                 for maxNumberOfChainsToSolvePerRound in [ int(i) for i in self.options.maxNumberOfChainsToSolvePerRound.split() ]:
-                                    os.path.exists(self.options.outputDir)
-                                    def fn(i):
-                                        if i == None:
-                                            return "no-required-species"
-                                        return "required-species"
-                                    jobOutputDir = "%s-%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound)
-                                    statsNames.append(jobOutputDir)
-                                    absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
-                                    statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
-                                    self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
-                                                                      requiredSpecies, referenceAlgorithm, minimumBlockDegree, 
-                                                                      blastAlignmentStrings[blastAlignmentStringIndex], 
-                                                                      baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound))
+                                    for chainWeightCode in [ int(i) for i in self.options.chainWeightCode.split() ]:
+                                        for recalculateMatchingEachCycle in [ bool(int(i)) for i in self.options.recalculateMatchingEachCycle.split() ]:
+                                            os.path.exists(self.options.outputDir)
+                                            def fn(i):
+                                                if i == None:
+                                                    return "no-required-species"
+                                                return "required-species"
+                                            jobOutputDir = "%s-%s-%s-%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound, chainWeightCode, recalculateMatchingEachCycle)
+                                            statsNames.append(jobOutputDir)
+                                            absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
+                                            statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
+                                            self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
+                                                                              requiredSpecies, referenceAlgorithm, minimumBlockDegree, 
+                                                                              blastAlignmentStrings[blastAlignmentStringIndex], 
+                                                                              baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound, 
+                                                                              chainWeightCode, recalculateMatchingEachCycle))
 
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
@@ -225,6 +237,8 @@ def main():
     parser.add_option("--baseLevel", dest="baseLevel")
     parser.add_option("--maxNumberOfChains", dest="maxNumberOfChains")
     parser.add_option("--maxNumberOfChainsToSolvePerRound", dest="maxNumberOfChainsToSolvePerRound")
+    parser.add_option("--chainWeightCode", dest="chainWeightCode")
+    parser.add_option("--recalculateMatchingEachCycle", dest="recalculateMatchingEachCycle")
     
     Stack.addJobTreeOptions(parser)
     
