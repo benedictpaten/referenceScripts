@@ -26,5 +26,7 @@ chainWeightCode = 0 1 2 3 4 5 6 7
 
 include ../../include.mk
 
+sampleNumber=100000000
+
 all : basic
 

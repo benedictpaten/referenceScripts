@@ -189,11 +189,11 @@ class MakeStats(Target):
         if not os.path.exists(outputFile):
             tempOutputFile = getTempFile(rootDir=self.getLocalTempDir())
             os.remove(tempOutputFile)
-            system("%s --cactusDisk '%s' --outputFile %s --minimumNsForScaffoldGap %s %s" % 
+            system("%s --cactusDisk '%s' --outputFile %s --minimumNsForScaffoldGap %s --sampleNumber %s %s" % 
             (os.path.join(getRootPathString(), "bin", binaryName),
              getCactusDiskString(self.alignment),
              tempOutputFile, 
-             self.options.minimumNsForScaffoldGap, specialOptions))
+             self.options.minimumNsForScaffoldGap, self.options.sampleNumber, specialOptions))
             system("mv %s %s" % (tempOutputFile, outputFile))
         
     def run(self):
@@ -211,11 +211,12 @@ class MakeStats(Target):
             outputFile = os.path.join(self.outputDir, outputFile)
             self.runScript(program, outputFile, "--referenceEventString %s" % self.options.referenceSpecies.split()[0])
         
-        for outputFile, program, in (("pathStats_%s.xml", "pathStats"), 
-                                     ("contiguityStats_%s.xml", "contiguityStats"), 
-                                     ("snpStats_%s.xml", "snpStats")):
+        for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
+                                     ("contiguityStats_%s.xml", "contiguityStats", ""), 
+                                     ("contiguityStatsNoDuplication_%s.xml", "contiguityStats", "--doNotSampleDuplicatedPositions"), 
+                                     ("snpStats_%s.xml", "snpStats", "")):
             for reference in self.options.referenceSpecies.split():
-                self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s" % reference)
+                self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
         
 def main():
     ##########################################
@@ -239,6 +240,7 @@ def main():
     parser.add_option("--maxNumberOfChainsToSolvePerRound", dest="maxNumberOfChainsToSolvePerRound")
     parser.add_option("--chainWeightCode", dest="chainWeightCode")
     parser.add_option("--recalculateMatchingEachCycle", dest="recalculateMatchingEachCycle")
+    parser.add_option("--sampleNumber", dest="sampleNumber")
     
     Stack.addJobTreeOptions(parser)
     

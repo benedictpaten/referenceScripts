@@ -45,6 +45,7 @@ extern bool printIndelPositions;
 extern int32_t bucketNumber;
 extern int32_t upperLinkageBound;
 extern int32_t sampleNumber;
+extern bool doNotSampleDuplicatedPositions;
 
 stList *getEventStrings(const char *hapA1EventString, const char *hapA2EventString);
 

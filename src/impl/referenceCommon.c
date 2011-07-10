@@ -29,10 +29,8 @@ int32_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName) {
     int64_t totalLength = 0;
 
     //First sum the length of the sequences
-    stSortedSet *metaSequences =
-            getMetaSequencesForEvents(flower, eventStrings);
-    stSortedSetIterator *metaSequenceIterator = stSortedSet_getIterator(
-            metaSequences);
+    stSortedSet *metaSequences = getMetaSequencesForEvents(flower, eventStrings);
+    stSortedSetIterator *metaSequenceIterator = stSortedSet_getIterator(metaSequences);
     MetaSequence *metaSequence;
     while ((metaSequence = stSortedSet_getNext(metaSequenceIterator)) != NULL) {
         totalLength += metaSequence_getLength(metaSequence);
@@ -44,7 +42,7 @@ int32_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName) {
     stSortedSetIterator *segmentIt = stSortedSet_getIterator(orderedSegments);
     Segment *segment;
     while ((segment = stSortedSet_getNext(segmentIt)) != NULL) {
-        if(strcmp(event_getHeader(segment_getEvent(segment)), eventName) == 0) {
+        if (strcmp(event_getHeader(segment_getEvent(segment)), eventName) == 0) {
             totalLength -= segment_getLength(segment);
         }
     }
@@ -85,6 +83,7 @@ bool printIndelPositions = 0;
 int32_t bucketNumber = 2000;
 int32_t upperLinkageBound = 200000000;
 int32_t sampleNumber = 1000000;
+bool doNotSampleDuplicatedPositions = 0;
 
 void basicUsage(const char *programName) {
     fprintf(stderr, "%s\n", programName);
@@ -92,12 +91,10 @@ void basicUsage(const char *programName) {
     fprintf(stderr, "-c --cactusDisk : The location of the cactus disk\n");
     fprintf(stderr, "-e --outputFile : The file to write the output in.\n");
     fprintf(stderr, "-h --help : Print this help screen\n");
-    fprintf(
-            stderr,
+    fprintf(stderr,
             "-m --minimumNsForScaffoldGap : Minimum number of Ns in assembly sequence to denote a scaffold gap\n");
     fprintf(stderr, "-n --maximumDeletionLength : Maximum length of deletion\n");
-    fprintf(stderr,
-            "-o --maximumInsertionLength : Maximum length of insertion\n");
+    fprintf(stderr, "-o --maximumInsertionLength : Maximum length of insertion\n");
 
     fprintf(stderr, "-p --referenceEventString : The reference event string\n");
 
@@ -106,12 +103,11 @@ void basicUsage(const char *programName) {
     fprintf(stderr, "-t --minimumBlockLength : Minimum block length\n");
     fprintf(stderr, "-u --ignoreFirstNBasesOfBlock : Minimum block length\n");
     fprintf(stderr, "-v --minimumIdentity : Minimum identity of the block\n");
-    fprintf(
-            stderr,
-            "-w --printIndelPositions : Print out valid columns containing only one haplotype\n");
+    fprintf(stderr, "-w --printIndelPositions : Print out valid columns containing only one haplotype\n");
     fprintf(stderr, "-x --bucketNumber : Number of buckets\n");
     fprintf(stderr, "-y --upperLinkageBound : Upper linkage bound\n");
     fprintf(stderr, "-z --sampleNumber : Number of samples\n");
+    fprintf(stderr, "-A --doNotSampleDuplicatedPositions : Do not sample positions that contain duplication\n");
 }
 
 int parseBasicArguments(int argc, char *argv[], const char *programName) {
@@ -129,25 +125,21 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
     ///////////////////////////////////////////////////////////////////////////
 
     while (1) {
-        static struct option long_options[] = { { "logLevel",
-                required_argument, 0, 'a' }, { "cactusDisk", required_argument,
-                0, 'c' }, { "outputFile", required_argument, 0, 'e' }, {
-                "help", no_argument, 0, 'h' }, { "minimumNsForScaffoldGap",
-                required_argument, 0, 'm' }, { "maximumDeletionLength",
-                required_argument, 0, 'n' }, { "maximumInsertionLength",
-                required_argument, 0, 'o' }, { "referenceEventString",
-                required_argument, 0, 'p' }, { "minimumBlockLength",
-                required_argument, 0, 't' }, { "ignoreFirstNBasesOfBlock",
-                required_argument, 0, 'u' }, { "minimumIdentity",
-                required_argument, 0, 'v' }, { "printIndelPositions",
-                no_argument, 0, 'w' }, { "bucketNumber", required_argument, 0,
-                'x' }, { "upperLinkageBound", required_argument, 0, 'y' }, {
-                "sampleNumber", required_argument, 0, 'z' }, { 0, 0, 0, 0 } };
+        static struct option long_options[] = { { "logLevel", required_argument, 0, 'a' }, { "cactusDisk",
+                required_argument, 0, 'c' }, { "outputFile", required_argument, 0, 'e' },
+                { "help", no_argument, 0, 'h' }, { "minimumNsForScaffoldGap", required_argument, 0, 'm' }, {
+                        "maximumDeletionLength", required_argument, 0, 'n' }, { "maximumInsertionLength",
+                        required_argument, 0, 'o' }, { "referenceEventString", required_argument, 0, 'p' }, {
+                        "minimumBlockLength", required_argument, 0, 't' }, { "ignoreFirstNBasesOfBlock",
+                        required_argument, 0, 'u' }, { "minimumIdentity", required_argument, 0, 'v' }, {
+                        "printIndelPositions", no_argument, 0, 'w' }, { "bucketNumber", required_argument, 0, 'x' }, {
+                        "upperLinkageBound", required_argument, 0, 'y' },
+                { "sampleNumber", required_argument, 0, 'z' },
+                { "doNotSampleDuplicatedPositions", no_argument, 0, 'A' }, { 0, 0, 0, 0 } };
 
         int option_index = 0;
 
-        int key = getopt_long(argc, argv, "a:c:e:hm:n:o:p:t:u:v:wx:y:z:",
-                long_options, &option_index);
+        int key = getopt_long(argc, argv, "a:c:e:hm:n:o:p:t:u:v:wx:y:z:", long_options, &option_index);
 
         if (key == -1) {
             break;
@@ -175,9 +167,7 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 assert(k == 1);
                 break;
             case 'o':
-                k
-                        = sscanf(optarg, "%i",
-                                &capCodeParameters->maxInsertionLength);
+                k = sscanf(optarg, "%i", &capCodeParameters->maxInsertionLength);
                 assert(k == 1);
                 break;
             case 'p':
@@ -195,9 +185,7 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 k = sscanf(optarg, "%i", &minimumIndentity);
                 assert(k == 1);
                 if (minimumIndentity > 100 || minimumIndentity < 0) {
-                    st_errAbort(
-                            "The minimum identity was not in the range [0, 100]: %i",
-                            minimumIndentity);
+                    st_errAbort("The minimum identity was not in the range [0, 100]: %i", minimumIndentity);
                 }
                 break;
             case 'w':
@@ -207,28 +195,25 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 k = sscanf(optarg, "%i", &bucketNumber);
                 assert(k == 1);
                 if (bucketNumber < 1) {
-                    st_errAbort(
-                            "The number of buckets can not be less than 1: %i",
-                            bucketNumber);
+                    st_errAbort("The number of buckets can not be less than 1: %i", bucketNumber);
                 }
                 break;
             case 'y':
                 k = sscanf(optarg, "%i", &upperLinkageBound);
                 assert(k == 1);
                 if (upperLinkageBound < 1) {
-                    st_errAbort(
-                            "The total interval of linkage is too small: %i",
-                            upperLinkageBound);
+                    st_errAbort("The total interval of linkage is too small: %i", upperLinkageBound);
                 }
                 break;
             case 'z':
                 k = sscanf(optarg, "%i", &sampleNumber);
                 assert(k == 1);
                 if (sampleNumber < 0) {
-                    st_errAbort(
-                            "The number of samples can not be less than 0: %i",
-                            sampleNumber);
+                    st_errAbort("The number of samples can not be less than 0: %i", sampleNumber);
                 }
+                break;
+            case 'A':
+                doNotSampleDuplicatedPositions = 1;
                 break;
             default:
                 st_errAbort("Unrecognised option %s", optarg);
@@ -267,8 +252,7 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
     //Load the database
     //////////////////////////////////////////////
 
-    stKVDatabaseConf *kvDatabaseConf = stKVDatabaseConf_constructFromString(
-            cactusDiskDatabaseString);
+    stKVDatabaseConf *kvDatabaseConf = stKVDatabaseConf_constructFromString(cactusDiskDatabaseString);
     cactusDisk = cactusDisk_construct(kvDatabaseConf, 0);
     st_logInfo("Set up the cactus disk\n");
 
