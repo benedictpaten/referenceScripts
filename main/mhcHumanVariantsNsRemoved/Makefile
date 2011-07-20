@@ -16,11 +16,12 @@ outputDir=${outputPath}/main/mhcHumanVariantsNsRemoved
 referenceSpecies=reference hg19
 minimumBlockDegreeRange=1 2
 #algorithms: greedy maxCardinality maxWeight blossom5
-referenceAlgorithms = maxCardinality maxWeight
+referenceAlgorithms = maxWeight
 baseLevel = 0 1
-maxNumberOfChains = 30
-blastAlignmentStrings = --nogapped %  % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
-maxNumberOfChainsToSolvePerRound = 1 10
+maxNumberOfChains = 0
+blastAlignmentStrings = 
+#--nogapped %  % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
+maxNumberOfChainsToSolvePerRound = 1 5
 recalculateMatchingEachCycle = 0
 chainWeightCode = 0 1 2 3 4 5 6 7
 
