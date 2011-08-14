@@ -15,9 +15,9 @@ referenceAlgorithms = maxCardinality
 baseLevel = 1
 maxNumberOfChains = 0
 blastAlignmentStrings = --nogapped % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
-maxNumberOfChainsToSolvePerRound = 10
-recalculateMatchingEachCycle = 0 1
-chainWeightCode = 0 2
+theta = 0.5 0.9 0.99 0.999 0.9999 0.99999
+useSimulatedAnnealing = 0
+permutations = 100
 
 #maxCardinality maxWeight blossom5
 

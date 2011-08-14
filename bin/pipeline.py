@@ -44,8 +44,8 @@ class MakeAlignment(Target):
     """
     def __init__(self, options, outputDir, requiredSpecies,
                  referenceAlgorithm, minimumBlockDegree, 
-                 blastAlignmentString, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound,
-                 chainWeightCode, recalculateMatchingEachCycle):
+                 blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
+                 theta, useSimulatedAnnealing):
         Target.__init__(self, cpu=1, memory=4000000000)
         self.requiredSpecies = requiredSpecies
         self.outputDir = outputDir
@@ -54,9 +54,9 @@ class MakeAlignment(Target):
         self.blastAlignmentString = blastAlignmentString
         self.baseLevel = baseLevel
         self.maxNumberOfChains = maxNumberOfChains
-        self.maxNumberOfChainsToSolvePerRound = maxNumberOfChainsToSolvePerRound
-        self.chainWeightCode = chainWeightCode
-        self.recalculateMatchingEachCycle = recalculateMatchingEachCycle
+        self.permutations = permutations
+        self.theta = theta
+        self.useSimulatedAnnealing = useSimulatedAnnealing
         self.options = options
     
     def run(self):
@@ -93,13 +93,13 @@ class MakeAlignment(Target):
             config.find("normal").attrib["max_number_of_chains"] = str(self.maxNumberOfChains)
             
             #Set the number of chains to order per round of the matching algorithm
-            config.find("reference").attrib["maxNumberOfChainsToSolvePerRound"]  = str(self.maxNumberOfChainsToSolvePerRound)
+            config.find("reference").attrib["permutations"]  = str(self.permutations)
             
             #Set the chain weight function
-            if bool(self.recalculateMatchingEachCycle):
-                config.find("reference").attrib["recalculateMatchingEachCycle"]="1"
+            if bool(self.useSimulatedAnnealing):
+                config.find("reference").attrib["useSimulatedAnnealing"]="1"
                 
-            config.find("reference").attrib["chainWeightCode"] = str(self.chainWeightCode)
+            config.find("reference").attrib["theta"] = str(self.theta)
             
             #Write the config file
             tempConfigFile = os.path.join(self.getLocalTempDir(), "config.xml")
@@ -158,23 +158,23 @@ class MakeAlignments(Target):
                     for blastAlignmentStringIndex in xrange(len(blastAlignmentStrings)):
                         for baseLevel in [ bool(int(i)) for i in self.options.baseLevel.split() ]:
                             for maxNumberOfChains in [ int(i) for i in self.options.maxNumberOfChains.split() ]:
-                                for maxNumberOfChainsToSolvePerRound in [ int(i) for i in self.options.maxNumberOfChainsToSolvePerRound.split() ]:
-                                    for chainWeightCode in [ int(i) for i in self.options.chainWeightCode.split() ]:
-                                        for recalculateMatchingEachCycle in [ bool(int(i)) for i in self.options.recalculateMatchingEachCycle.split() ]:
+                                for permutations in [ int(i) for i in self.options.permutations.split() ]:
+                                    for theta in [ float(i) for i in self.options.theta.split() ]:
+                                        for useSimulatedAnnealing in [ bool(int(i)) for i in self.options.useSimulatedAnnealing.split() ]:
                                             os.path.exists(self.options.outputDir)
                                             def fn(i):
                                                 if i == None:
                                                     return "no-required-species"
                                                 return "required-species"
-                                            jobOutputDir = "%s-%s-%s-%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound, chainWeightCode, recalculateMatchingEachCycle)
+                                            jobOutputDir = "%s-%s-%s-%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains, permutations, theta, useSimulatedAnnealing)
                                             statsNames.append(jobOutputDir)
                                             absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
                                             statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
                                             self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
                                                                               requiredSpecies, referenceAlgorithm, minimumBlockDegree, 
                                                                               blastAlignmentStrings[blastAlignmentStringIndex], 
-                                                                              baseLevel, maxNumberOfChains, maxNumberOfChainsToSolvePerRound, 
-                                                                              chainWeightCode, recalculateMatchingEachCycle))
+                                                                              baseLevel, maxNumberOfChains, permutations, 
+                                                                              theta, useSimulatedAnnealing))
 
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
@@ -237,9 +237,9 @@ def main():
     parser.add_option("--blastAlignmentStrings", dest="blastAlignmentStrings")
     parser.add_option("--baseLevel", dest="baseLevel")
     parser.add_option("--maxNumberOfChains", dest="maxNumberOfChains")
-    parser.add_option("--maxNumberOfChainsToSolvePerRound", dest="maxNumberOfChainsToSolvePerRound")
-    parser.add_option("--chainWeightCode", dest="chainWeightCode")
-    parser.add_option("--recalculateMatchingEachCycle", dest="recalculateMatchingEachCycle")
+    parser.add_option("--permutations", dest="permutations")
+    parser.add_option("--theta", dest="theta")
+    parser.add_option("--useSimulatedAnnealing", dest="useSimulatedAnnealing")
     parser.add_option("--sampleNumber", dest="sampleNumber")
     
     Stack.addJobTreeOptions(parser)
