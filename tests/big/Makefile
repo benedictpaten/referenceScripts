@@ -15,7 +15,7 @@ referenceAlgorithms = maxCardinality
 baseLevel = 1
 maxNumberOfChains = 0
 blastAlignmentStrings = --nogapped % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
-theta = 0.5 0.9 0.99 0.999 0.9999 0.99999
+theta = 0.0 0.00001 0.001 0.01 0.1
 useSimulatedAnnealing = 0
 permutations = 100
 
