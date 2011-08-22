@@ -10,6 +10,7 @@ sequences= ${dataDir}/panTro2 ${dataDir}/hg19 ${dataDir}/mann ${dataDir}/NA12878
 requiredSequences=hg19 mann NA12878
 outputDir=${outputPath}/tests/big
 referenceSpecies=reference hg19
+singleCopySpecies=panTro2 hg19 mann
 minimumBlockDegreeRange=1
 referenceAlgorithms = maxCardinality
 baseLevel = 1

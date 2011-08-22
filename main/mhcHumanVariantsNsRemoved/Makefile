@@ -12,6 +12,7 @@ newickTree=(panTro2:0.007060,(NA12878:0.002000,NA12891:0.002000,NA12892:0.002000
 dataDir=${dataPath}/mhcHumanVariantsNsRemoved
 sequences= ${dataDir}/panTro2 ${dataDir}/NA12878.fa ${dataDir}/NA12891.fa ${dataDir}/NA12892.fa ${dataDir}/NA19238.fa ${dataDir}/NA19239.fa ${dataDir}/NA19240.fa ${dataDir}/apd ${dataDir}/cox ${dataDir}/dbb ${dataDir}/hg19 ${dataDir}/mann ${dataDir}/mcf ${dataDir}/qbl ${dataDir}/ssto
 requiredSequences=NA12878 NA12891 NA12892 NA19238 NA19239 NA19240 apd cox dbb hg19 mann mcf qbl ssto
+singleCopySpecies=panTro2 % panTro2 NA12878 NA12891 NA12892 NA19238 NA19239 NA19240 apd cox dbb hg19 mann mcf qbl ssto
 outputDir=${outputPath}/main/mhcHumanVariantsNsRemoved
 referenceSpecies=reference hg19
 minimumBlockDegreeRange=1 2
