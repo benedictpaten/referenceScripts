@@ -26,6 +26,7 @@ extern Flower *flower;
 extern CactusDisk *cactusDisk;
 
 extern char *referenceEventString;
+extern char *otherReferenceEventString;
 
 /*
  * Optional parameter used by copy number and substitution scripts.

@@ -185,7 +185,7 @@ class MakeAlignments(Target):
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
     """
-    def __init__(self, alignment, outputDir, options, cpu=4, memory=4000000000):
+    def __init__(self, alignment, outputDir, options, cpu=1, memory=4000000000):
         Target.__init__(self, cpu=cpu, memory=memory)
         self.alignment = alignment
         self.outputDir = outputDir
@@ -233,10 +233,18 @@ class MakeStats3(MakeStats):
 class MakeStats4(MakeStats):
     def run(self):          
         for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
-                                     ("snpStats_%s.xml", "snpStats", "")):
+                                                    ("snpStats_%s.xml", "snpStats", "")
+                                     ):
             for reference in self.options.referenceSpecies.split():
                 self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
-        
+        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
+
+class MakeStats5(MakeStats):
+    def run(self):       
+        ref1, ref2 = self.options.referenceSpecies.split()
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s" % (ref1, ref2))
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s" % (ref2, ref1))                 
+           
 def main():
     ##########################################
     #Construct the arguments.

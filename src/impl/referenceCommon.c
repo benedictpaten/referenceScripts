@@ -64,6 +64,7 @@ Flower *flower = NULL;
 CactusDisk *cactusDisk = NULL;
 
 char *referenceEventString = NULL;
+char *otherReferenceEventString = NULL;
 
 /*
  * Optional parameter used by copy number and substitution scripts.
@@ -108,6 +109,9 @@ void basicUsage(const char *programName) {
     fprintf(stderr, "-y --upperLinkageBound : Upper linkage bound\n");
     fprintf(stderr, "-z --sampleNumber : Number of samples\n");
     fprintf(stderr, "-A --doNotSampleDuplicatedPositions : Do not sample positions that contain duplication\n");
+    fprintf(
+            stderr,
+            "-B --otherReferenceEventString : The other reference event string (only look at sites that also contain this reference)\n");
 }
 
 int parseBasicArguments(int argc, char *argv[], const char *programName) {
@@ -135,11 +139,12 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                         "printIndelPositions", no_argument, 0, 'w' }, { "bucketNumber", required_argument, 0, 'x' }, {
                         "upperLinkageBound", required_argument, 0, 'y' },
                 { "sampleNumber", required_argument, 0, 'z' },
-                { "doNotSampleDuplicatedPositions", no_argument, 0, 'A' }, { 0, 0, 0, 0 } };
+                { "doNotSampleDuplicatedPositions", no_argument, 0, 'A' }, { "otherReferenceEventString",
+                        required_argument, 0, 'B' }, { 0, 0, 0, 0 } };
 
         int option_index = 0;
 
-        int key = getopt_long(argc, argv, "a:c:e:hm:n:o:p:t:u:v:wx:y:z:", long_options, &option_index);
+        int key = getopt_long(argc, argv, "a:c:e:hm:n:o:p:t:u:v:wx:y:z:AB:", long_options, &option_index);
 
         if (key == -1) {
             break;
@@ -214,6 +219,9 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 break;
             case 'A':
                 doNotSampleDuplicatedPositions = 1;
+                break;
+            case 'B':
+                otherReferenceEventString = stString_copy(optarg);
                 break;
             default:
                 st_errAbort("Unrecognised option %s", optarg);
