@@ -31,7 +31,7 @@ class Header:
         return '.'.join( [self.name, self.chr, self.chrSize, str(self.start), str(self.fragSize), self.strand] )
 
 def fn( header, sequence, lengthOfNs ):
-    pattern = "(?P<Nstr>N+)"
+    pattern = "(?P<Nstr>[Nn]+)"
     searchedSeq = ""
     m = re.search( pattern, sequence )
     while m:
