@@ -185,7 +185,7 @@ class MakeAlignments(Target):
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
     """
-    def __init__(self, alignment, outputDir, options, cpu=4, memory=4000000000):
+    def __init__(self, alignment, outputDir, options, cpu=1, memory=4000000000):
         Target.__init__(self, cpu=cpu, memory=memory)
         self.alignment = alignment
         self.outputDir = outputDir
@@ -210,20 +210,41 @@ class MakeStats(Target):
                 tempFile = os.path.join(self.getLocalTempDir(), "temp")
                 program(tempFile, getCactusDiskString(self.alignment))
                 system("mv %s %s" % (tempFile, outputFile))
-        
+        self.addChildTarget(MakeStats2(self.alignment, self.outputDir, self.options))    
+
+class MakeStats2(MakeStats):
+    def run(self):  
         #Now build the different stats files..
         for outputFile, program in (("coverageStats.xml", "coverageStats"), 
                                     ("copyNumberStats.xml", "copyNumberStats")):
             outputFile = os.path.join(self.outputDir, outputFile)
             self.runScript(program, outputFile, "--referenceEventString %s" % self.options.referenceSpecies.split()[0])
-        
-        for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
+        self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
+
+class MakeStats3(MakeStats):
+    def run(self):          
+        for outputFile, program, specialOptions in ( 
                                      ("contiguityStats_%s.xml", "contiguityStats", ""), 
-                                     ("contiguityStatsNoDuplication_%s.xml", "contiguityStats", "--doNotSampleDuplicatedPositions"), 
-                                     ("snpStats_%s.xml", "snpStats", "")):
+                                     ):
             for reference in self.options.referenceSpecies.split():
                 self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
-        
+        self.addChildTarget(MakeStats4(self.alignment, self.outputDir, self.options))
+
+class MakeStats4(MakeStats):
+    def run(self):          
+        for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
+                                                    ("snpStats_%s.xml", "snpStats", "")
+                                     ):
+            for reference in self.options.referenceSpecies.split():
+                self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
+        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
+
+class MakeStats5(MakeStats):
+    def run(self):       
+        ref1, ref2 = self.options.referenceSpecies.split()
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s" % (ref1, ref2))
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s" % (ref2, ref1))                 
+           
 def main():
     ##########################################
     #Construct the arguments.

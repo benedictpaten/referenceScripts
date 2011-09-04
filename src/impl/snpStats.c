@@ -23,37 +23,39 @@ int32_t totalCalls = 0;
 static void getSnpStats(Block *block, FILE *fileHandle) {
     if (block_getLength(block) >= minimumBlockLength) {
         //Now get the column
-        Block_InstanceIterator *instanceIterator = block_getInstanceIterator(
-                block);
+        Block_InstanceIterator *instanceIterator = block_getInstanceIterator(block);
         Segment *segment;
         char *referenceSeq = NULL;
+        char *otherReferenceSeq = NULL;
         char *sampleSeq = NULL;
         while ((segment = block_getNext(instanceIterator)) != NULL) {
-            if (strcmp(event_getHeader(segment_getEvent(segment)),
-                    referenceEventString) == 0) {
+            if (strcmp(event_getHeader(segment_getEvent(segment)), referenceEventString) == 0) {
                 if (referenceSeq != NULL) {
                     goto end;
                 }
                 referenceSeq = segment_getString(segment);
             }
-            if (strcmp(event_getHeader(segment_getEvent(segment)),
-                    sampleEventString) == 0) {
+            if (strcmp(event_getHeader(segment_getEvent(segment)), sampleEventString) == 0) {
                 if (sampleSeq != NULL) {
                     goto end;
                 }
                 sampleSeq = segment_getString(segment);
             }
+            if (strcmp(event_getHeader(segment_getEvent(segment)), otherReferenceEventString) == 0) {
+                if (otherReferenceSeq != NULL) {
+                    goto end;
+                }
+                otherReferenceSeq = segment_getString(segment);
+            }
         }
 
-        if (referenceSeq != NULL) {
+        if (referenceSeq != NULL && otherReferenceSeq != NULL) {
             //We're in gravy.
-            for (int32_t i = ignoreFirstNBasesOfBlock; i < block_getLength(
-                    block) - ignoreFirstNBasesOfBlock; i++) {
+            for (int32_t i = ignoreFirstNBasesOfBlock; i < block_getLength(block) - ignoreFirstNBasesOfBlock; i++) {
                 totalSites++;
                 if (sampleSeq != NULL) {
                     totalCorrect += bitsScoreFn(sampleSeq[i], referenceSeq[i]);
-                    totalErrors += correctFn(sampleSeq[i], referenceSeq[i]) ? 0
-                            : 1;
+                    totalErrors += correctFn(sampleSeq[i], referenceSeq[i]) ? 0 : 1;
                     totalCalls++;
                 }
             }
@@ -67,6 +69,9 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
         if (sampleSeq != NULL) {
             free(sampleSeq);
         }
+        if(otherReferenceSeq != NULL) {
+            free(otherReferenceSeq);
+        }
         block_destructInstanceIterator(instanceIterator);
     }
 }
@@ -77,6 +82,9 @@ int main(int argc, char *argv[]) {
     //////////////////////////////////////////////
 
     parseBasicArguments(argc, argv, "snpStats");
+    if(otherReferenceEventString == NULL) {
+        otherReferenceEventString = stString_copy(referenceEventString);
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Calculate and print to file a crap load of numbers.
@@ -84,13 +92,11 @@ int main(int argc, char *argv[]) {
 
     FILE *fileHandle = fopen(outputFile, "w");
     fprintf(fileHandle, "<substitutionStats>\n");
-    EventTree_Iterator *eventIt = eventTree_getIterator(
-            flower_getEventTree(flower));
+    EventTree_Iterator *eventIt = eventTree_getIterator(flower_getEventTree(flower));
     Event *event;
     while ((event = eventTree_getNext(eventIt)) != NULL) {
         sampleEventString = event_getHeader(event);
-        if (sampleEventString != NULL && strcmp(sampleEventString, referenceEventString)
-                != 0) {
+        if (sampleEventString != NULL && strcmp(sampleEventString, referenceEventString) != 0) {
 
             totalSites = getTotalLengthOfAdjacencies(flower, referenceEventString);
             totalCorrect = 0;
@@ -104,14 +110,14 @@ int main(int argc, char *argv[]) {
             ///////////////////////////////////////////////////////////////////////////
 
             fprintf(fileHandle, "<statsForSample "
-                    "sampleName=\"%s\" "
-                    "referenceName=\"%s\" "
-                    "totalSites=\"%i\" "
+                "sampleName=\"%s\" "
+                "referenceName=\"%s\" "
+                "otherReferenceName=\"%s\" "
+                "totalSites=\"%i\" "
                 "totalCorrect=\"%f\" "
                 "totalErrors=\"%i\" "
-                "totalCalls=\"%i\" />\n",
-                sampleEventString, referenceEventString,
-                totalSites, totalCorrect, totalErrors, totalCalls);
+                "totalCalls=\"%i\" />\n", sampleEventString, referenceEventString, otherReferenceEventString,
+                    totalSites, totalCorrect, totalErrors, totalCalls);
 
         }
     }
