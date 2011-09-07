@@ -49,7 +49,7 @@ def fn( header, sequence, lengthOfNs ):
         
         sequence = sequence[m.start() + lenNs: ]
         m = re.search( pattern, sequence )
-    if len(sequence) > 0:
+    if len(sequence) >= lengthOfFragment:
         header.fragSize = len( sequence )
         yield header.getStr(), sequence
 
@@ -57,6 +57,7 @@ def fn( header, sequence, lengthOfNs ):
 fH = open(sys.argv[1], 'r')
 fH2 = open(sys.argv[2], 'w')
 lengthOfNs = int(sys.argv[3])
+lengthOfFragment = int(sys.argv[4])
 
 for name, sequence in fastaRead(fH):
     header = Header( name, len(sequence) )

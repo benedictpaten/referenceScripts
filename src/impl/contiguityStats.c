@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
             while ((metaSequence = stSortedSet_getNext(it)) != NULL) {
                 int32_t i = sampleNumber * (((double) metaSequence_getLength(metaSequence)) / metaSequencesLength);
                 samplePoints(flower, metaSequence, referenceEventString, i, correct, aligned, samples, bucketNumber, bucketSize,
-                        sortedSegments, !doNotSampleDuplicatedPositions, 0.9);
+                        sortedSegments, !doNotSampleDuplicatedPositions, 1.0);
             }
             stSortedSet_destructIterator(it);
             stSortedSet_destruct(sequences);

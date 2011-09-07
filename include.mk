@@ -2,6 +2,7 @@ jobTreeFlags = --batchSystem parasol --logDebug --retryCount 0 --maxThreads 4 --
 #jobTreeFlags = --batchSystem singleMachine --maxThreads 2 --logDebug --retryCount 0
 configFile=${libPath}/config_fast.xml
 minimumNsForScaffoldGap=15
+minimumLengthOfFragment=100
 sampleNumber=1000000
 
 #########

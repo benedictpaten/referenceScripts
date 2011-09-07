@@ -81,7 +81,7 @@ bool printIndelPositions = 0;
 /*
  * For the linkage script.
  */
-int32_t bucketNumber = 2000;
+int32_t bucketNumber = 200;
 int32_t upperLinkageBound = 200000000;
 int32_t sampleNumber = 1000000;
 bool doNotSampleDuplicatedPositions = 0;
