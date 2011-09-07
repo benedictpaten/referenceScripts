@@ -218,7 +218,8 @@ class MakeStats2(MakeStats):
         for outputFile, program in (("coverageStats.xml", "coverageStats"), 
                                     ("copyNumberStats.xml", "copyNumberStats")):
             outputFile = os.path.join(self.outputDir, outputFile)
-            self.runScript(program, outputFile, "--referenceEventString %s" % self.options.referenceSpecies.split()[0])
+            ref1, ref2 = self.options.referenceSpecies.split()
+            self.runScript(program, outputFile, "--referenceEventString %s --otherReferenceEventString %s" % (ref1, ref2))
         self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
 
 class MakeStats3(MakeStats):

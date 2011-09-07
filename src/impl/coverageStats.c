@@ -18,6 +18,8 @@ const char *sampleEventString;
 int32_t *baseCoverages;
 int32_t *totalBaseCoverages;
 int32_t eventNumber;
+int32_t totalReferenceBases;
+int32_t totalOtherReferenceBases;
 
 static void getMAFBlock2(Block *block, FILE *fileHandle) {
     if (block_getLength(block) >= minimumBlockLength) {
@@ -39,6 +41,24 @@ static void getMAFBlock2(Block *block, FILE *fileHandle) {
         baseCoverages[stSortedSet_size(otherSampleEvents)] += block_getLength(
                 block) * sampleNumber;
         stSortedSet_destruct(otherSampleEvents);
+        //Calculate bases in the reference and other reference sequence
+        instanceIt = block_getInstanceIterator(block);
+        bool includesReference = 0;
+        bool includesOtherReference = 0;
+        while ((segment = block_getNext(instanceIt)) != NULL) {
+            const char *segmentEvent = event_getHeader(
+                    segment_getEvent(segment));
+            if (strcmp(segmentEvent, referenceEventString) == 0) {
+                includesReference = 1;
+            } else if (strcmp(segmentEvent, otherReferenceEventString) == 0) {
+                includesOtherReference = 1;
+            }
+        }
+        block_destructInstanceIterator(instanceIt);
+        totalReferenceBases += includesReference ? block_getLength(
+                block) * sampleNumber : 0;
+        totalOtherReferenceBases += includesOtherReference ? block_getLength(
+                        block) * sampleNumber : 0;
     }
 }
 
@@ -46,7 +66,10 @@ void printStatsForSample(bool addToTotalBaseCoverage, FILE *fileHandle) {
     fprintf(fileHandle, "<statsForSample "
         "sampleName=\"%s\" "
         "referenceName=\"%s\" "
-        "baseCoverages=\"", sampleEventString, referenceEventString);
+        "otherReferenceName=\"%s\" "
+        "referenceBasesMapped=\"%i\" "
+        "otherReferenceBasesMapped=\"%i\" "
+        "baseCoverages=\"", sampleEventString, referenceEventString, otherReferenceEventString, totalReferenceBases, totalOtherReferenceBases);
     for (int32_t i = 0; i < eventNumber; i++) {
         fprintf(fileHandle, "%i ", baseCoverages[i]);
         if(addToTotalBaseCoverage) {
@@ -62,6 +85,8 @@ int main(int argc, char *argv[]) {
     //////////////////////////////////////////////
 
     parseBasicArguments(argc, argv, "coverageStats");
+    assert(referenceEventString != NULL);
+    assert(otherReferenceEventString != NULL);
 
     ///////////////////////////////////////////////////////////////////////////
     // Calculate and print to file a crap load of numbers.
