@@ -157,7 +157,7 @@ class MakeAlignments(Target):
         singleCopySpeciesCount = 0
         for singleCopySpecies in self.options.singleCopySpecies.split("%") + [ None ]:
             singleCopySpeciesCount += 1
-            for requiredSpecies in (self.options.requiredSpecies, None):
+            for requiredSpecies in (self.options.requiredSpecies,):
                 for referenceAlgorithm in self.options.referenceAlgorithms.split():
                     for minimumBlockDegree in [ int(i) for i in self.options.rangeOfMinimumBlockDegrees.split() ]:
                         blastAlignmentStrings = self.options.blastAlignmentStrings.split("%")
