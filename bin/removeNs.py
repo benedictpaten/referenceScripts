@@ -49,7 +49,9 @@ def fn( header, sequence, lengthOfNs ):
         
         sequence = sequence[m.start() + lenNs: ]
         m = re.search( pattern, sequence )
-    if len(sequence) >= lengthOfFragment:
+    
+    nonRepetitiveSequence = sequence.replace("a", "").replace("c", '').replace("g", '').replace("t", "")
+    if len(nonRepetitiveSequence) >= lengthOfFragment:
         header.fragSize = len( sequence )
         yield header.getStr(), sequence
 
