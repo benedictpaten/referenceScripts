@@ -18,6 +18,8 @@ const char *sampleEventString;
 int32_t *baseCoverages;
 int32_t *totalBaseCoverages;
 int32_t eventNumber;
+int32_t referenceBases;
+int32_t otherReferenceBases;
 int32_t totalReferenceBases;
 int32_t totalOtherReferenceBases;
 
@@ -55,9 +57,9 @@ static void getMAFBlock2(Block *block, FILE *fileHandle) {
             }
         }
         block_destructInstanceIterator(instanceIt);
-        totalReferenceBases += includesReference ? block_getLength(
+        referenceBases += includesReference ? block_getLength(
                 block) * sampleNumber : 0;
-        totalOtherReferenceBases += includesOtherReference ? block_getLength(
+        otherReferenceBases += includesOtherReference ? block_getLength(
                         block) * sampleNumber : 0;
     }
 }
@@ -69,13 +71,15 @@ void printStatsForSample(bool addToTotalBaseCoverage, FILE *fileHandle) {
         "otherReferenceName=\"%s\" "
         "referenceBasesMapped=\"%i\" "
         "otherReferenceBasesMapped=\"%i\" "
-        "baseCoverages=\"", sampleEventString, referenceEventString, otherReferenceEventString, totalReferenceBases, totalOtherReferenceBases);
+        "baseCoverages=\"", sampleEventString, referenceEventString, otherReferenceEventString, referenceBases, otherReferenceBases);
     for (int32_t i = 0; i < eventNumber; i++) {
         fprintf(fileHandle, "%i ", baseCoverages[i]);
         if(addToTotalBaseCoverage) {
             totalBaseCoverages[i] += baseCoverages[i];
         }
     }
+    totalReferenceBases += referenceBases;
+    totalOtherReferenceBases += otherReferenceBases;
     fprintf(fileHandle, "\"/>\n");
 }
 
@@ -100,6 +104,8 @@ int main(int argc, char *argv[]) {
                         flower_getEventTree(flower));
     Event *event;
     totalBaseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
+    totalReferenceBases = 0;
+    totalOtherReferenceBases = 0;
     while ((event = eventTree_getNext(eventIt)) != NULL) {
         sampleEventString = event_getHeader(event);
         if (sampleEventString != NULL && strcmp(sampleEventString,
@@ -110,8 +116,8 @@ int main(int argc, char *argv[]) {
             baseCoverages[0] = getTotalLengthOfAdjacencies(flower,
                     sampleEventString);
 
-            totalReferenceBases = 0;
-            totalOtherReferenceBases = 0;
+            referenceBases = 0;
+            otherReferenceBases = 0;
 
             getMAFs(flower, fileHandle, getMAFBlock2);
 
@@ -124,6 +130,8 @@ int main(int argc, char *argv[]) {
     //Do aggregate base coverages..
     sampleEventString = "aggregate";
     baseCoverages = totalBaseCoverages;
+    referenceBases = totalReferenceBases;
+    otherReferenceBases = totalOtherReferenceBases;
     printStatsForSample(0, fileHandle);
 
     eventTree_destructIterator(eventIt);

@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
                 stIntTuple_destruct(stList_get(events, i+2));
             }
             stList_destruct(events);
-            fprintf(fileHandle, "</statsForSample>/n");
+            fprintf(fileHandle, "</statsForSample>\n");
         }
     }
     eventTree_destructIterator(eventIt);
