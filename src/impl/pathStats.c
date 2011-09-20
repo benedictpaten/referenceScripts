@@ -12,6 +12,44 @@
 #include "scaffoldPaths.h"
 #include "referenceCommon.h"
 
+typedef struct _indelEvent {
+    Cap *cap, *otherCap;
+    int32_t insertionLength;
+    int32_t deletionLength;
+} IndelEvent;
+
+IndelEvent *indelEvent_construct(Cap *cap, Cap *otherCap,
+        int32_t insertionLength, int32_t deletionLength) {
+    IndelEvent *indelEvent = st_malloc(sizeof(IndelEvent));
+    cap = cap_getStrand(cap) ? cap : cap_getReverse(cap);
+    otherCap = cap_getStrand(otherCap) ? otherCap : cap_getReverse(otherCap);
+    assert(cap_getSide(cap) != cap_getSide(otherCap));
+    if (cap_getSide(cap)) {
+        Cap *cap2 = otherCap;
+        otherCap = cap;
+        cap = cap2;
+    }
+    assert(cap_getCoordinate(cap) < cap_getCoordinate(otherCap));
+    indelEvent->cap = cap;
+    indelEvent->otherCap = otherCap;
+    indelEvent->insertionLength = insertionLength;
+    indelEvent->deletionLength = deletionLength;
+    return indelEvent;
+}
+
+int indelEvent_cmpFn(IndelEvent *indelEvent1, IndelEvent *indelEvent2) {
+    int i = cactusMisc_nameCompare(cap_getName(indelEvent1->cap),
+            cap_getName(indelEvent2->cap));
+    if (i != 0) {
+        return i;
+    }
+    assert(indelEvent1->cap == indelEvent2->cap);
+    assert(indelEvent1->otherCap == indelEvent2->otherCap);
+    assert(indelEvent1->insertionLength == indelEvent2->insertionLength);
+    assert(indelEvent1->deletionLength == indelEvent2->deletionLength);
+    return 0;
+}
+
 typedef struct _sampleStats {
     int32_t totalCleanEnds;
     int32_t totalHangingEndWithsNs;
@@ -25,8 +63,7 @@ typedef struct _sampleStats {
     int32_t totalInsertionAndDeletions;
     int32_t totalHangingInsertions;
 
-    stList *insertionDistribution;
-    stList *deletionDistribution;
+    stList *indelEvents;
 
     stList *contigPathLengthDistribution;
     stList *scaffoldPathLengthDistribution;
@@ -36,10 +73,7 @@ typedef struct _sampleStats {
 
 SampleStats *sampleStats_construct() {
     SampleStats *sampleStats = st_calloc(1, sizeof(SampleStats));
-    sampleStats->insertionDistribution = stList_construct3(0,
-            (void(*)(void *)) stIntTuple_destruct);
-    sampleStats->deletionDistribution = stList_construct3(0,
-            (void(*)(void *)) stIntTuple_destruct);
+    sampleStats->indelEvents = stList_construct3(0, free);
     sampleStats->contigPathLengthDistribution = stList_construct3(0,
             (void(*)(void *)) stIntTuple_destruct);
     sampleStats->scaffoldPathLengthDistribution = stList_construct3(0,
@@ -52,8 +86,7 @@ SampleStats *sampleStats_construct() {
 }
 
 void sampleStats_destruct(SampleStats *sampleStats) {
-    stList_destruct(sampleStats->insertionDistribution);
-    stList_destruct(sampleStats->deletionDistribution);
+    stList_destruct(sampleStats->indelEvents);
     stList_destruct(sampleStats->contigPathLengthDistribution);
     stList_destruct(sampleStats->scaffoldPathLengthDistribution);
     stList_destruct(sampleStats->blockLengthDistribution);
@@ -65,8 +98,10 @@ void getHaplotypePathStatsP(Cap *cap, stList *referenceEventStrings,
         stList *contaminationEventStrings,
         CapCodeParameters *capCodeParameters, SampleStats *sampleStats) {
     int32_t insertLength, deleteLength;
-    switch (getCapCode(cap, referenceEventStrings, contaminationEventStrings,
-            &insertLength, &deleteLength, capCodeParameters)) {
+    Cap *otherCap = NULL;
+    switch (getCapCode(cap, &otherCap, referenceEventStrings,
+            contaminationEventStrings, &insertLength, &deleteLength,
+            capCodeParameters)) {
         case HAP_NOTHING:
             return;
         case CONTIG_END:
@@ -79,20 +114,20 @@ void getHaplotypePathStatsP(Cap *cap, stList *referenceEventStrings,
         case SCAFFOLD_GAP:
         case AMBIGUITY_GAP:
             if (insertLength > 0 && deleteLength == 0) {
-                stList_append(sampleStats->insertionDistribution,
-                        stIntTuple_construct(1, insertLength));
+                stList_append(sampleStats->indelEvents,
+                        indelEvent_construct(cap, otherCap, insertLength, 0));
                 sampleStats->totalInsertions++;
             }
             if (deleteLength > 0 && insertLength == 0) {
-                stList_append(sampleStats->deletionDistribution,
-                        stIntTuple_construct(1, deleteLength));
+                stList_append(sampleStats->indelEvents,
+                        indelEvent_construct(cap, otherCap, 0, deleteLength));
                 sampleStats->totalDeletions++;
             }
             if (insertLength > 0 && deleteLength > 0) {
-                stList_append(sampleStats->insertionDistribution,
-                        stIntTuple_construct(1, insertLength));
-                stList_append(sampleStats->deletionDistribution,
-                        stIntTuple_construct(1, deleteLength));
+                stList_append(
+                        sampleStats->indelEvents,
+                        indelEvent_construct(cap, otherCap, insertLength,
+                                deleteLength));
                 sampleStats->totalInsertions++;
                 sampleStats->totalDeletions++;
             }
@@ -106,23 +141,23 @@ void getHaplotypePathStatsP(Cap *cap, stList *referenceEventStrings,
             return;
         case ERROR_HAP_TO_INSERT:
             assert(insertLength > 0);
-            stList_append(sampleStats->insertionDistribution,
-                    stIntTuple_construct(1, insertLength));
+            stList_append(sampleStats->indelEvents,
+                    indelEvent_construct(cap, otherCap, insertLength, 0));
             sampleStats->totalInsertions++;
             return;
         case ERROR_HAP_TO_DELETION:
             assert(deleteLength > 0);
-            stList_append(sampleStats->deletionDistribution,
-                    stIntTuple_construct(1, deleteLength));
+            stList_append(sampleStats->indelEvents,
+                    indelEvent_construct(cap, otherCap, 0, deleteLength));
             sampleStats->totalDeletions++;
             return;
         case ERROR_HAP_TO_INSERT_AND_DELETION:
             assert(insertLength > 0);
             assert(deleteLength > 0);
-            stList_append(sampleStats->insertionDistribution,
-                    stIntTuple_construct(1, insertLength));
-            stList_append(sampleStats->deletionDistribution,
-                    stIntTuple_construct(1, deleteLength));
+            stList_append(
+                    sampleStats->indelEvents,
+                    indelEvent_construct(cap, otherCap, insertLength,
+                            deleteLength));
             sampleStats->totalInsertionAndDeletions++;
             return;
         case ERROR_CONTIG_END_WITH_INSERT:
@@ -136,6 +171,41 @@ void getHaplotypePathStatsP(Cap *cap, stList *referenceEventStrings,
         case ERROR_HAP_TO_INSERT_TO_CONTAMINATION:
             assert(0);
     }
+}
+
+void printIndel(IndelEvent *indelEvent, stList *eventStrings,
+        FILE *fileHandle) {
+    Cap *cap3 = NULL, *cap4 = NULL;
+    int32_t i = 0;
+    bool b = endsAreAdjacent2(cap_getEnd(indelEvent->cap),
+            cap_getEnd(indelEvent->otherCap), &cap3, &cap4, &i, eventStrings);
+    cap3 = cap_getStrand(cap3) ? cap3 : cap_getReverse(cap3);
+    cap4 = cap_getStrand(cap4) ? cap4 : cap_getReverse(cap4);
+    if (cap_getSide(cap3)) {
+        assert(cap_getCoordinate(cap3) - cap_getCoordinate(cap4) > 0);
+    } else {
+        assert(cap_getCoordinate(cap4) - cap_getCoordinate(cap3) > 0);
+    }
+    assert(b);
+    assert(i == indelEvent->deletionLength);
+    assert(
+            cap_getCoordinate(indelEvent->otherCap) - cap_getCoordinate(
+                    indelEvent->cap) - 1 == indelEvent->insertionLength);
+    assert(cap_getSequence(indelEvent->cap) != NULL);
+    assert(cap_getSequence(cap3) != NULL);
+
+    fprintf(fileHandle,
+            "SEQ1: %s START1: %i LENGTH1: %i STRAND1: 1 SEQ2: %s START2: %i LENGTH2: %i STRAND2: %i\n",
+            sequence_getHeader(cap_getSequence(indelEvent->cap)),
+            cap_getCoordinate(indelEvent->cap) + 1 - sequence_getStart(
+                    cap_getSequence(indelEvent->cap)),
+            indelEvent->insertionLength,
+            sequence_getHeader(cap_getSequence(cap3)),
+            cap_getSide(cap3) ? cap_getCoordinate(cap3) - 1
+                    - sequence_getStart(cap_getSequence(cap3))
+                    : cap_getCoordinate(cap3) + 1 - sequence_getStart(
+                            cap_getSequence(cap3)), indelEvent->deletionLength,
+            !cap_getSide(cap3));
 }
 
 void getSequenceLengths(Flower *flower, const char *eventString,
@@ -243,6 +313,8 @@ SampleStats *getSamplePathStats(Flower *flower, const char *sampleEventString,
     sampleStats->totalInsertionAndDeletions /= 2;
     sampleStats->totalIntraJoins /= 2;
     sampleStats->totalInterJoins /= 2;
+    sampleStats->totalInsertions += sampleStats->totalInsertionAndDeletions;
+    sampleStats->totalDeletions += sampleStats->totalInsertionAndDeletions;
 
     //Add the lengths for the scaffold paths.
     getScaffoldPathsLengths(scaffoldPaths,
@@ -294,25 +366,6 @@ int32_t getGenomeLength(Flower *flower, const char *eventString) {
     return i;
 }
 
-char *concatenateList(stList *list) {
-    char **cAA = st_malloc(sizeof(char *) * (stList_length(list) / 2));
-    stList_sort(list, (int(*)(const void *, const void *)) stIntTuple_cmpFn);
-    assert(stList_length(list) % 2 == 0);
-    for (int32_t i = 0; i < stList_length(list); i += 2) {
-        assert(
-                stIntTuple_getPosition(stList_get(list, i), 0)
-                        == stIntTuple_getPosition(stList_get(list, i + 1), 0));
-        cAA[i / 2] = stString_print("%i",
-                stIntTuple_getPosition(stList_get(list, i), 0));
-    }
-    char *cA = stString_join(" ", (const char **) cAA, stList_length(list) / 2);
-    for (int32_t i = 0; i < stList_length(list) / 2; i++) {
-        free(cAA[i]);
-    }
-    free(cAA);
-    return cA;
-}
-
 void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
         const char *referenceEventString, CapCodeParameters *capCodeParameters) {
 
@@ -326,6 +379,8 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
         const char *eventString = event_getHeader(event);
         if (eventString != NULL && strcmp(eventString, referenceEventString)
                 != 0) {
+            stList *eventStrings = stList_construct();
+            stList_append(eventStrings, (void *)eventString);
             SampleStats *sampleStats = getSamplePathStats(flower,
                     referenceEventString, eventString, capCodeParameters);
             int32_t minimumNCount = capCodeParameters->minimumNCount;
@@ -338,10 +393,12 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
             int32_t alignedGenomeLength = getSum(
                     sampleStats->blockLengthDistribution);
 
-            char *insertionDistributionString = concatenateList(
-                    sampleStats->insertionDistribution);
-            char *deletionDistributionString = concatenateList(
-                    sampleStats->deletionDistribution);
+            stSortedSet *indelEvents = stList_getSortedSet(
+                    sampleStats->indelEvents,
+                    (int(*)(const void *, const void *)) indelEvent_cmpFn);
+            assert(
+                    stList_length(sampleStats->indelEvents) == 2
+                            * stSortedSet_size(indelEvents));
 
             int32_t totalEvents = sampleStats->totalIntraJoins
                     + sampleStats->totalInterJoins
@@ -390,9 +447,7 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
                         "totalBlockNumber=\"%i\" "
                         "totalContigPaths=\"%i\" "
                         "totalScaffoldPaths=\"%i\" "
-                        "totalIndelPaths=\"%i\" "
-                        "insertionSizeDistribution=\"%s\" "
-                        "deletionSizeDistribution=\"%s\"/>\n",
+                        "totalIndelPaths=\"%i\" ",
                     eventString,
                     referenceEventString,
                     sampleStats->totalScaffoldGaps
@@ -443,8 +498,29 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
                     stList_length(sampleStats->contigPathLengthDistribution),
                     stList_length(sampleStats->scaffoldPathLengthDistribution),
                     stList_length(
-                            sampleStatsFreeIndels->scaffoldPathLengthDistribution),
-                    insertionDistributionString, deletionDistributionString);
+                            sampleStatsFreeIndels->scaffoldPathLengthDistribution));
+
+            stSortedSetIterator *it = stSortedSet_getIterator(indelEvents);
+            IndelEvent *indelEvent;
+            fprintf(fileHandle, "insertionLengthDistribution=\"");
+            while ((indelEvent = stSortedSet_getNext(it)) != NULL) {
+                if (indelEvent->insertionLength > 0) {
+                    fprintf(fileHandle, "%i ", indelEvent->insertionLength);
+                }
+            }
+            fprintf(fileHandle, "\" deletionLengthDistribution=\"");
+            while ((indelEvent = stSortedSet_getPrevious(it)) != NULL) {
+                if (indelEvent->deletionLength > 0) {
+                    fprintf(fileHandle, "%i ", indelEvent->deletionLength);
+                }
+            }
+            fprintf(fileHandle, "\">\n");
+            while ((indelEvent = stSortedSet_getNext(it)) != NULL) {
+                printIndel(indelEvent, eventStrings, fileHandle);
+            }
+            stSortedSet_destructIterator(it);
+            stSortedSet_destruct(indelEvents);
+            fprintf(fileHandle, "</statsForSample>\n");
             sampleStats_destruct(sampleStats);
         }
     }
@@ -470,23 +546,30 @@ void reportDistanceMatrix(Flower *flower, FILE *fileHandle,
                     SampleStats *sampleStats = getSamplePathStats(flower,
                             eventString, eventString2, capCodeParameters);
                     //Return total length of contig paths, total number of insertion, total number of deletions, total number of indels and total number of indels per base.
-                    int32_t alignedGenomeLength = getSum(sampleStats->blockLengthDistribution);
+                    int32_t alignedGenomeLength = getSum(
+                            sampleStats->blockLengthDistribution);
 
                     fprintf(
                             fileHandle,
                             "<indelDistanceForEvents "
-                            "eventName1=\"%s\" "
-                            "eventName2=\"%s\" "
-                            "alignmentLength=\"%i\" "
-                            "totalInsertions=\"%i\" "
-                            "totalDeletions=\"%i\" "
-                            "totalIndels=\"%i\" "
-                            "indelsPerBase=\"%f\" "
-                            "/>\n", eventString, eventString2, alignedGenomeLength,
+                                "eventName1=\"%s\" "
+                                "eventName2=\"%s\" "
+                                "alignmentLength=\"%i\" "
+                                "totalInsertions=\"%i\" "
+                                "totalDeletions=\"%i\" "
+                                "totalIndels=\"%i\" "
+                                "indelsPerBase=\"%f\" "
+                                "/>\n",
+                            eventString,
+                            eventString2,
+                            alignedGenomeLength,
                             sampleStats->totalInsertions,
                             sampleStats->totalDeletions,
-                            sampleStats->totalInsertions + sampleStats->totalDeletions,
-                            ((double)sampleStats->totalInsertions + sampleStats->totalDeletions)/alignedGenomeLength);
+                            sampleStats->totalInsertions
+                                    + sampleStats->totalDeletions,
+                            ((double) sampleStats->totalInsertions
+                                    + sampleStats->totalDeletions)
+                                    / alignedGenomeLength);
                     sampleStats_destruct(sampleStats);
                 }
             }

@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
                 "totalSites=\"%i\" "
                 "totalCorrect=\"%f\" "
                 "totalErrors=\"%i\" "
-                "totalCalls=\"%i\">", sampleEventString, referenceEventString,
+                "totalCalls=\"%i\">\n", sampleEventString, referenceEventString,
                     otherReferenceEventString, totalSites, totalCorrect,
                     totalErrors, totalCalls);
 
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
         assert(event_getHeader(event1) != NULL);
         assert(event_getHeader(event2) != NULL);
         int32_t *iA = stHash_search(eventPairsToDistanceMatrix, eventPair);
-        fprintf(fileHandle, "<distancesForSamples eventName1=\"%s\" eventName2=\"%s\" substitutionNumber=\"%i\" sampleNumber\"%i\" substitutionRate=\"%f\"/>\n", event_getHeader(event1), event_getHeader(event2), iA[0], iA[1], ((double)iA[0])/iA[1]);
+        fprintf(fileHandle, "<distancesForSamples eventName1=\"%s\" eventName2=\"%s\" substitutionNumber=\"%i\" sampleNumber=\"%i\" substitutionRate=\"%f\"/>\n", event_getHeader(event1), event_getHeader(event2), iA[0], iA[1], ((double)iA[0])/iA[1]);
     }
     stHash_destructIterator(hashIt);
     stHash_destruct(eventPairsToDistanceMatrix);
