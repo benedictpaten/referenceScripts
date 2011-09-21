@@ -13,9 +13,14 @@ test : all
 	cd tests/little && make all
 
 run : mhcHumanVariantsNsRemoved
+
+runFiltered : mhcHumanVariantsNsRemovedAndFiltered
 	
 mhcHumanVariantsNsRemoved : all
 	cd main/mhcHumanVariantsNsRemoved && make all
+
+mhcHumanVariantsNsRemovedAndFiltered : all
+	cd main/mhcHumanVariantsNsRemovedAndFiltered && make all
 
 clean : 
 	cd src && make clean
