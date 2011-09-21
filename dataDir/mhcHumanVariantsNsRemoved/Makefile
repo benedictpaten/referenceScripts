@@ -1,0 +1,8 @@
+minimumNsForScaffoldGap=15
+minimumLengthOfFragment=100 
+sequences= panTro2 cox qbl mann mcf dbb apd ssto hg19 NA12878.fa NA12891.fa NA12892.fa NA19238.fa NA19239.fa NA19240.fa
+
+all : ${sequences:%=../mhcHumanVariantsNsRemoved/%}
+
+../mhcHumanVariantsNsRemoved/% : 
+	python ../../src/scripts/removeNs.py ../mhcHumanVariants/$* $* ${minimumNsForScaffoldGap} ${minimumLengthOfFragment} 
