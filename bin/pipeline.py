@@ -216,7 +216,8 @@ class MakeStats2(MakeStats):
     def run(self):  
         #Now build the different stats files..
         for outputFile, program in (("coverageStats.xml", "coverageStats"), 
-                                    ("copyNumberStats.xml", "copyNumberStats")):
+                                    ("copyNumberStats.xml", "copyNumberStats"),
+                                    ("filterNonComponentSequences.xml", "filterNonComponentSequences")):
             outputFile = os.path.join(self.outputDir, outputFile)
             ref1, ref2 = self.options.referenceSpecies.split()
             self.runScript(program, outputFile, "--referenceEventString %s --otherReferenceEventString %s" % (ref1, ref2))
