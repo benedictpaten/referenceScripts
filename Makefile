@@ -6,7 +6,8 @@ srcM :
 	cd src && make all
 
 dataM :
-	cd data/mhcHumanVariantsNsRemoved && make all
+	cd dataDir/mhcHumanVariantsNsRemoved && make all
+	cd dataDir/mhcHumanVariantsNsRemovedAndFiltered && make all
 
 test : all
 	cd tests/little && make all

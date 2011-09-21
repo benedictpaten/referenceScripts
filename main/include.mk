@@ -1,6 +1,6 @@
 binPath = ${rootPath}bin
 libPath = ${rootPath}lib
-dataPath = ${rootPath}data
+dataPath = ${rootPath}dataDir
 outputPath = ${rootPath}output
 
 #Tree for the nine haplotypes

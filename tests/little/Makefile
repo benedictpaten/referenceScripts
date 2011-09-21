@@ -1,7 +1,7 @@
 rootPath = ../../
 binPath = ${rootPath}bin
 libPath = ${rootPath}lib
-dataPath = ${rootPath}data
+dataPath = ${rootPath}dataDir
 outputPath = ${rootPath}output
 
 newickTree=(CHIMP:0.007060,(HUMAN:0.002000,HUMAN2:0.002000,HUMAN3:0.002000):0.005850);
