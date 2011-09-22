@@ -42,12 +42,15 @@ def getCactusDiskString(alignmentFile):
 class MakeAlignment(Target):
     """Target runs the alignment.
     """
-    def __init__(self, options, outputDir, requiredSpecies,
+    def __init__(self, options,
+                 sequences, 
+                 outputDir, requiredSpecies,
                  singleCopySpecies,
                  referenceAlgorithm, minimumBlockDegree, 
                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
-                 theta, useSimulatedAnnealing):
+                 theta, useSimulatedAnnealing, heldOutSequence):
         Target.__init__(self, cpu=1, memory=4000000000)
+        self.sequences = sequences
         self.requiredSpecies = requiredSpecies
         self.singleCopySpecies = singleCopySpecies
         self.outputDir = outputDir
@@ -60,6 +63,7 @@ class MakeAlignment(Target):
         self.theta = theta
         self.useSimulatedAnnealing = useSimulatedAnnealing
         self.options = options
+        self.heldOutSequence = heldOutSequence
     
     def run(self):
         if not os.path.isdir(self.outputDir):
@@ -115,7 +119,7 @@ class MakeAlignment(Target):
             tempJobTreeDir = os.path.join(self.getLocalTempDir(), "jobTree")
             #Make the experiment file
             cactusWorkflowExperiment = CactusWorkflowExperiment(
-                                                 sequences=self.options.haplotypeSequences.split(), 
+                                                 sequences=self.sequences.split(), 
                                                  newickTreeString=self.options.newickTree, 
                                                  requiredSpecies=self.requiredSpecies,
                                                  singleCopySpecies=self.singleCopySpecies,
@@ -143,6 +147,31 @@ class MakeAlignment(Target):
             system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir, self.outputDir))
             #We're done!
         self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
+
+def makeHeldOutAlignments(self, options, outputDir, requiredSpecies,
+                 singleCopySpecies,
+                 referenceAlgorithm, minimumBlockDegree, 
+                 blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
+                 theta, useSimulatedAnnealing):
+    for heldoutSequence in self.options.heldOutSequences.split():
+        heldOutOutputDir = outputDir + "_" + heldoutSequence
+        heldOutSequences = options.haplotypeSequences.replace(heldoutSequence, "")
+        heldOutRequiredSpecies = requiredSpecies.replace(heldoutSequence, "")
+        heldOutSingleCopySpecies = singleCopySpecies.replace(heldoutSequence, "")
+        self.addChildTarget(MakeAlignment(options, 
+                      heldOutSequences,
+                      heldOutOutputDir, heldOutRequiredSpecies,
+                      heldOutSingleCopySpecies,
+                      referenceAlgorithm, minimumBlockDegree, 
+                      blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
+                      theta, useSimulatedAnnealing, heldoutSequence))
+    self.addChildTarget(MakeAlignment(options, 
+                  options.haplotypeSequences,
+                  outputDir, requiredSpecies,
+                  singleCopySpecies,
+                  referenceAlgorithm, minimumBlockDegree, 
+                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
+                  theta, useSimulatedAnnealing, None))
 
 class MakeAlignments(Target):
     """Makes alignments using pipeline.
@@ -176,11 +205,11 @@ class MakeAlignments(Target):
                                                 statsNames.append(jobOutputDir)
                                                 absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
                                                 statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
-                                                self.addChildTarget(MakeAlignment(self.options, absJobOutputDir, 
-                                                                                  requiredSpecies, singleCopySpecies, referenceAlgorithm, minimumBlockDegree, 
-                                                                                  blastAlignmentStrings[blastAlignmentStringIndex], 
-                                                                                  baseLevel, maxNumberOfChains, permutations, 
-                                                                                  theta, useSimulatedAnnealing))
+                                                makeHeldOutAlignments(self, self.options, absJobOutputDir, 
+                                                                      requiredSpecies, singleCopySpecies, referenceAlgorithm, minimumBlockDegree, 
+                                                                      blastAlignmentStrings[blastAlignmentStringIndex], 
+                                                                      baseLevel, maxNumberOfChains, permutations, 
+                                                                      theta, useSimulatedAnnealing)
 
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
@@ -271,6 +300,7 @@ def main():
     parser.add_option("--theta", dest="theta")
     parser.add_option("--useSimulatedAnnealing", dest="useSimulatedAnnealing")
     parser.add_option("--sampleNumber", dest="sampleNumber")
+    parser.add_option("--heldOutSequences", dest="heldOutSequences")
     
     Stack.addJobTreeOptions(parser)
     
