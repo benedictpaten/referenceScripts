@@ -24,7 +24,7 @@ blastAlignmentStrings =
 theta = 0.0 0.0000001 0.000001 0.00001 0.0001
 useSimulatedAnnealing = 0
 permutations = 100
-heldOutSequences=panTro2 NA12878 NA12891 NA12892 NA19238 NA19239 NA19240 apd cox dbb hg19 mann mcf qbl ssto
+heldOutSequences=NA12878 NA12891 NA12892 NA19238 NA19239 NA19240
 
 include ${rootPath}/include.mk
 
