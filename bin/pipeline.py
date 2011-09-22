@@ -153,9 +153,18 @@ def makeHeldOutAlignments(self, options, outputDir, requiredSpecies,
                  referenceAlgorithm, minimumBlockDegree, 
                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
                  theta, useSimulatedAnnealing):
+    nullSequence = os.path.join(self.getGlobalTempDir(), "nullSequence.fa")
+    open(nullSequence, 'w').close()
     for heldoutSequence in self.options.heldOutSequences.split():
         heldOutOutputDir = outputDir + "_" + heldoutSequence
-        heldOutSequences = options.haplotypeSequences.replace(heldoutSequence, "")
+        def fn(i):
+            if heldoutSequence == i.split("/")[-1]:
+                return nullSequence
+            return i
+        heldOutSequences = " ".join([ fn(i) for i in options.haplotypeSequences.split() ])
+        #print "NULL", nullSequence
+        #print "heldoutsequences", heldOutSequences
+        #sys.exit()
         heldOutRequiredSpecies = requiredSpecies.replace(heldoutSequence, "")
         heldOutSingleCopySpecies = singleCopySpecies.replace(heldoutSequence, "")
         self.addChildTarget(MakeAlignment(options, 
@@ -184,7 +193,7 @@ class MakeAlignments(Target):
         statsFiles = []
         statsNames = []
         singleCopySpeciesCount = 0
-        for singleCopySpecies in self.options.singleCopySpecies.split("%") + [ None ]:
+        for singleCopySpecies in self.options.singleCopySpecies.split("%"):
             singleCopySpeciesCount += 1
             for requiredSpecies in (self.options.requiredSpecies,):
                 for referenceAlgorithm in self.options.referenceAlgorithms.split():
