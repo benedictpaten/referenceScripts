@@ -3,7 +3,7 @@
 """
 
 import sys, re
-from sonLib.bioio import fastaRead, fastaWrite
+from sonLib.bioio import fastaRead, fastaWrite, logger, setLogLevel
 
 if len(sys.argv) == 0:
     print "fasta-file-in fasta-file-out minimum-length-of-ns-to-mask"
@@ -31,6 +31,14 @@ class Header:
         return '.'.join( [self.name, self.chr, self.chrSize, str(self.start), str(self.fragSize), self.strand] )
 
 def fn( header, sequence, lengthOfNs ):
+    def fn2(header, sequence):
+        nonRepetitiveSequence = sequence.replace("a", "").replace("c", '').replace("g", '').replace("t", "")
+        logger.debug("Got a non-repetitive sequence of length %s for a sequence starting with length %s" % (len(nonRepetitiveSequence), len(sequence)))
+        if len(nonRepetitiveSequence) >= lengthOfFragment:
+            header.fragSize = len( sequence )
+            return header.getStr(), sequence
+        return None
+    
     pattern = "(?P<Nstr>[Nn]+)"
     searchedSeq = ""
     m = re.search( pattern, sequence )
@@ -40,9 +48,9 @@ def fn( header, sequence, lengthOfNs ):
             searchedSeq += sequence[: m.start() + lenNs]
         else:
             subSequence = searchedSeq + sequence[: m.start()]
-            header.fragSize = len( subSequence )
-            newheader = header.getStr()
-            yield newheader, subSequence
+            i = fn2(header, subSequence)
+            if i != None:
+                yield i
             searchedSeq = ""
             #Update the start coordinate:
             header.start += len( subSequence ) + lenNs
@@ -50,21 +58,24 @@ def fn( header, sequence, lengthOfNs ):
         sequence = sequence[m.start() + lenNs: ]
         m = re.search( pattern, sequence )
     
-    nonRepetitiveSequence = sequence.replace("a", "").replace("c", '').replace("g", '').replace("t", "")
-    if len(nonRepetitiveSequence) >= lengthOfFragment:
-        header.fragSize = len( sequence )
-        yield header.getStr(), sequence
+    i = fn2(header, sequence)
+    if i != None:
+        yield i
 
 #=========== MAIN ====================
 fH = open(sys.argv[1], 'r')
 fH2 = open(sys.argv[2], 'w')
 lengthOfNs = int(sys.argv[3])
 lengthOfFragment = int(sys.argv[4])
+if len(sys.argv) == 6:
+    setLogLevel(sys.argv[5])
 
 for name, sequence in fastaRead(fH):
     header = Header( name, len(sequence) )
+    logger.info("Got a sequence of length %i with header %s for processing" % (len(sequence), name))
     for newheader, subsequence in fn( header, sequence, lengthOfNs ):
         if len( subsequence ) > 0:
+            logger.info("Writing out a sequence of length %i with header %s" % (len(subsequence), newheader))
             fastaWrite(fH2, newheader, subsequence)
         
 fH.close()
