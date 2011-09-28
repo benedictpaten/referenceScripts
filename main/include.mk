@@ -16,7 +16,7 @@ requiredSequences=NA12878 NA12892 NA19239 apd dbb mann nigerian qbl venter yanhu
 singleCopySpecies=panTro3 % NA12878 NA12892 NA19239 apd dbb mann nigerian qbl venter yanhuang NA12891 NA19238 NA19240 cox hg19 mcf panTro3 ssto watson
 outputDir=${outputPath}/main/${experimentName}
 referenceSpecies=reference hg19
-minimumBlockDegreeRange=1 2 3 4
+minimumBlockDegreeRange=1 2 3 4 5 6 7 8
 #algorithms: greedy maxCardinality maxWeight blossom5
 referenceAlgorithms = maxWeight
 baseLevel = 1
