@@ -58,7 +58,7 @@ def fn( header, sequence, lengthOfNs ):
         sequence = sequence[m.start() + lenNs: ]
         m = re.search( pattern, sequence )
     
-    i = fn2(header, sequence)
+    i = fn2(header, searchedSeq + sequence)
     if i != None:
         yield i
 
