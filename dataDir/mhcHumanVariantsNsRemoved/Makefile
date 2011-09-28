@@ -6,4 +6,4 @@ sequences=NA12878 NA12892 NA19239 apd dbb mann nigerian qbl venter yanhuang NA12
 all : ${sequences:%=../mhcHumanVariantsNsRemoved/%}
 
 ../mhcHumanVariantsNsRemoved/% : 
-	python ../../src/scripts/removeNs.py ../mhcHumanVariants/$* $* ${minimumNsForScaffoldGap} ${minimumLengthOfFragment} 
+	python ../../src/scripts/removeNs.py ../mhcHumanVariants/$* $* ${minimumNsForScaffoldGap} ${minimumLengthOfFragment} DEBUG
