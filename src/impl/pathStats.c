@@ -502,13 +502,13 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
 
             stSortedSetIterator *it = stSortedSet_getIterator(indelEvents);
             IndelEvent *indelEvent;
-            fprintf(fileHandle, "insertionLengthDistribution=\"");
+            fprintf(fileHandle, "insertionSizeDistribution=\"");
             while ((indelEvent = stSortedSet_getNext(it)) != NULL) {
                 if (indelEvent->insertionLength > 0) {
                     fprintf(fileHandle, "%i ", indelEvent->insertionLength);
                 }
             }
-            fprintf(fileHandle, "\" deletionLengthDistribution=\"");
+            fprintf(fileHandle, "\" deletionSizeDistribution=\"");
             while ((indelEvent = stSortedSet_getPrevious(it)) != NULL) {
                 if (indelEvent->deletionLength > 0) {
                     fprintf(fileHandle, "%i ", indelEvent->deletionLength);
