@@ -31,5 +31,5 @@ include ${rootPath}/include.mk
 
 sampleNumber=100000000
 
-all : basic
+
 
