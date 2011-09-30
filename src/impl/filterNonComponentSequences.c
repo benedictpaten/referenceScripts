@@ -14,17 +14,17 @@
 #include "referenceCommon.h"
 #include "cactusMafs.h"
 
-stSortedSet *freeSequences;
+stSortedSet *connectedSequences;
 
-static void getDisconnectedSequences(Block *block, FILE *fileHandle) {
+static void getConnectedSequences(Block *block, FILE *fileHandle) {
     Block_InstanceIterator *instanceIterator1 = block_getInstanceIterator(block);
     Segment *segment;
-    bool b = 1;
+    bool b = 0;
     while ((segment = block_getNext(instanceIterator1)) != NULL) {
         Event *event = segment_getEvent(segment);
         if (strcmp(event_getHeader(event), referenceEventString) == 0) {
             if (segment_getSequence(segment) != NULL && sequence_getLength(segment_getSequence(segment)) >= 1000000) {
-                b = 0;
+                b = 1;
                 break;
             }
         }
@@ -36,7 +36,7 @@ static void getDisconnectedSequences(Block *block, FILE *fileHandle) {
             Event *event = segment_getEvent(segment);
             if (strcmp(event_getHeader(event), referenceEventString) != 0) {
                 if (segment_getSequence(segment) != NULL) {
-                    stSortedSet_insert(freeSequences, (void *)sequence_getHeader(segment_getSequence(segment)));
+                    stSortedSet_insert(connectedSequences, (void *)sequence_getHeader(segment_getSequence(segment)));
                 }
             }
         }
@@ -60,14 +60,16 @@ int main(int argc, char *argv[]) {
 
     FILE *fileHandle = fopen(outputFile, "w");
     fprintf(fileHandle, "<disconnectedSequences>\n");
-    freeSequences = stSortedSet_construct3((int (*)(const void *, const void *))strcmp, NULL);
-    getMAFs(flower, fileHandle, getDisconnectedSequences);
-    stSortedSetIterator *it = stSortedSet_getIterator(freeSequences);
-    char *cA;
-    while((cA = stSortedSet_getNext(it)) != NULL) {
-        fprintf(fileHandle, "%s ", cA);
+    connectedSequences = stSortedSet_construct3((int (*)(const void *, const void *))strcmp, NULL);
+    getMAFs(flower, fileHandle, getConnectedSequences);
+    Flower_SequenceIterator *sequenceIt = flower_getSequenceIterator(flower);
+    Sequence *sequence;
+    while((sequence = flower_getNextSequence(sequenceIt)) != NULL) {
+        if(stSortedSet_search(connectedSequences, (void *)sequence_getHeader(sequence)) == NULL) {
+            fprintf(fileHandle, "%s ", sequence_getHeader(sequence));
+        }
     }
-    stSortedSet_destructIterator(it);
+    flower_destructSequenceIterator(sequenceIt);
     fprintf(fileHandle, "</disconnectedSequences>\n");
 
     st_logInfo("Finished writing out the disconnected sequences\n");
