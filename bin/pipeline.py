@@ -113,7 +113,7 @@ class MakeAlignment(Target):
             tree = ET.ElementTree(config)
             tree.write(fileHandle)
             fileHandle.close()
-         
+            
             #Make the supporting temporary files
             tempExperimentFile = os.path.join(self.getLocalTempDir(), "experiment.xml")
             tempJobTreeDir = os.path.join(self.getLocalTempDir(), "jobTree")
@@ -121,7 +121,7 @@ class MakeAlignment(Target):
             cactusWorkflowExperiment = CactusWorkflowExperiment(
                                                  sequences=self.sequences.split(), 
                                                  newickTreeString=self.options.newickTree, 
-                                                 requiredSpecies=self.requiredSpecies,
+                                                 requiredSpecies=[ (1, self.requiredSpecies.split() ) ],
                                                  singleCopySpecies=self.singleCopySpecies,
                                                  databaseName=cactusAlignmentName,
                                                  outputDir=self.getLocalTempDir(),
@@ -165,8 +165,8 @@ def makeHeldOutAlignments(self, options, outputDir, requiredSpecies,
         #print "NULL", nullSequence
         #print "heldoutsequences", heldOutSequences
         #sys.exit()
-        heldOutRequiredSpecies = requiredSpecies.replace(heldoutSequence, "")
-        heldOutSingleCopySpecies = singleCopySpecies.replace(heldoutSequence, "")
+        heldOutRequiredSpecies = " ".join([ i for i in requiredSpecies.split() if i != heldoutSequence ])
+        heldOutSingleCopySpecies = " ".join([ i for i in singleCopySpecies.split() if i != heldoutSequence ])
         self.addChildTarget(MakeAlignment(options, 
                       heldOutSequences,
                       heldOutOutputDir, heldOutRequiredSpecies,
