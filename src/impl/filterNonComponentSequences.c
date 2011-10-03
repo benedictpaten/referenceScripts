@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     FILE *fileHandle = fopen(outputFile, "w");
     connectedSequences = stSortedSet_construct3((int(*)(const void *, const void *)) strcmp, NULL);
     getMAFs(flower, fileHandle, getConnectedSequences);
-    fprintf(fileHandle, "<disconnectedSequences minOtherReferenceCoordinate=\"%i\" maxOtherReferenceCoordinate=\"%i\" referenceEventString=\"%s\" otherReferenceEventString\"%s\">\n", minCoordinate, maxCoordinate, referenceEventString, otherReferenceEventString);
+    fprintf(fileHandle, "<disconnectedSequences minOtherReferenceCoordinate=\"%i\" maxOtherReferenceCoordinate=\"%i\" referenceEventString=\"%s\" otherReferenceEventString=\"%s\">\n", minCoordinate, maxCoordinate, referenceEventString, otherReferenceEventString);
     Flower_SequenceIterator *sequenceIt = flower_getSequenceIterator(flower);
     Sequence *sequence;
     while ((sequence = flower_getNextSequence(sequenceIt)) != NULL) {
