@@ -273,11 +273,19 @@ class MakeStats3(MakeStats):
 class MakeStats4(MakeStats):
     def run(self):          
         for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
-                                                    ("snpStats_%s.xml", "snpStats", "")
+                                                    ("snpStats_%s.xml", "snpStats", ""),
+                                                    ("snpStats_filtered_%s.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5 --minimumBlockLength 100")
                                      ):
             for reference in self.options.referenceSpecies.split():
                 self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
+        
+        for reference in self.options.referenceSpecies.split():
+            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_%s.xml") % reference))
+            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s.xml") % reference))
+        
         self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
+        
+        
 
 class MakeStats5(MakeStats):
     def run(self):       
