@@ -17,6 +17,6 @@ j["sampleNumber"] = "NaN"
 j["substitutionRate"] = "NaN"
 j["sampleName"] = "aggregate"
 ET.SubElement(i, "statsForSample", attrib=j).text = "\n".join(l)
-fH = open(sys.argv[1][:-3] + "_withAggregates.xml", 'w')
+fH = open(sys.argv[1][:-4] + "_withAggregates.xml", 'w')
 ET.ElementTree(i).write(fH)
 fH.close()
