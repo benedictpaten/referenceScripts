@@ -39,6 +39,7 @@ for sampleName, samples, truePositives, filteredSamples, filteredTruePositives i
 writeEnd(fileHandle, "snpTable", "Total: the number of SNPs detected in each sample with respect to HG19. \
 In brackets is the percentage confirmed true positives, already present in dbSNP.\
 Total filtered: the number of SNPs detected in each sample not within 5 bps of an indel. \
-Aggregate row: gives the total SNPs in human samples (excluding chimp).")
+Aggregate row: gives the total SNPs in human samples (excluding chimp).\
+Reference row: gives SNPs in our reference with respect to HG19")
 writeDocumentEnd(fileHandle)
 fileHandle.close()
