@@ -59,7 +59,7 @@ static void getSnpStatsDistanceMatrix(Block *block, FILE *fileHandle) {
                                 iA = st_calloc(2, sizeof(int32_t));
                                 stHash_insert(eventPairsToDistanceMatrix, getKey(segment_getEvent(segment1), segment_getEvent(segment2)), iA);
                             }
-                            if(!correctFn(sequence1[i], sequence2[i])) {
+                            if(toupper(sequence1[i]) != 'N' && toupper(sequence2[i]) != 'N' && toupper(sequence1[i]) != toupper(sequence2[i])) {
                                 iA[0]++;
                             }
                             iA[1]++;
