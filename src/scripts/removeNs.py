@@ -76,7 +76,7 @@ for name, sequence in fastaRead(fH):
     for newheader, subsequence in fn( header, sequence, lengthOfNs ):
         if len( subsequence ) > 0:
             logger.info("Writing out a sequence of length %i with header %s" % (len(subsequence), newheader))
-            fastaWrite(fH2, newheader, subsequence)
+            fastaWrite(fH2, newheader.split()[0], subsequence)
         
 fH.close()
 fH2.close()
