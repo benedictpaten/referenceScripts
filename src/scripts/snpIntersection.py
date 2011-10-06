@@ -6,11 +6,12 @@ i = ET.parse(sys.argv[1]).getroot()
 l = []
 l2 = set()
 for j in i.findall("statsForSample"):
-    for k in j.text.split("\n"):
-        key = " ".join(k.split()[2:])
-        if key not in l2:
-            l2.add(key)
-            l.append(k)
+    if "panTro" not in j.attrib["sampleName"] and "reference" not in j.attrib["sampleName"]:
+        for k in j.text.split("\n"):
+            key = " ".join(k.split()[2:])
+            if key not in l2:
+                l2.add(key)
+                l.append(k)
 j = i.find("statsForSample").attrib.copy()
 j["substitutionNumber"] = str(len(l))
 j["sampleNumber"] = "NaN"

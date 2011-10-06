@@ -274,7 +274,7 @@ class MakeStats4(MakeStats):
     def run(self):          
         for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
                                                     ("snpStats_%s.xml", "snpStats", ""),
-                                                    ("snpStats_filtered_%s.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5 --minimumBlockLength 100")
+                                                    ("snpStats_filtered_%s.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5")
                                      ):
             for reference in self.options.referenceSpecies.split():
                 self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
