@@ -6,7 +6,7 @@ def fn(file):
     l = {}
     for line in [ line.split() for line in open(file, "r").readlines()[1:] ]:
         l[line[0]] = line[1:]
-    l.pop("reference")
+    referenceLine = l.pop("reference")
     aggregateLine = l.pop("aggregate")
     chimpLine = l.pop("panTro3")
     k = l.keys()
@@ -15,6 +15,7 @@ def fn(file):
         yield (key, int(l[key][0]), int(l[key][1]))
     yield "panTro3", int(chimpLine[0]), int(chimpLine[1])
     yield "aggregate", int(aggregateLine[0]), int(aggregateLine[1])
+    yield "reference", int(referenceLine[0]), int(referenceLine[1])
     
 fileHandle = open(sys.argv[3], "w")
 
