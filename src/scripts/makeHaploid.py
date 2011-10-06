@@ -10,9 +10,9 @@ def fn(k, i, j):
         return l.lower()
     else:
         return k
-for name, seq in fastaRead(open(sys.argv[1]), "r"):
+for name, seq in fastaRead(open(sys.argv[1], "r")):
     for i, j in [ ("W", ("A", "T")),
-                 ("S", ("C", "G")), 
+                 ("S", ("C", "G")),
                  ("M", ("A", "C")),
                  ("K", ("G", "T")),
                  ("R", ("A", "G")),
