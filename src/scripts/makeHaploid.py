@@ -3,7 +3,7 @@ import sys
 import random
 fH = open(sys.argv[2], "w")
 def fn(k, i, j):
-    if k != i:
+    if k.upper() == i.upper():
         l = random.choice(j)
         if k == k.upper():
             return l.upper()
