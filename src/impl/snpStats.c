@@ -111,9 +111,12 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
 
         if (referenceSegment != NULL && otherReferenceSegment != NULL && sampleSegment != NULL) {
             bool b = segment_getStrand(referenceSegment);
-            char *referenceSeq = segment_getString(b ? referenceSegment : segment_getReverse(referenceSegment));
-            char *otherReferenceSeq = segment_getString(b ? otherReferenceSegment : segment_getReverse(otherReferenceSegment));
-            char *sampleSeq = segment_getString(b ? sampleSegment : segment_getReverse(sampleSegment));
+            referenceSegment = b ? referenceSegment : segment_getReverse(referenceSegment);
+            otherReferenceSegment = b ? otherReferenceSegment : segment_getReverse(otherReferenceSegment);
+            sampleSegment = b ? sampleSegment : segment_getReverse(sampleSegment);
+            char *referenceSeq = segment_getString(referenceSegment);
+            char *otherReferenceSeq = segment_getString(otherReferenceSegment);
+            char *sampleSeq = segment_getString(sampleSegment);
             //We're in gravy.
             for (int32_t i = ignoreFirstNBasesOfBlock; i < block_getLength(
                     block) - ignoreFirstNBasesOfBlock; i++) {
