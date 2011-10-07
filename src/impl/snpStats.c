@@ -82,38 +82,38 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
         Block_InstanceIterator *instanceIterator = block_getInstanceIterator(
                 block);
         Segment *segment;
-        char *referenceSeq = NULL;
         Segment *referenceSegment = NULL;
-        char *otherReferenceSeq = NULL;
-        char *sampleSeq = NULL;
         Segment *sampleSegment = NULL;
+        Segment *otherReferenceSegment = NULL;
         while ((segment = block_getNext(instanceIterator)) != NULL) {
             if (strcmp(event_getHeader(segment_getEvent(segment)),
-                    referenceEventString) == 0) {
-                if (referenceSeq != NULL) {
+                    referenceEventString) == 0 && segment_getSequence(segment) != NULL) {
+                if (referenceSegment != NULL) {
                     goto end;
                 }
-                referenceSeq = segment_getString(segment);
                 referenceSegment = segment;
             }
             if (strcmp(event_getHeader(segment_getEvent(segment)),
-                    sampleEventString) == 0) {
-                if (sampleSeq != NULL) {
+                    sampleEventString) == 0 && segment_getSequence(segment) != NULL) {
+                if (sampleSegment != NULL) {
                     goto end;
                 }
-                sampleSeq = segment_getString(segment);
                 sampleSegment = segment;
             }
             if (strcmp(event_getHeader(segment_getEvent(segment)),
-                    otherReferenceEventString) == 0) {
-                if (otherReferenceSeq != NULL) {
+                    otherReferenceEventString) == 0 && segment_getSequence(segment) != NULL) {
+                if (otherReferenceSegment != NULL) {
                     goto end;
                 }
-                otherReferenceSeq = segment_getString(segment);
+                otherReferenceSegment = segment;
             }
         }
 
-        if (referenceSeq != NULL && otherReferenceSeq != NULL) {
+        if (referenceSegment != NULL && otherReferenceSegment != NULL && sampleSegment != NULL) {
+            bool b = segment_getStrand(referenceSegment);
+            char *referenceSeq = segment_getString(b ? referenceSegment : segment_getReverse(referenceSegment));
+            char *otherReferenceSeq = segment_getString(b ? otherReferenceSegment : segment_getReverse(otherReferenceSegment));
+            char *sampleSeq = segment_getString(b ? sampleSegment : segment_getReverse(sampleSegment));
             //We're in gravy.
             for (int32_t i = ignoreFirstNBasesOfBlock; i < block_getLength(
                     block) - ignoreFirstNBasesOfBlock; i++) {
@@ -136,19 +136,11 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
                     totalCalls++;
                 }
             }
-        }
-
-        end:
-        //cleanup
-        if (referenceSeq != NULL) {
             free(referenceSeq);
-        }
-        if (sampleSeq != NULL) {
+            free(otherReferenceSeq);
             free(sampleSeq);
         }
-        if (otherReferenceSeq != NULL) {
-            free(otherReferenceSeq);
-        }
+        end:
         block_destructInstanceIterator(instanceIterator);
     }
 }
