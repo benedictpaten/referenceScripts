@@ -47,7 +47,6 @@ static void getConnectedSequences(Block *block, FILE *fileHandle) {
     if (b) {
         instanceIterator1 = block_getInstanceIterator(block);
         while ((segment = block_getNext(instanceIterator1)) != NULL) {
-            Event *event = segment_getEvent(segment);
             if (segment_getSequence(segment) != NULL) {
                 stSortedSet_insert(connectedSequences, (void *) sequence_getHeader(segment_getSequence(segment)));
             }
