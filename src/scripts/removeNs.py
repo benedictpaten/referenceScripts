@@ -70,13 +70,16 @@ lengthOfFragment = int(sys.argv[4])
 if len(sys.argv) == 6:
     setLogLevel(sys.argv[5])
 
+headers = set()
 for name, sequence in fastaRead(fH):
-    header = Header( name, len(sequence) )
-    logger.info("Got a sequence of length %i with header %s for processing" % (len(sequence), name))
+    header = Header( name.split()[0], len(sequence) )
+    logger.info("Got a sequence of length %i with header %s for processing" % (len(sequence), name.split()[0]))
     for newheader, subsequence in fn( header, sequence, lengthOfNs ):
         if len( subsequence ) > 0:
             logger.info("Writing out a sequence of length %i with header %s" % (len(subsequence), newheader))
-            fastaWrite(fH2, newheader.split()[0], subsequence)
+            assert newheader not in headers
+            headers.add(newheader)
+            fastaWrite(fH2, newheader, subsequence)
         
 fH.close()
 fH2.close()

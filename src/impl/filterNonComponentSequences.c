@@ -36,8 +36,10 @@ static void getConnectedSequences(Block *block, FILE *fileHandle) {
             if (segment_getStart(segment) - sequence_getStart(segment_getSequence(segment)) < minCoordinate) {
                 minCoordinate = segment_getStart(segment) - sequence_getStart(segment_getSequence(segment));
             }
-            if (segment_getStart(segment) + segment_getLength(segment) - sequence_getStart(segment_getSequence(segment)) > maxCoordinate) {
-                maxCoordinate = segment_getStart(segment) + segment_getLength(segment) - sequence_getStart(segment_getSequence(segment));
+            if (segment_getStart(segment) + segment_getLength(segment)
+                    - sequence_getStart(segment_getSequence(segment)) > maxCoordinate) {
+                maxCoordinate = segment_getStart(segment) + segment_getLength(segment) - sequence_getStart(
+                        segment_getSequence(segment));
             }
         }
     }
@@ -46,10 +48,8 @@ static void getConnectedSequences(Block *block, FILE *fileHandle) {
         instanceIterator1 = block_getInstanceIterator(block);
         while ((segment = block_getNext(instanceIterator1)) != NULL) {
             Event *event = segment_getEvent(segment);
-            if (strcmp(event_getHeader(event), referenceEventString) != 0) {
-                if (segment_getSequence(segment) != NULL) {
-                    stSortedSet_insert(connectedSequences, (void *) sequence_getHeader(segment_getSequence(segment)));
-                }
+            if (segment_getSequence(segment) != NULL) {
+                stSortedSet_insert(connectedSequences, (void *) sequence_getHeader(segment_getSequence(segment)));
             }
         }
         block_destructInstanceIterator(instanceIterator1);
@@ -72,7 +72,10 @@ int main(int argc, char *argv[]) {
     FILE *fileHandle = fopen(outputFile, "w");
     connectedSequences = stSortedSet_construct3((int(*)(const void *, const void *)) strcmp, NULL);
     getMAFs(flower, fileHandle, getConnectedSequences);
-    fprintf(fileHandle, "<disconnectedSequences minOtherReferenceCoordinate=\"%i\" maxOtherReferenceCoordinate=\"%i\" referenceEventString=\"%s\" otherReferenceEventString=\"%s\">\n", minCoordinate, maxCoordinate, referenceEventString, otherReferenceEventString);
+    fprintf(
+            fileHandle,
+            "<disconnectedSequences minOtherReferenceCoordinate=\"%i\" maxOtherReferenceCoordinate=\"%i\" referenceEventString=\"%s\" otherReferenceEventString=\"%s\">\n",
+            minCoordinate, maxCoordinate, referenceEventString, otherReferenceEventString);
     Flower_SequenceIterator *sequenceIt = flower_getSequenceIterator(flower);
     Sequence *sequence;
     while ((sequence = flower_getNextSequence(sequenceIt)) != NULL) {
