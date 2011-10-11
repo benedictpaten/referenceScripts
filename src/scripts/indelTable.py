@@ -41,11 +41,11 @@ writeLine(8, 2, (("Sample", 0, 0, 0, 1),
               ("Exact", 2, 4, 0, 0), 
               ("TP", 2, 2, 1, 1), 
               ("STP", 3, 3, 1, 1), 
-              ("STN", 4, 4, 1, 1),
+              ("SFN", 4, 4, 1, 1),
               ("Wobble", 5, 7, 0, 0), 
               ("TP", 5, 5, 1, 1), 
               ("STP", 6, 6, 1, 1), 
-              ("STN", 7, 7, 1, 1)), fileHandle)
+              ("SFN", 7, 7, 1, 1)), fileHandle)
 
 for sampleName, samples, truePositives, \
     sampleTruePositives, sampleTrueNegatives, \
@@ -76,7 +76,7 @@ Wobble: as exact, but allowing a match to an insertion within 5 bases of its loc
 T\#: Total number of insertions. \
 TP: Percentage true positives, as validated by a match in dbSNP. \
 STP: Percentage (sample) true positives, as validated by those reported for the sample in question. \
-STN: Percentage (sample) false negatives, as validated by those reported for the sample in question. \
+SFN: Percentage (sample) false negatives, as validated by those reported for the sample in question. \
 An NA entry denotes that the data was not available. \
 Aggregate row: gives the total insertions in human samples (excluding chimp). \
 Reference row: gives insertions in our reference with respect to HG19")

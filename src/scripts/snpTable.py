@@ -40,12 +40,12 @@ writeLine(9, 2, (("Sample", 0, 0, 0, 1),
               ("T\#", 1, 1, 1, 1), 
               ("TP", 2, 2, 1, 1), 
               ("STP", 3, 3, 1, 1), 
-              ("STN", 4, 4, 1, 1),
+              ("SFN", 4, 4, 1, 1),
               ("Filtered", 5, 8, 0, 0), 
               ("T\#", 5, 5, 1, 1), 
               ("TP", 6, 6, 1, 1), 
               ("STP", 7, 7, 1, 1), 
-              ("STN", 8, 8, 1, 1)), fileHandle)
+              ("SFN", 8, 8, 1, 1)), fileHandle)
 
 for sampleName, samples, truePositives, \
     sampleTruePositives, sampleTrueNegatives, \
@@ -77,7 +77,7 @@ Filtered: as unfiltered, but excluding SNPs detected within 5 bps of an indel wi
 T\#: Total number of SNPs. \
 TP: Percentage true positives, as validated by a matching SNP in dbSNP. \
 STP: Percentage (sample) true positives, as validated by those reported for the sample in question. \
-STN: Percentage (sample) false negatives, as validated by those reported for the sample in question. \
+SFN: Percentage (sample) false negatives, as validated by those reported for the sample in question. \
 An NA entry denotes that the data was not available. \
 Aggregate row: gives the total SNPs in human samples (excluding chimp). \
 Reference row: gives SNPs in our reference with respect to HG19")

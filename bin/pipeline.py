@@ -282,16 +282,20 @@ class MakeStats4(MakeStats):
         for reference in self.options.referenceSpecies.split():
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_%s.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s.xml") % reference))
+            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_%s.xml") % reference))
         
-        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
-        
-        
+        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))      
 
 class MakeStats5(MakeStats):
     def run(self):       
         ref1, ref2 = self.options.referenceSpecies.split()
         self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s" % (ref1, ref2))
         self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s" % (ref2, ref1))                 
+        self.addChildTarget(MakeStats6(self.alignment, self.outputDir, self.options))
+
+class MakeStats6(MakeStats):
+    def run(self):
+        self.runScript("danielAlignment", os.path.join(self.outputDir, "danielAlignment.txt"), "--referenceEventString hg19 --otherReferenceEventString NA12891")
            
 def main():
     ##########################################
@@ -338,4 +342,3 @@ if __name__ == '__main__':
     from referenceScripts.bin.pipeline import *
     _test()
     main()
-
