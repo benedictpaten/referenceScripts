@@ -7,7 +7,7 @@ def fn(file):
     for line in [ line.split() for line in open(file, "r").readlines()[1:] ]:
         l[line[0]] = line[1:]
     referenceLine = l.pop("reference")
-    aggregateLine = l.pop("aggregate")
+    #aggregateLine = l.pop("aggregate")
     chimpLine = l.pop("panTro3")
     k = l.keys()
     k.sort()
@@ -22,30 +22,30 @@ def fn(file):
         else:
             yield (key, int(l[key][samples]), int(l[key][truePositives]), None, None)
     yield "panTro3", int(chimpLine[samples]), int(chimpLine[truePositives]), None, None
-    yield "aggregate", int(aggregateLine[samples]), int(aggregateLine[truePositives]), None, None
+    #yield "aggregate", int(aggregateLine[samples]), int(aggregateLine[truePositives]), None, None
     yield "reference", int(referenceLine[samples]), int(referenceLine[truePositives]), None, None
     
 fileHandle = open(sys.argv[3], "w")
 
 writeDocumentPreliminaries(fileHandle)
-writePreliminaries(9, fileHandle)
+
+writePreliminaries(8, fileHandle)
 
 #writeRow(("samples", "sequence", "\% mapped", "\% mapped and contiguous", "\% contigious that mapped"), fileHandle)
 
-writeLine(9, 1, (("Single Nucleotide Polymorphisms", 0, 8, 0, 0),), fileHandle)
+writeLine(8, 1, (("Short Insertion Polymorphisms", 0, 7, 0, 0),), fileHandle)
 
 
-writeLine(9, 2, (("Sample", 0, 0, 0, 1), 
-              ("Unfiltered", 1, 4, 0, 0), 
-              ("T\#", 1, 1, 1, 1), 
+writeLine(8, 2, (("Sample", 0, 0, 0, 1), 
+              ("T\#", 1, 1, 0, 1), 
+              ("Exact", 2, 4, 0, 0), 
               ("TP", 2, 2, 1, 1), 
               ("STP", 3, 3, 1, 1), 
               ("STN", 4, 4, 1, 1),
-              ("Filtered", 5, 8, 0, 0), 
-              ("T\#", 5, 5, 1, 1), 
-              ("TP", 6, 6, 1, 1), 
-              ("STP", 7, 7, 1, 1), 
-              ("STN", 8, 8, 1, 1)), fileHandle)
+              ("Wobble", 5, 7, 0, 0), 
+              ("TP", 5, 5, 1, 1), 
+              ("STP", 6, 6, 1, 1), 
+              ("STN", 7, 7, 1, 1)), fileHandle)
 
 for sampleName, samples, truePositives, \
     sampleTruePositives, sampleTrueNegatives, \
@@ -61,25 +61,24 @@ for sampleName, samples, truePositives, \
         if i == None:
             return "NA"
         return "%.0f" % (100.0*float(j)/(float(i) + float(j)))
-    writeLine(9, 1, ((sampleName, 0, 0, 0, 0), 
+    writeLine(8, 1, ((sampleName, 0, 0, 0, 0), 
                      (samples, 1, 1, 0, 0),
                      (fn2(truePositives), 2, 2, 0, 0),
                      (fn2(sampleTruePositives), 3, 3, 0, 0),
                      (fn4(sampleTruePositives, sampleTrueNegatives), 4, 4, 0, 0),
-                     (filteredSamples, 5, 5, 0, 0),
-                     (fn3(filteredTruePositives), 6, 6, 0, 0),
-                     (fn3(filteredSampleTruePositives), 7, 7, 0, 0),
-                     (fn4(filteredSampleTruePositives, filteredSampleTrueNegatives), 8, 8, 0, 0)), fileHandle, trailingLines=0)
+                     (fn3(filteredTruePositives), 5, 5, 0, 0),
+                     (fn3(filteredSampleTruePositives), 6, 6, 0, 0),
+                     (fn4(filteredSampleTruePositives, filteredSampleTrueNegatives), 7, 7, 0, 0)), fileHandle, trailingLines=0)
        
 
-writeEnd(fileHandle, "snpTable", "Unfiltered: all SNPs detected in each sample with respect to HG19. \
-Filtered: as unfiltered, but excluding SNPs detected within 5 bps of an indel within the MSA. \
-T\#: Total number of SNPs. \
-TP: Percentage true positives, as validated by a matching SNP in dbSNP. \
+writeEnd(fileHandle, "indelTable", "Exact: insertions detected in each sample with respect to HG19, matched precisely to insertions in dbsnp (location and length). \
+Wobble: as exact, but allowing a match to an insertion within 5 bases of its location in dbSNP. \
+T\#: Total number of insertions. \
+TP: Percentage true positives, as validated by a match in dbSNP. \
 STP: Percentage (sample) true positives, as validated by those reported for the sample in question. \
 STN: Percentage (sample) false negatives, as validated by those reported for the sample in question. \
 An NA entry denotes that the data was not available. \
-Aggregate row: gives the total SNPs in human samples (excluding chimp). \
-Reference row: gives SNPs in our reference with respect to HG19")
+Aggregate row: gives the total insertions in human samples (excluding chimp). \
+Reference row: gives insertions in our reference with respect to HG19")
 writeDocumentEnd(fileHandle)
 fileHandle.close()
