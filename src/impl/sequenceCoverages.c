@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
         int32_t *i = stList_get(list, 0);
         assert(i != NULL);
         assert(i[0] >= 0);
-        if(i[0] > 0 && sequence_getLength(sequence)-i[0] < 200 && sequence_getLength(sequence)-i[0] > 0) {
+        if(i[0] > 0 && sequence_getLength(sequence)-i[0] < 400 && sequence_getLength(sequence)-i[0] > 0) {
             fprintf(fileHandle, "%i\t%i\t%s\t%s\t%i", sequence_getLength(sequence)-i[0], sequence_getLength(sequence), event_getHeader(sequence_getEvent(sequence)), sequence_getHeader(sequence), stList_length(list)-1);
             for(int32_t j=1; j<stList_length(list); j++) {
                 Segment *segment = stList_get(list, j);
