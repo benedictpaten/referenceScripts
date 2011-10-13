@@ -83,13 +83,22 @@ int main(int argc, char *argv[]) {
         int32_t *i = stList_get(list, 0);
         assert(i != NULL);
         assert(i[0] >= 0);
-        if(i[0] > 0 && sequence_getLength(sequence)-i[0] < 200) {
+        if(i[0] > 0 && sequence_getLength(sequence)-i[0] < 200 && sequence_getLength(sequence)-i[0] > 0) {
             fprintf(fileHandle, "%i\t%i\t%s\t%s\t%i", sequence_getLength(sequence)-i[0], sequence_getLength(sequence), event_getHeader(sequence_getEvent(sequence)), sequence_getHeader(sequence), stList_length(list)-1);
             for(int32_t j=1; j<stList_length(list); j++) {
                 Segment *segment = stList_get(list, j);
                 fprintf(fileHandle, "\t%s", segment_getString(segment));
                 Segment *otherSegment = getOtherSegment(segment);
                 fprintf(fileHandle, "\t%s", segment_getString(otherSegment));
+                char *cA = segment_getString(segment);
+                char *cA2 = segment_getString(otherSegment);
+                int32_t l = 0;
+                for(int32_t k=0; k<segment_getLength(segment); k++) {
+                    if(cA[k] != cA2[k]) {
+                        l++;
+                    }
+                }
+                fprintf(fileHandle, "\t%i\t%i", block_getInstanceNumber(segment_getBlock(segment)), l);
             }
             fprintf(fileHandle, "\n");
         }
