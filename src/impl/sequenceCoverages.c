@@ -29,7 +29,7 @@ static void removeSegmentLengths(Block *block, FILE *fileHandle) {
             assert(i != NULL);
             i[0] -= segment_getLength(segment);
             assert(i[0] >= 0);
-            stList_append(list, i);
+            stList_append(list, segment);
         }
     }
     block_destructInstanceIterator(instanceIterator);
