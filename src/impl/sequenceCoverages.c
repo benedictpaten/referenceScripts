@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
                 char *cA2 = segment_getString(otherSegment);
                 int32_t l = 0;
                 for(int32_t k=0; k<segment_getLength(segment); k++) {
-                    if(cA[k] != cA2[k]) {
+                    if(toupper(cA[k]) != toupper(cA2[k]) && toupper(cA[k]) != 'N' && toupper(cA2[k]) != 'N') {
                         l++;
                     }
                 }
