@@ -24,13 +24,29 @@ static void removeSegmentLengths(Block *block, FILE *fileHandle) {
         Sequence *sequence = segment_getSequence(segment);
         if(sequence != NULL) {
             MetaSequence *metaSequence = sequence_getMetaSequence(sequence);
-            int32_t *i = stHash_search(sequencesToAdjacencyLengths, metaSequence);
+            stList *list = stHash_search(sequencesToAdjacencyLengths, metaSequence);
+            int32_t *i = stList_get(list, 0);
             assert(i != NULL);
             i[0] -= segment_getLength(segment);
             assert(i[0] >= 0);
+            stList_append(list, i);
         }
     }
     block_destructInstanceIterator(instanceIterator);
+}
+
+Segment *getOtherSegment(Segment *segment) {
+    Block_InstanceIterator *it = block_getInstanceIterator(segment_getBlock(segment));
+    Segment *otherSegment;
+    while((otherSegment = block_getNext(it)) != NULL) {
+        if(otherSegment != segment) {
+            assert(segment_getReverse(segment) != otherSegment);
+            block_destructInstanceIterator(it);
+            return otherSegment;
+        }
+    }
+    assert(0);
+    block_destructInstanceIterator(it);
 }
 
 int main(int argc, char *argv[]) {
@@ -51,8 +67,10 @@ int main(int argc, char *argv[]) {
         MetaSequence *metaSequence = sequence_getMetaSequence(sequence);
         int32_t *i = st_malloc(sizeof(int32_t));
         i[0] = metaSequence_getLength(metaSequence);
+        stList *list = stList_construct();
         assert(i[0] >= 0);
-        stHash_insert(sequencesToAdjacencyLengths, metaSequence, i);
+        stList_append(list, i);
+        stHash_insert(sequencesToAdjacencyLengths, metaSequence, list);
     }
     flower_destructSequenceIterator(sequenceIt);
     FILE *fileHandle = fopen(outputFile, "w");
@@ -60,10 +78,21 @@ int main(int argc, char *argv[]) {
     sequenceIt = flower_getSequenceIterator(flower);
     while((sequence = flower_getNextSequence(sequenceIt)) != NULL) {
         MetaSequence *metaSequence = sequence_getMetaSequence(sequence);
-        int32_t *i = stHash_search(sequencesToAdjacencyLengths, metaSequence);
+        stList *list = stHash_search(sequencesToAdjacencyLengths, metaSequence);
+        assert(list != NULL);
+        int32_t *i = stList_get(list, 0);
         assert(i != NULL);
         assert(i[0] >= 0);
-        fprintf(fileHandle, "%i\t%i\t%s\t%s\n", i[0], sequence_getLength(sequence), event_getHeader(sequence_getEvent(sequence)), sequence_getHeader(sequence));
+        if(i[0] > 0 && sequence_getLength(sequence)-i[0] < 200) {
+            fprintf(fileHandle, "%i\t%i\t%s\t%s\t%i", sequence_getLength(sequence)-i[0], sequence_getLength(sequence), event_getHeader(sequence_getEvent(sequence)), sequence_getHeader(sequence), stList_length(list)-1);
+            for(int32_t j=1; j<stList_length(list); j++) {
+                Segment *segment = stList_get(list, j);
+                fprintf(fileHandle, "\t%s", segment_getString(segment));
+                Segment *otherSegment = getOtherSegment(segment);
+                fprintf(fileHandle, "\t%s", segment_getString(otherSegment));
+            }
+            fprintf(fileHandle, "\n");
+        }
     }
     flower_destructSequenceIterator(sequenceIt);
     fclose(fileHandle);
