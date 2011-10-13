@@ -296,6 +296,7 @@ class MakeStats5(MakeStats):
 class MakeStats6(MakeStats):
     def run(self):
         self.runScript("danielAlignment", os.path.join(self.outputDir, "danielAlignment.txt"), "--referenceEventString hg19 --otherReferenceEventString NA12891")
+        self.runScript("sequenceCoverages", os.path.join(self.outputDir, "sequenceCoverages.txt"), "--referenceEventString reference")
            
 def main():
     ##########################################
