@@ -242,11 +242,15 @@ class MakeStats(Target):
         
     def run(self):
         for outputFile, program in (("treeStats.xml", runCactusTreeStats),
-                                    ("alignment.maf", runCactusMAFGenerator)):
+                                    ("alignment.maf", runCactusMAFGenerator),
+                                    ("alignment_substitutionsOnly.maf", runCactusMAFGenerator)):
             outputFile = os.path.join(self.outputDir, outputFile)
             if not os.path.exists(outputFile):
                 tempFile = os.path.join(self.getLocalTempDir(), "temp")
-                program(tempFile, getCactusDiskString(self.alignment))
+                if "alignment_substitutionsOnly.maf" in outputFile:
+                    program(tempFile, getCactusDiskString(self.alignment), showOnlySubstitutionsWithRespectToTheReference=True)
+                else:
+                    program(tempFile, getCactusDiskString(self.alignment))
                 system("mv %s %s" % (tempFile, outputFile))
         self.addChildTarget(MakeStats2(self.alignment, self.outputDir, self.options))    
 
