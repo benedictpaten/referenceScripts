@@ -123,6 +123,7 @@ class MakeAlignment(Target):
                                                  newickTreeString=self.options.newickTree, 
                                                  requiredSpecies=[ (1, self.requiredSpecies.split() ) ],
                                                  singleCopySpecies=self.singleCopySpecies,
+                                                 outgroupEvent = self.options.outgroupEvent,
                                                  databaseName=cactusAlignmentName,
                                                  outputDir=self.getLocalTempDir(),
                                                  configFile=tempConfigFile)
@@ -327,6 +328,7 @@ def main():
     parser.add_option("--useSimulatedAnnealing", dest="useSimulatedAnnealing")
     parser.add_option("--sampleNumber", dest="sampleNumber")
     parser.add_option("--heldOutSequences", dest="heldOutSequences")
+    parser.add_option("--outgroupEvent", dest="outgroupEvent")
     
     Stack.addJobTreeOptions(parser)
     

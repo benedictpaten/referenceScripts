@@ -20,6 +20,7 @@ theta = 0.0 0.001
 useSimulatedAnnealing = 0
 permutations = 100
 heldOutSequences=HUMAN CHIMP
+outgroupEvent=HUMAN2
 
 #maxCardinality maxWeight blossom5
 

@@ -26,6 +26,7 @@ blastAlignmentStrings =
 theta = 0.0 0.0000001 0.000001 0.00001 0.0001
 useSimulatedAnnealing = 0
 permutations = 100
+outgroupEvent=panTro3
 
 include ${rootPath}/include.mk
 
