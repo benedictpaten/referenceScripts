@@ -6,15 +6,15 @@ pL = {}
 l = []
 for line in open(sys.argv[1], 'r'):
     if line[:2] == 'a ':
-        if l != []:
+        l.sort()
+        def fn(i):
+            for name in seqs:
+                if name in i:
+                    return True
+            return False
+        l = [ i for i in l if len(seqs) == 0 or fn(i) ]
+        if len(l) >= len(seqs) or (seqs == [] and l != []):
             pL2 = {}
-            l.sort()
-            def fn(i):
-                for name in seqs:
-                    if name in i:
-                        return True
-                return False
-            l = [ i for i in l if len(seqs) == 0 or fn(i) ]
             fH.write("%i\n" % len(l))
             for i in l:
                 i = i.split()
