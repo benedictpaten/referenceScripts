@@ -13,7 +13,7 @@ for line in open(sys.argv[1], 'r'):
                     return True
             return False
         l = [ i for i in l if len(seqs) == 0 or fn(i) ]
-        if len(l) >= len(seqs) or (seqs == [] and l != []):
+        if l != []:
             pL2 = {}
             fH.write("%i\n" % len(l))
             for i in l:
@@ -31,8 +31,8 @@ for line in open(sys.argv[1], 'r'):
                 fH.write("%s\t%s\t%i\t%i\t%i\t%s\n" % \
                          (i[1][:10] + " " * (10 - len(i[1][:10])), i[2], b, b2, b3, i[-1][:30]))
             fH.write("\n")
-            l = []
             pL = pL2
+        l = []    
     elif line[0] == 's':
         l.append(line)
 fH.close()
