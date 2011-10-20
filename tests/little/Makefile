@@ -16,7 +16,7 @@ referenceAlgorithms = maxCardinality
 baseLevel = 1
 maxNumberOfChains = 0
 blastAlignmentStrings = --nogapped % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
-theta = 0.0 0.001
+theta = 0.001
 useSimulatedAnnealing = 0
 permutations = 100
 heldOutSequences=HUMAN CHIMP
