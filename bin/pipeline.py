@@ -195,8 +195,8 @@ class MakeAlignments(Target):
     def run(self):
         statsFiles = []
         statsNames = []
-        singleCopySpeciesCount = 0
         for pruneOutStubAlignments in (True, False):
+            singleCopySpeciesCount = 0
             for singleCopySpecies in self.options.singleCopySpecies.split("%"):
                 singleCopySpeciesCount += 1
                 for requiredSpecies in (self.options.requiredSpecies,):
