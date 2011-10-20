@@ -21,10 +21,11 @@ baseLevel = 1
 maxNumberOfChains = 10000
 blastAlignmentStrings = 
 #--nogapped %  % --step=10 --seed=match12 --notransition --mismatch=2,100 --match=1,5 --nogapped
-theta = 0.0 0.0000001 0.000001 0.00001 0.0001
+theta = 0.0 0.0000001 0.000001 0.00001 0.01
 useSimulatedAnnealing = 0
 permutations = 100
 outgroupEvent=panTro3
+gapGamma = 0.0 0.2
 
 include ${rootPath}/include.mk
 

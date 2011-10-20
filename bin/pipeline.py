@@ -48,7 +48,7 @@ class MakeAlignment(Target):
                  singleCopySpecies,
                  referenceAlgorithm, minimumBlockDegree, 
                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
-                 theta, useSimulatedAnnealing, heldOutSequence, pruneOutStubAlignments):
+                 theta, useSimulatedAnnealing, heldOutSequence, pruneOutStubAlignments, gapGamma):
         Target.__init__(self, cpu=1, memory=4000000000)
         self.sequences = sequences
         self.requiredSpecies = requiredSpecies
@@ -65,6 +65,7 @@ class MakeAlignment(Target):
         self.options = options
         self.heldOutSequence = heldOutSequence
         self.pruneOutStubAlignments = pruneOutStubAlignments
+        self.gapGamma = gapGamma
     
     def run(self):
         if not os.path.isdir(self.outputDir):
@@ -88,6 +89,7 @@ class MakeAlignment(Target):
             blastIteration.find("core").attrib["minimumBlockDegree"] = str(minimumBlastBlockDegree)
             baseIteration.attrib["minimumBlockDegree"] = str(self.minimumBlockDegree)
             baseIteration.attrib["prune_out_stub_alignments"] = str(int(self.pruneOutStubAlignments))
+            baseIteration.attrib["gap_gamma"] = str(float(self.gapGamma))
             
             #Set the blast string
             blastIteration.find("blast").attrib["blastString"] = blastIteration.find("blast").attrib["blastString"].replace("PARAMETERS", self.blastAlignmentString)
@@ -155,7 +157,7 @@ def makeHeldOutAlignments(self, options, outputDir, requiredSpecies,
                  singleCopySpecies,
                  referenceAlgorithm, minimumBlockDegree, 
                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
-                 theta, useSimulatedAnnealing, pruneOutStubAlignments):
+                 theta, useSimulatedAnnealing, pruneOutStubAlignments, gapGamma):
     nullSequence = os.path.join(self.getGlobalTempDir(), "nullSequence.fa")
     open(nullSequence, 'w').close()
     for heldoutSequence in self.options.heldOutSequences.split():
@@ -176,14 +178,14 @@ def makeHeldOutAlignments(self, options, outputDir, requiredSpecies,
                       heldOutSingleCopySpecies,
                       referenceAlgorithm, minimumBlockDegree, 
                       blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
-                      theta, useSimulatedAnnealing, heldoutSequence, pruneOutStubAlignments))
+                      theta, useSimulatedAnnealing, heldoutSequence, pruneOutStubAlignments, gapGamma))
     self.addChildTarget(MakeAlignment(options, 
                   options.haplotypeSequences,
                   outputDir, requiredSpecies,
                   singleCopySpecies,
                   referenceAlgorithm, minimumBlockDegree, 
                   blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
-                  theta, useSimulatedAnnealing, None, pruneOutStubAlignments))
+                  theta, useSimulatedAnnealing, None, pruneOutStubAlignments, gapGamma))
 
 class MakeAlignments(Target):
     """Makes alignments using pipeline.
@@ -195,34 +197,35 @@ class MakeAlignments(Target):
     def run(self):
         statsFiles = []
         statsNames = []
-        for pruneOutStubAlignments in (True, False):
-            singleCopySpeciesCount = 0
-            for singleCopySpecies in self.options.singleCopySpecies.split("%"):
-                singleCopySpeciesCount += 1
-                for requiredSpecies in (self.options.requiredSpecies,):
-                    for referenceAlgorithm in self.options.referenceAlgorithms.split():
-                        for minimumBlockDegree in [ int(i) for i in self.options.rangeOfMinimumBlockDegrees.split() ]:
-                            blastAlignmentStrings = self.options.blastAlignmentStrings.split("%")
-                            for blastAlignmentStringIndex in xrange(len(blastAlignmentStrings)):
-                                for baseLevel in [ bool(int(i)) for i in self.options.baseLevel.split() ]:
-                                    for maxNumberOfChains in [ int(i) for i in self.options.maxNumberOfChains.split() ]:
-                                        for permutations in [ int(i) for i in self.options.permutations.split() ]:
-                                            for theta in [ float(i) for i in self.options.theta.split() ]:
-                                                for useSimulatedAnnealing in [ bool(int(i)) for i in self.options.useSimulatedAnnealing.split() ]:
-                                                    os.path.exists(self.options.outputDir)
-                                                    def fn(i, string="required-species"):
-                                                        if i == None:
-                                                            return "no-%s" % string
-                                                        return string
-                                                    jobOutputDir = "%s-%s-%s-%s-%s-%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), fn(singleCopySpecies, "single-copy-species_%i" % singleCopySpeciesCount), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains, permutations, theta, useSimulatedAnnealing, pruneOutStubAlignments)
-                                                    statsNames.append(jobOutputDir)
-                                                    absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
-                                                    statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
-                                                    makeHeldOutAlignments(self, self.options, absJobOutputDir, 
-                                                                          requiredSpecies, singleCopySpecies, referenceAlgorithm, minimumBlockDegree, 
-                                                                          blastAlignmentStrings[blastAlignmentStringIndex], 
-                                                                          baseLevel, maxNumberOfChains, permutations, 
-                                                                          theta, useSimulatedAnnealing, pruneOutStubAlignments)
+        for gapGamma in self.options.gapGamma.split():
+            for pruneOutStubAlignments in (True, False):
+                singleCopySpeciesCount = 0
+                for singleCopySpecies in self.options.singleCopySpecies.split("%"):
+                    singleCopySpeciesCount += 1
+                    for requiredSpecies in (self.options.requiredSpecies,):
+                        for referenceAlgorithm in self.options.referenceAlgorithms.split():
+                            for minimumBlockDegree in [ int(i) for i in self.options.rangeOfMinimumBlockDegrees.split() ]:
+                                blastAlignmentStrings = self.options.blastAlignmentStrings.split("%")
+                                for blastAlignmentStringIndex in xrange(len(blastAlignmentStrings)):
+                                    for baseLevel in [ bool(int(i)) for i in self.options.baseLevel.split() ]:
+                                        for maxNumberOfChains in [ int(i) for i in self.options.maxNumberOfChains.split() ]:
+                                            for permutations in [ int(i) for i in self.options.permutations.split() ]:
+                                                for theta in [ float(i) for i in self.options.theta.split() ]:
+                                                    for useSimulatedAnnealing in [ bool(int(i)) for i in self.options.useSimulatedAnnealing.split() ]:
+                                                        os.path.exists(self.options.outputDir)
+                                                        def fn(i, string="required-species"):
+                                                            if i == None:
+                                                                return "no-%s" % string
+                                                            return string
+                                                        jobOutputDir = "%s-%s-%s-%s-%s-%s-%s-%s-%s-%s-%s-%s" % (fn(requiredSpecies), fn(singleCopySpecies, "single-copy-species_%i" % singleCopySpeciesCount), referenceAlgorithm, minimumBlockDegree, blastAlignmentStringIndex, baseLevel, maxNumberOfChains, permutations, theta, useSimulatedAnnealing, pruneOutStubAlignments, gapGamma)
+                                                        statsNames.append(jobOutputDir)
+                                                        absJobOutputDir = os.path.join(self.options.outputDir, jobOutputDir)
+                                                        statsFiles.append(os.path.join(absJobOutputDir, "treeStats.xml"))
+                                                        makeHeldOutAlignments(self, self.options, absJobOutputDir, 
+                                                                              requiredSpecies, singleCopySpecies, referenceAlgorithm, minimumBlockDegree, 
+                                                                              blastAlignmentStrings[blastAlignmentStringIndex], 
+                                                                              baseLevel, maxNumberOfChains, permutations, 
+                                                                              theta, useSimulatedAnnealing, pruneOutStubAlignments, gapGamma)
 
 class MakeStats(Target):
     """Builds basic stats and the maf alignment.
@@ -332,6 +335,7 @@ def main():
     parser.add_option("--sampleNumber", dest="sampleNumber")
     parser.add_option("--heldOutSequences", dest="heldOutSequences")
     parser.add_option("--outgroupEvent", dest="outgroupEvent")
+    parser.add_option("--gapGamma", dest="gapGamma")
     
     Stack.addJobTreeOptions(parser)
     

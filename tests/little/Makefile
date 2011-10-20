@@ -21,6 +21,7 @@ useSimulatedAnnealing = 0
 permutations = 100
 heldOutSequences=HUMAN CHIMP
 outgroupEvent=HUMAN2
+gapGamma = 0.0 0.2
 
 #maxCardinality maxWeight blossom5
 
