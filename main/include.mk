@@ -25,7 +25,7 @@ theta = 0.0 0.0000001 0.000001 0.00001 0.01
 useSimulatedAnnealing = 0
 permutations = 100
 outgroupEvent=panTro3
-gapGamma = 0.0 0.2
+gapGamma = 0.2
 
 include ${rootPath}/include.mk
 
