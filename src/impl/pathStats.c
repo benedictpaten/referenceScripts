@@ -188,7 +188,7 @@ void printIndel(IndelEvent *indelEvent, stList *eventStrings,
     }
     assert(b);
     assert(i == indelEvent->deletionLength);
-    assert(
+    assert(ignoreAdjacencies ||
             cap_getCoordinate(indelEvent->otherCap) - cap_getCoordinate(
                     indelEvent->cap) - 1 == indelEvent->insertionLength);
     assert(cap_getSequence(indelEvent->cap) != NULL);
