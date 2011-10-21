@@ -284,6 +284,7 @@ class MakeStats3(MakeStats):
 class MakeStats4(MakeStats):
     def run(self):          
         for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
+                                                    ("pathStats_ignoreAdjacencies_%s.xml", "pathStats", "--ignoreAdjacencies"), 
                                                     ("snpStats_%s.xml", "snpStats", ""),
                                                     ("snpStats_filtered_%s.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5"),
                                                     ("snpStats_%s_recurrent.xml", "snpStats", "--minimumRecurrence 2"),
@@ -298,6 +299,7 @@ class MakeStats4(MakeStats):
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_%s_recurrent.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s_recurrent.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_%s.xml") % reference))
+            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_ignoreAdjacencies_%s.xml") % reference))
         
         self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))      
 

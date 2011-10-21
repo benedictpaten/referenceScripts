@@ -41,6 +41,11 @@ extern int32_t minimumIndentity;
 extern bool printIndelPositions;
 
 /*
+ * Parameters for the path stats script.
+ */
+extern bool ignoreAdjacencies;
+
+/*
  * For the linkage script.
  */
 extern int32_t bucketNumber;

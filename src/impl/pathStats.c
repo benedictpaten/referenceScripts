@@ -590,6 +590,7 @@ int main(int argc, char *argv[]) {
     // Now print the haplotype path stats.
     ///////////////////////////////////////////////////////////////////////////
 
+    getTerminalAdjacencyLength_ignoreAdjacencies = ignoreAdjacencies;
     int64_t startTime = time(NULL);
     FILE *fileHandle = fopen(outputFile, "w");
     fprintf(fileHandle, "<pathStats>\n");

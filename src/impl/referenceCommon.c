@@ -81,6 +81,11 @@ int32_t minimumIndentity = 0;
 bool printIndelPositions = 0;
 
 /*
+ * Parameters for the path stats script.
+ */
+bool ignoreAdjacencies = 0;
+
+/*
  * For the linkage script.
  */
 int32_t bucketNumber = 100;
@@ -126,6 +131,7 @@ void basicUsage(const char *programName) {
             stderr,
             "-B --otherReferenceEventString : The other reference event string (only look at sites that also contain this reference)\n");
     fprintf(stderr, "-C --minimumRecurrence : \n");
+    fprintf(stderr, "-D --ignoreAdjacencies : \n");
 }
 
 int parseBasicArguments(int argc, char *argv[], const char *programName) {
@@ -159,12 +165,12 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 "sampleNumber", required_argument, 0, 'z' }, {
                 "doNotSampleDuplicatedPositions", no_argument, 0, 'A' }, {
                 "otherReferenceEventString", required_argument, 0, 'B' }, {
-                "minimumRecurrence", required_argument, 0, 'C' },
-                { 0, 0, 0, 0 } };
+                "minimumRecurrence", required_argument, 0, 'C' }, {
+                "ignoreAdjacencies", no_argument, 0, 'D' }, { 0, 0, 0, 0 } };
 
         int option_index = 0;
 
-        int key = getopt_long(argc, argv, "a:c:e:hm:n:o:p:t:u:v:wx:y:z:AB:C:",
+        int key = getopt_long(argc, argv, "a:c:e:hm:n:o:p:t:u:v:wx:y:z:AB:C:D",
                 long_options, &option_index);
 
         if (key == -1) {
@@ -257,6 +263,9 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
             case 'C':
                 k = sscanf(optarg, "%i", &minimumRecurrence);
                 assert(k == 1);
+                break;
+            case 'D':
+                ignoreAdjacencies = 1;
                 break;
             default:
                 st_errAbort("Unrecognised option %s", optarg);
