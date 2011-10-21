@@ -48,6 +48,11 @@ extern int32_t upperLinkageBound;
 extern int32_t sampleNumber;
 extern bool doNotSampleDuplicatedPositions;
 
+/*
+ * For the snps script
+ */
+extern int32_t minimumRecurrence;
+
 stList *getEventStrings(const char *hapA1EventString, const char *hapA2EventString);
 
 void basicUsage(const char *programName);
