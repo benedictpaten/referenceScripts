@@ -198,7 +198,7 @@ class MakeAlignments(Target):
         statsFiles = []
         statsNames = []
         for gapGamma in self.options.gapGamma.split():
-            for pruneOutStubAlignments in (True, False):
+            for pruneOutStubAlignments in (True,): # False):
                 singleCopySpeciesCount = 0
                 for singleCopySpecies in self.options.singleCopySpecies.split("%"):
                     singleCopySpeciesCount += 1

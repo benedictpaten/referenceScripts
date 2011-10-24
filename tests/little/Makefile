@@ -4,14 +4,14 @@ libPath = ${rootPath}lib
 dataPath = ${rootPath}dataDir
 outputPath = ${rootPath}output
 
-newickTree=(CHIMP:0.007060,(HUMAN:0.002000,HUMAN2:0.002000,HUMAN3:0.002000):0.005850);
+newickTree=(CHIMP:0.007060,(HUMAN:0.002000,HUMAN2:0.002000,HUMAN3:0.002000,HUMAN4:0.002000):0.005850);
 dataDir=${dataPath}/test
-sequences= ${dataDir}/CHIMP ${dataDir}/HUMAN ${dataDir}/HUMAN2 ${dataDir}/HUMAN3
-requiredSequences=HUMAN HUMAN2 HUMAN3
-singleCopySpecies=CHIMP % CHIMP HUMAN HUMAN2 HUMAN3
+sequences= ${dataDir}/CHIMP ${dataDir}/HUMAN ${dataDir}/HUMAN2 ${dataDir}/HUMAN3 ${dataDir}/HUMAN4
+requiredSequences=HUMAN HUMAN2 HUMAN3 HUMAN4
+singleCopySpecies=CHIMP % CHIMP HUMAN HUMAN2 HUMAN3 HUMAN4
 outputDir=${outputPath}/tests/little
 referenceSpecies=reference HUMAN
-minimumBlockDegreeRange=1
+minimumBlockDegreeRange=2
 referenceAlgorithms = maxCardinality
 baseLevel = 1
 maxNumberOfChains = 0
@@ -20,7 +20,7 @@ theta = 0.001
 useSimulatedAnnealing = 0
 permutations = 100
 heldOutSequences=HUMAN CHIMP
-outgroupEvent=HUMAN2
+outgroupEvent=HUMAN3
 gapGamma = 0.0 0.2
 
 #maxCardinality maxWeight blossom5
