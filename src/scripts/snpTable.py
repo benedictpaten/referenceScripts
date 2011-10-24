@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 def fn(file):
     l = {}
-    for line in [ line.split() for line in open(file, "r").readlines()[1:] ]:
+    for line in [ line.split() for line in open(file, "r").readlines()[2:] ]:
         l[line[0]] = line[1:]
     referenceLine = l.pop("reference")
     aggregateLine = l.pop("aggregate")
