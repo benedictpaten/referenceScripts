@@ -19,7 +19,7 @@ blastAlignmentStrings = --nogapped % --step=10 --seed=match12 --notransition --m
 theta = 0.001
 useSimulatedAnnealing = 0
 permutations = 100
-heldOutSequences=HUMAN CHIMP
+heldOutSequences=CHIMP
 outgroupEvent=HUMAN3
 gapGamma = 0.0 0.2
 

@@ -269,7 +269,7 @@ class MakeStats2(MakeStats):
                                     ("filterNonComponentSequences.xml", "filterNonComponentSequences")):
             outputFile = os.path.join(self.outputDir, outputFile)
             ref1, ref2 = self.options.referenceSpecies.split()
-            self.runScript(program, outputFile, "--referenceEventString %s --otherReferenceEventString %s" % (ref1, ref2))
+            self.runScript(program, outputFile, "--referenceEventString %s --otherReferenceEventString %s --outgroupEventString %s" % (ref1, ref2, self.options.outgroupEvent))
         self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
 
 class MakeStats3(MakeStats):

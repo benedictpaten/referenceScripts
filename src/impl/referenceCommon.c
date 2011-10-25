@@ -67,6 +67,7 @@ CactusDisk *cactusDisk = NULL;
 
 char *referenceEventString = NULL;
 char *otherReferenceEventString = NULL;
+char *outgroupEventString = NULL;
 
 /*
  * Optional parameter used by copy number and substitution scripts.
@@ -112,6 +113,7 @@ void basicUsage(const char *programName) {
             "-o --maximumInsertionLength : Maximum length of insertion\n");
 
     fprintf(stderr, "-p --referenceEventString : The reference event string\n");
+    fprintf(stderr, "-E --outgroupEventString : The outgroup event string\n");
 
     //Parameters not used by everyone..
     fprintf(stderr, "The following are not used by all scripts\n");
@@ -166,12 +168,15 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 "doNotSampleDuplicatedPositions", no_argument, 0, 'A' }, {
                 "otherReferenceEventString", required_argument, 0, 'B' }, {
                 "minimumRecurrence", required_argument, 0, 'C' }, {
-                "ignoreAdjacencies", no_argument, 0, 'D' }, { 0, 0, 0, 0 } };
+                "ignoreAdjacencies", no_argument, 0, 'D' }, {
+                "outgroupEventString", required_argument, 0, 'E' }, { 0, 0, 0,
+                0 } };
 
         int option_index = 0;
 
-        int key = getopt_long(argc, argv, "a:c:e:hm:n:o:p:t:u:v:wx:y:z:AB:C:D",
-                long_options, &option_index);
+        int key = getopt_long(argc, argv,
+                "a:c:e:hm:n:o:p:t:u:v:wx:y:z:AB:C:DE:", long_options,
+                &option_index);
 
         if (key == -1) {
             break;
@@ -266,6 +271,9 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 break;
             case 'D':
                 ignoreAdjacencies = 1;
+                break;
+            case 'E':
+                outgroupEventString = stString_copy(optarg);
                 break;
             default:
                 st_errAbort("Unrecognised option %s", optarg);

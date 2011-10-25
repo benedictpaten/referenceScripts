@@ -27,6 +27,7 @@ extern CactusDisk *cactusDisk;
 
 extern char *referenceEventString;
 extern char *otherReferenceEventString;
+extern char *outgroupEventString;
 
 /*
  * Optional parameter used by copy number and substitution scripts.
