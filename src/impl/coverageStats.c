@@ -156,8 +156,8 @@ int main(int argc, char *argv[]) {
 
             baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
 
-            baseCoverages[0] = getTotalLengthOfAdjacencies(flower,
-                    sampleEventString);
+            baseCoverages[0] = strcmp(sampleEventString, referenceEventString) != 0 ? getTotalLengthOfAdjacencies(flower,
+                    sampleEventString) : 0;
 
             referenceBases = 0;
             otherReferenceBases = 0;
@@ -183,12 +183,16 @@ int main(int argc, char *argv[]) {
     otherReferenceBases = totalOtherReferenceBases;
     printStatsForSample(0, fileHandle, totalSamples);
 
-    //Do blocks without other reference
+    //Do all..
     sampleEventString = referenceEventString;
     baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
     baseCoverages[0] = totalBaseCoverages[0];
     referenceBases = 0;
     getMAFs(flower, fileHandle, getMAFBlock2);
+    for(int32_t i=2; i<eventNumber + 1; i++) {
+        baseCoverages[i-1] = baseCoverages[i];
+    }
+    baseCoverages[eventNumber] = 0;
     otherReferenceBases = sequence_getLength(otherReferenceSequence);
     sampleEventString = "all";
     printStatsForSample(0, fileHandle, 1);
@@ -198,10 +202,15 @@ int main(int argc, char *argv[]) {
     ignoreOtherReferenceBlocks = 1;
     sampleEventString = referenceEventString;
     baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
-    baseCoverages[0] = totalBaseCoverages[0];
+    baseCoverages[0] = totalBaseCoverages[0] - getTotalLengthOfAdjacencies(flower,
+            otherReferenceEventString);
     referenceBases = 0;
     otherReferenceBases = 0;
     getMAFs(flower, fileHandle, getMAFBlock2);
+    for(int32_t i=2; i<eventNumber + 1; i++) {
+        baseCoverages[i-1] = baseCoverages[i];
+    }
+    baseCoverages[eventNumber] = 0;
     sampleEventString = "minusOtherReference";
     printStatsForSample(0, fileHandle, 1);
     free(baseCoverages);
