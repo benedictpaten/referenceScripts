@@ -184,6 +184,17 @@ int main(int argc, char *argv[]) {
     printStatsForSample(0, fileHandle, totalSamples);
 
     //Do blocks without other reference
+    sampleEventString = referenceEventString;
+    baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
+    baseCoverages[0] = totalBaseCoverages[0];
+    referenceBases = 0;
+    getMAFs(flower, fileHandle, getMAFBlock2);
+    otherReferenceBases = sequence_getLength(otherReferenceSequence);
+    sampleEventString = "all";
+    printStatsForSample(0, fileHandle, 1);
+    free(baseCoverages);
+
+    //Do blocks without other reference
     ignoreOtherReferenceBlocks = 1;
     sampleEventString = referenceEventString;
     baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
