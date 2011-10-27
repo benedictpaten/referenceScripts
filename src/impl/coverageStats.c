@@ -164,6 +164,13 @@ int main(int argc, char *argv[]) {
 
             getMAFs(flower, fileHandle, getMAFBlock2);
 
+            if(strcmp(sampleEventString, referenceEventString) == 0) {
+                for(int32_t i=2; i<eventNumber + 1; i++) {
+                    baseCoverages[i-1] = baseCoverages[i];
+                }
+                baseCoverages[eventNumber] = 0;
+            }
+
             printStatsForSample(
                     strcmp(sampleEventString, referenceEventString) != 0 && strcmp(sampleEventString, outgroupEventString) != 0,
                     fileHandle, 1);
