@@ -379,14 +379,12 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
         const char *eventString = event_getHeader(event);
         if (eventString != NULL && strcmp(eventString, referenceEventString)
                 != 0) {
-            stList *eventStrings = stList_construct();
-            stList_append(eventStrings, (void *)eventString);
             SampleStats *sampleStats = getSamplePathStats(flower,
-                    referenceEventString, eventString, capCodeParameters);
+                    eventString, referenceEventString, capCodeParameters);
             int32_t minimumNCount = capCodeParameters->minimumNCount;
             capCodeParameters->minimumNCount = 0;
             SampleStats *sampleStatsFreeIndels = getSamplePathStats(flower,
-                    referenceEventString, eventString, capCodeParameters);
+                    eventString, referenceEventString, capCodeParameters);
             capCodeParameters->minimumNCount = minimumNCount;
 
             int32_t genomeLength = getGenomeLength(flower, eventString);
@@ -515,9 +513,12 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle,
                 }
             }
             fprintf(fileHandle, "\">\n");
+            stList *eventStrings = stList_construct();
+            stList_append(eventStrings, (void *)referenceEventString);
             while ((indelEvent = stSortedSet_getNext(it)) != NULL) {
                 printIndel(indelEvent, eventStrings, fileHandle);
             }
+            stList_destruct(eventStrings);
             stSortedSet_destructIterator(it);
             stSortedSet_destruct(indelEvents);
             fprintf(fileHandle, "</statsForSample>\n");
