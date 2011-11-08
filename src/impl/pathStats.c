@@ -124,11 +124,11 @@ void getHaplotypePathStatsP(Cap *cap, stList *referenceEventStrings, stList *con
             sampleStats->totalScaffoldGaps++;
             return;
         case ERROR_HAP_TO_HAP_SAME_CHROMOSOME:
+            stList_append(sampleStats->nonLinearRearrangements, cap);
+            stList_append(sampleStats->nonLinearRearrangements, otherCap);
             sampleStats->totalIntraJoins++;
             return;
         case ERROR_HAP_TO_HAP_DIFFERENT_CHROMOSOMES:
-            stList_append(sampleStats->nonLinearRearrangements, cap);
-            stList_append(sampleStats->nonLinearRearrangements, otherCap);
             sampleStats->totalInterJoins++;
             return;
         case ERROR_HAP_TO_INSERT:
