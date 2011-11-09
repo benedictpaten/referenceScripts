@@ -160,10 +160,39 @@ void getHaplotypePathStatsP(Cap *cap, stList *referenceEventStrings, stList *con
     }
 }
 
-void printNonLinearRearrangement(Cap *cap, Cap *otherCap, FILE *fileHandle) {
-    fprintf(fileHandle, "SEQ1: %s START1: %i SEQ2: %s START2: %i #",
-            sequence_getHeader(cap_getSequence(cap)), cap_getCoordinate(cap) + 1 - sequence_getStart(cap_getSequence(cap)),
-            sequence_getHeader(cap_getSequence(otherCap)), cap_getCoordinate(otherCap) + 1 - sequence_getStart(cap_getSequence(cap)));
+static Cap *getCapForReferenceEventString(End *end, const char *referenceEventString) {
+    /*
+     * Get the cap for a given event.
+     */
+    End_InstanceIterator *it = end_getInstanceIterator(end);
+    Cap *cap;
+    while ((cap = end_getNext(it)) != NULL) {
+        if (strcmp(event_getHeader(cap_getEvent(cap)), referenceEventString) == 0) {
+            end_destructInstanceIterator(it);
+            return cap;
+        }
+    }
+    end_destructInstanceIterator(it);
+    assert(0);
+    return NULL;
+}
+
+void printNonLinearRearrangement(Cap *cap, Cap *otherCap, FILE *fileHandle, const char *referenceEventString) {
+    Cap *cap2 = getCapForReferenceEventString(cap_getEnd(cap), referenceEventString);
+    Cap *otherCap2 = getCapForReferenceEventString(cap_getEnd(otherCap), referenceEventString);
+    fprintf(fileHandle, "SEQ1: %s START1: %i SEQ2: %s START2: %i ", sequence_getHeader(cap_getSequence(cap)),
+            cap_getCoordinate(cap) + 1 - sequence_getStart(cap_getSequence(cap)),
+            sequence_getHeader(cap_getSequence(otherCap)),
+            cap_getCoordinate(otherCap) + 1 - sequence_getStart(cap_getSequence(cap)));
+    if (cap2 != NULL) {
+        fprintf(fileHandle, "SEQ3: %s START3: %i ", sequence_getHeader(cap_getSequence(cap2)),
+                cap_getCoordinate(cap2) + 1 - sequence_getStart(cap_getSequence(cap2)));
+    }
+    if (otherCap2 != NULL) {
+        fprintf(fileHandle, "SEQ4: %s START4: %i ", sequence_getHeader(cap_getSequence(otherCap2)),
+                cap_getCoordinate(otherCap2) + 1 - sequence_getStart(cap_getSequence(cap2)));
+    }
+    fprintf(fileHandle, "# ");
 }
 
 void printIndel(IndelEvent *indelEvent, stList *eventStrings, FILE *fileHandle) {
@@ -452,9 +481,9 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle, const char *r
                 }
             }
             fprintf(fileHandle, "\" locationOfNonLinearBreakpoints=\"");
-            for(int32_t i=0; i<stList_length(sampleStats->nonLinearRearrangements); i+=2) {
+            for (int32_t i = 0; i < stList_length(sampleStats->nonLinearRearrangements); i += 2) {
                 printNonLinearRearrangement(stList_get(sampleStats->nonLinearRearrangements, i),
-                        stList_get(sampleStats->nonLinearRearrangements, i+1), fileHandle);
+                        stList_get(sampleStats->nonLinearRearrangements, i + 1), fileHandle, referenceEventString);
             }
             fprintf(fileHandle, "\">\n");
             stList *eventStrings = stList_construct();
