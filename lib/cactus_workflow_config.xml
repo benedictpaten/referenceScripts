@@ -20,7 +20,7 @@
 	<faces>
 	</faces>
 
-	<reference matching_algorithm="blossom5" maxNumberOfChainsToSolvePerRound="10">
+	<reference matching_algorithm="blossom5" maxNumberOfChainsBeforeSwitchingToFast="1000000">
 	</reference>
 
 	<check>
