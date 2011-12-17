@@ -16,11 +16,11 @@ def fn(x):
 
 writeLine(5, 1, (("Contiguity Statistics", 0, 4, 0, 0),), fileHandle)
 
-writeLine(5, 2, (("samples", 0, 0, 0, 1), 
-              ("sequence", 1, 1, 0, 1), 
-              ("\% mapped", 2, 2, 0, 1),
-              ("\% mapped and contiguous", 3, 3, 0, 1),
-              ("\% contigious that mapped", 4, 4, 0, 1)), fileHandle)
+writeLine(5, 2, (("Samples", 0, 0, 0, 1), 
+              ("Reference", 1, 1, 0, 1), 
+              ("\% M.", 2, 2, 0, 1),
+              ("\% M. \& C.", 3, 3, 0, 1),
+              ("\% C. w. M.", 4, 4, 0, 1)), fileHandle)
 
 samples = [ i.attrib["sampleName"] for i in ref.findall("statsForSample") if i.attrib["sampleName"] not in ("hg19", "reference", "", "ROOT")]
 samples.sort()
@@ -53,8 +53,8 @@ for sample in samples:
                      ), fileHandle, trailingLines=1)
 
 writeLine(5, 2, (("aggregate", 0, 0, 0, 1), 
-                     ("reference", 1, 1, 0, 0), 
-                     ("hg19", 1, 1, 1, 1), 
+                     ("C. Ref.", 1, 1, 0, 0), 
+                     ("GRCh37", 1, 1, 1, 1), 
                      (fn(refTotalAligned/refTotalSamples), 2, 2, 0, 0), 
                      (fn(hg19TotalAligned/hg19TotalSamples), 2, 2, 1, 1),
                      (fn(refTotalContiguous/refTotalSamples), 3, 3, 0, 0), 

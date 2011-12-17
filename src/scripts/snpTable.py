@@ -16,14 +16,15 @@ def fn(file):
     sampleTruePositives = 10
     sampleTrueNegatives = 12
     for key in k:
-        if len(l[key]) > 8:
+        if len(l[key]) > 13:
+            print "hhh", key, l[key]
             print "gooo", key, l[key][samples], l[key][truePositives], l[key][sampleTruePositives], l[key][sampleTrueNegatives]
             yield (key, int(l[key][samples]), int(l[key][truePositives]), int(l[key][sampleTruePositives]), int(l[key][sampleTrueNegatives]))
         else:
             yield (key, int(l[key][samples]), int(l[key][truePositives]), None, None)
     yield "panTro3", int(chimpLine[samples]), int(chimpLine[truePositives]), None, None
     yield "aggregate", int(aggregateLine[samples]), int(aggregateLine[truePositives]), None, None
-    yield "reference", int(referenceLine[samples]), int(referenceLine[truePositives]), None, None
+    yield "C. Ref.", int(referenceLine[samples]), int(referenceLine[truePositives]), None, None
     
 fileHandle = open(sys.argv[3], "w")
 
@@ -36,12 +37,12 @@ writeLine(9, 1, (("Single Nucleotide Polymorphisms", 0, 8, 0, 0),), fileHandle)
 
 
 writeLine(9, 2, (("Sample", 0, 0, 0, 1), 
-              ("Unfiltered", 1, 4, 0, 0), 
+              ("All", 1, 4, 0, 0), 
               ("T\#", 1, 1, 1, 1), 
               ("TP", 2, 2, 1, 1), 
               ("STP", 3, 3, 1, 1), 
               ("SFN", 4, 4, 1, 1),
-              ("Filtered", 5, 8, 0, 0), 
+              ("Recurrent", 5, 8, 0, 0), 
               ("T\#", 5, 5, 1, 1), 
               ("TP", 6, 6, 1, 1), 
               ("STP", 7, 7, 1, 1), 
@@ -72,14 +73,14 @@ for sampleName, samples, truePositives, \
                      (fn4(filteredSampleTruePositives, filteredSampleTrueNegatives), 8, 8, 0, 0)), fileHandle, trailingLines=0)
        
 
-writeEnd(fileHandle, "snpTable", "Unfiltered: all SNPs detected in each sample with respect to HG19. \
-Filtered: as unfiltered, but excluding SNPs detected within 5 bps of an indel within the MSA. \
+writeEnd(fileHandle, "snpTable", "All: all SNPs detected in each sample with respect to GRCh37. \
+Recurrent: as All, but excluding SNPs not present in at least two samples, including chimp. \
 T\#: Total number of SNPs. \
 TP: Percentage true positives, as validated by a matching SNP in dbSNP. \
 STP: Percentage (sample) true positives, as validated by those reported for the sample in question. \
 SFN: Percentage (sample) false negatives, as validated by those reported for the sample in question. \
 An NA entry denotes that the data was not available. \
 Aggregate row: gives the total SNPs in human samples (excluding chimp). \
-Reference row: gives SNPs in our reference with respect to HG19")
+C. Ref. row: gives SNPs in C. Ref. with respect to GRCh37")
 writeDocumentEnd(fileHandle)
 fileHandle.close()

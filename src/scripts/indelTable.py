@@ -23,7 +23,7 @@ def fn(file, insertionOrDeletion):
             yield (key, int(l[key][samples]), int(l[key][truePositives]), None, None)
     yield "panTro3", int(chimpLine[samples]), int(chimpLine[truePositives]), None, None
     yield "aggregate", int(aggregateLine[samples]), int(aggregateLine[truePositives]), None, None
-    yield "reference", int(referenceLine[samples]), int(referenceLine[truePositives]), None, None
+    yield "C. Ref.", int(referenceLine[samples]), int(referenceLine[truePositives]), None, None
     
 fileHandle = open(sys.argv[3], "w")
 
@@ -37,11 +37,11 @@ for type in ("insertion", "deletion"):
     
     writeLine(8, 2, (("Sample", 0, 0, 0, 1), 
                   ("T\#", 1, 1, 0, 1), 
-                  ("Exact", 2, 4, 0, 0), 
+                  ("All", 2, 4, 0, 0), 
                   ("TP", 2, 2, 1, 1), 
                   ("STP", 3, 3, 1, 1), 
                   ("SFN", 4, 4, 1, 1),
-                  ("Wobble", 5, 7, 0, 0), 
+                  ("No wobble", 5, 7, 0, 0), 
                   ("TP", 5, 5, 1, 1), 
                   ("STP", 6, 6, 1, 1), 
                   ("SFN", 7, 7, 1, 1)), fileHandle)
@@ -69,15 +69,15 @@ for type in ("insertion", "deletion"):
                          (fn3(filteredSampleTruePositives), 6, 6, 0, 0),
                          (fn4(filteredSampleTruePositives, filteredSampleTrueNegatives), 7, 7, 0, 0)), fileHandle, trailingLines=0)    
 
-    writeEnd(fileHandle, "%sTable" % type, "Exact: %ss detected in each sample with respect to HG19, matched precisely to insertions in dbsnp (location and length). \
-    Wobble: as exact, but allowing a match to an %s within 5 bases of its location in dbSNP. \
+    writeEnd(fileHandle, "%sTable" % type, "All: %ss detected in each sample with respect to GRCh37, allowing a match to an %s within 5 bases of its location in dbSNP. \
+    No wobble: as All, matched precisely to insertions in dbsnp (location and length) \
     T\#: Total number of %ss. \
     TP: Percentage true positives, as validated by a match in dbSNP. \
     STP: Percentage (sample) true positives, as validated by those reported for the sample in question. \
     SFN: Percentage (sample) false negatives, as validated by those reported for the sample in question. \
     An NA entry denotes that the data was not available. \
     Aggregate row: gives the total %ss in human samples (excluding chimp). \
-    Reference row: gives %ss in our reference with respect to HG19" % (type, type, type, type, type))
+    C. Ref. row: gives %ss in C. Ref. with respect to GRCh37" % (type, type, type, type, type))
     
 writeDocumentEnd(fileHandle)
 fileHandle.close()
