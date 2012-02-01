@@ -73,7 +73,7 @@ class MakeAlignment(Target):
             config = ET.parse(os.path.join(getRootPathString(), "lib", "cactus_workflow_config.xml")).getroot()
             
             #Set the reference algorithm
-            config.find("reference").attrib["matching_algorithm"] = self.referenceAlgorithm
+            config.find("reference").attrib["matchingAlgorithm"] = self.referenceAlgorithm
             
             #Do the minimum block degree configuration
             iterations = config.find("alignment").find("iterations")
@@ -85,19 +85,18 @@ class MakeAlignment(Target):
                 minimumBlastBlockDegree = 2
             blastIteration.find("core").attrib["minimumBlockDegree"] = str(minimumBlastBlockDegree)
             baseIteration.attrib["minimumBlockDegree"] = str(self.minimumBlockDegree)
-            baseIteration.attrib["prune_out_stub_alignments"] = str(int(self.pruneOutStubAlignments))
-            baseIteration.attrib["gap_gamma"] = str(float(self.gapGamma))
+            baseIteration.attrib["pruneOutStubAlignments"] = str(int(self.pruneOutStubAlignments))
+            baseIteration.attrib["gapGamma"] = str(float(self.gapGamma))
             
             #Set the blast string
-            blastIteration.find("blast").attrib["blastString"] = blastIteration.find("blast").attrib["blastString"].replace("PARAMETERS", self.blastAlignmentString)
-            blastIteration.find("blast").attrib["selfBlastString"] = blastIteration.find("blast").attrib["selfBlastString"].replace("PARAMETERS", self.blastAlignmentString)
+            blastIteration.find("blast").attrib["lastzArguments"] = blastIteration.find("blast").attrib["lastzArguments"].replace("PARAMETERS", self.blastAlignmentString)
             
             #Get rid of the base level, if needed
             if not self.baseLevel:
                 iterations.remove(baseIteration)
             
             #Set the number of chains to allow in a level, during promotion
-            config.find("normal").attrib["max_number_of_chains"] = str(self.maxNumberOfChains)
+            config.find("normal").attrib["maxNumberOfChains"] = str(self.maxNumberOfChains)
             
             #Set the number of chains to order per round of the matching algorithm
             config.find("reference").attrib["permutations"]  = str(self.permutations)
@@ -272,7 +271,7 @@ class MakeStats4(MakeStats):
                                      ):
             for reference in self.options.referenceSpecies.split():
                 self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
-        
+
         for reference in self.options.referenceSpecies.split():
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_%s.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s.xml") % reference))
@@ -280,8 +279,8 @@ class MakeStats4(MakeStats):
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s_recurrent.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_%s.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_ignoreAdjacencies_%s.xml") % reference))
-        
-        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))      
+
+        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
 
 class MakeStats5(MakeStats):
     def run(self):       
@@ -294,7 +293,7 @@ class MakeStats6(MakeStats):
     def run(self):
         self.runScript("danielAlignment", os.path.join(self.outputDir, "danielAlignment.txt"), "--referenceEventString hg19 --otherReferenceEventString NA12891")
         self.runScript("sequenceCoverages", os.path.join(self.outputDir, "sequenceCoverages.txt"), "--referenceEventString reference")
-           
+
 def main():
     ##########################################
     #Construct the arguments.
