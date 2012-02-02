@@ -27,7 +27,7 @@
 					minimumBlockDegree="2"
 					requiredInGroupFraction="0.0"
 					requiredOutGroupFraction="0.0"
-					singleCopyIngroup="0"
+					singleCopyIngroup="1"
 					singleCopyOutgroup="1"
 				/>
 			</iteration>
