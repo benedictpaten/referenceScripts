@@ -50,6 +50,8 @@
 					constraintDiagonalTrim="4" 
 					minimumBlockDegree="0" 
 					alignAmbiguityCharacters="1"
+					requiredInGroupFraction="0.0"
+					requiredOutGroupFraction="0.0"
 				/>
 			</iteration>
 		</iterations>

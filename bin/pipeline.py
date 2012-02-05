@@ -78,7 +78,7 @@ class MakeAlignment(Target):
             #Do the minimum block degree configuration
             iterations = config.find("alignment").find("iterations")
             blastIteration = iterations.findall("iteration")[0]
-            baseIteration = iterations.findall("iteration")[1]
+            baseIteration = iterations.findall("iteration")[1].find("base")
             
             minimumBlastBlockDegree = self.minimumBlockDegree
             if minimumBlastBlockDegree <= 1:
