@@ -42,12 +42,11 @@
 					gapGamma="0.2" 
 					useBanding="1" 
 					bandingLimit="100000" 
-					maxBandingSize="3000" 
-					minBandingSize="1000" 
-					minBandingConstraintDistance="300" 
-					minTraceBackDiag="42" 
-					minTraceGapDiags="10" 
-					constraintDiagonalTrim="4" 
+					splitMatrixBiggerThanThis="3000" 
+                    anchorMatrixBiggerThanThis="500"
+                    repeatMaskMatrixBiggerThanThis="500"
+                    diagonalExpansion="20"
+					constraintDiagonalTrim="14" 
 					minimumBlockDegree="0" 
 					alignAmbiguityCharacters="1"
 					requiredInGroupFraction="0.0"
@@ -77,5 +76,9 @@
 	<check 
 		maxFlowerGroupSize="1000000"
 		runCheck="1"
+	/>
+	<maf
+		buildMaf="0"
+		showOnlySubstitutionsWithRespectToReference="0"
 	/>
 </cactusWorkflowConfig>
