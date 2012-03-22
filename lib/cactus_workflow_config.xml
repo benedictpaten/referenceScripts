@@ -73,6 +73,10 @@
 		maxNumberOfChainsBeforeSwitchingToFast="10000000" 
 		permutations="10"
 	/>
+	<hal
+		buildHal="0"
+		showOnlySubstitutionsWithRespectToReference="0"
+	/>
 	<check 
 		maxFlowerGroupSize="1000000"
 		runCheck="1"
