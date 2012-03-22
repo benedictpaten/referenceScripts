@@ -178,7 +178,7 @@ def makeHeldOutAlignments(self, options, outputDir,
         constraintFileHandle = open(options.constraints, 'r')
         for cigar in cigarRead(constraintFileHandle):
             if cigar.contig1 not in heldOutSequenceNames and cigar.contig2 not in heldOutSequenceNames:
-                cigarWrite(heldOutConstraintsFileHandle, cigar)
+                cigarWrite(heldOutConstraintsFileHandle, cigar, withProbs=False)
         heldOutConstraintsFileHandle.close()
         constraintFileHandle.close()
         

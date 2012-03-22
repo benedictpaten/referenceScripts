@@ -1,8 +1,15 @@
-sequences=NA12878 NA12892 NA19239 apd dbb mann nigerian qbl venter yanhuang  NA19238 NA19240 cox mcf panTro3 ssto
+grcSequences = apd dbb mann qbl cox mcf panTro3 ssto
+sequences=${grcSequences} NA12878 NA12892 NA19239 nigerian venter yanhuang  NA19238 NA19240
 
-all : filterSeqs hg19
+all : filterSeqs hg19 constraints.cig
+
+clean : 
+	rm -rf ${sequences} hg19 hg19_long constraints.cig
 
 filterSeqs : ${sequences:%=../mhcHumanVariantsNsRemovedAndFiltered/%}
+
+constraints.cig : ../mhcHumanVariants/allUniq.cigar ${grcSequences} hg19
+	python ../../src/scripts/cigarConvertRef.py ../mhcHumanVariants/allUniq.cigar constraints.cig ${grcSequences} hg19
 
 ../mhcHumanVariantsNsRemovedAndFiltered/% : 
 	python ../../src/scripts/filterNonComponentSequences.py filterNonComponentSequences.xml ../mhcHumanVariantsNsRemoved/$* $*  

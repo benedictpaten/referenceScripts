@@ -1,8 +1,15 @@
 minimumNsForScaffoldGap=10
 minimumLengthOfFragment=0
-sequences=NA12892 NA19239 apd dbb mann nigerian qbl venter yanhuang NA19238 NA19240 cox hg19 mcf panTro3 ssto
+grcSequences = apd dbb mann qbl cox hg19 mcf panTro3 ssto
+sequences= ${grcSequences} NA12892 NA19239 nigerian venter yanhuang NA19238 NA19240 
 
-all : ${sequences:%=../mhcHumanVariantsNsRemoved/%} NA12878
+all : ${sequences:%=../mhcHumanVariantsNsRemoved/%} NA12878 constraints.cig
+
+clean : 
+	rm -rf ${sequences} constraints.cig NA12878
+
+constraints.cig : ../mhcHumanVariants/allUniq.cigar ${grcSequences}
+	python ../../src/scripts/cigarConvertRef.py ../mhcHumanVariants/allUniq.cigar constraints.cig ${grcSequences}
 
 ../mhcHumanVariantsNsRemoved/% : 
 	python ../../src/scripts/removeNs.py ../mhcHumanVariants/$* $* ${minimumNsForScaffoldGap} ${minimumLengthOfFragment} DEBUG
