@@ -1,4 +1,4 @@
-rootPath = ../../
+rootPath = ../
 binPath = ${rootPath}bin
 libPath = ${rootPath}lib
 dataPath = ${rootPath}dataDir
@@ -7,7 +7,7 @@ outputPath = ${rootPath}output
 newickTree=(CHIMP:0.007060,(HUMAN:0.002000,HUMAN2:0.002000,HUMAN3:0.002000,HUMAN4:0.002000):0.005850);
 dataDir=${dataPath}/test
 sequences= ${dataDir}/CHIMP ${dataDir}/HUMAN ${dataDir}/HUMAN2 ${dataDir}/HUMAN3 ${dataDir}/HUMAN4
-outputDir=${outputPath}/tests/little
+outputDir=${outputPath}/tests
 referenceSpecies=reference HUMAN
 minimumBlockDegreeRange=2
 referenceAlgorithms = maxCardinality
@@ -20,10 +20,11 @@ permutations = 500
 heldOutSequences=CHIMP
 outgroupEvent=HUMAN3
 gapGamma = 0.0 0.2
+constraints=${dataDir}/constraints.cig
 
 #maxCardinality maxWeight blossom5
 
-include ../../include.mk
+include ../include.mk
 
 all : basic
 

@@ -22,7 +22,7 @@ from cactusTools.shared.common import runCactusTreeStats
 from cactusTools.shared.common import runCactusMAFGenerator
 
 from sonLib.bioio import getTempFile, getTempDirectory
-from sonLib.bioio import fastaRead, fastaWrite
+from sonLib.bioio import fastaRead, fastaWrite, cigarRead, cigarWrite
 from sonLib.bioio import system
 
 from jobTree.test.jobTree.jobTreeTest import runJobTreeStatusAndFailIfNotComplete
@@ -44,12 +44,14 @@ class MakeAlignment(Target):
     """
     def __init__(self, options,
                  sequences, 
+                 constraints,
                  outputDir, 
                  referenceAlgorithm, minimumBlockDegree, 
                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
                  theta, useSimulatedAnnealing, heldOutSequence, pruneOutStubAlignments, gapGamma):
         Target.__init__(self, cpu=1, memory=4000000000)
         self.sequences = sequences
+        self.constraints = constraints
         self.outputDir = outputDir
         self.referenceAlgorithm = referenceAlgorithm
         self.minimumBlockDegree = int(minimumBlockDegree)
@@ -124,7 +126,8 @@ class MakeAlignment(Target):
                                                  outgroupEvents = self.options.outgroupEvent,
                                                  databaseName=cactusAlignmentName,
                                                  outputDir=self.getLocalTempDir(),
-                                                 configFile=tempConfigFile)
+                                                 configFile=tempConfigFile,
+                                                 constraints=self.constraints)
             cactusWorkflowExperiment.writeExperimentFile(tempExperimentFile)
             #Now run cactus workflow
             runCactusWorkflow(experimentFile=tempExperimentFile, jobTreeDir=tempJobTreeDir, 
@@ -136,6 +139,7 @@ class MakeAlignment(Target):
             runJobTreeStatusAndFailIfNotComplete(tempJobTreeDir)
             logger.info("Checked the job tree dir")
             #Now copy the true assembly back to the output
+            system("cp %s %s/constraints.cig" % (self.constraints, self.outputDir))
             system("mv %s %s/experiment.xml" % (tempExperimentFile, self.outputDir))
             system("mv %s %s/config.xml" % (tempConfigFile, self.outputDir))
             #Copy across the final alignment
@@ -154,20 +158,40 @@ def makeHeldOutAlignments(self, options, outputDir,
     nullSequence = os.path.join(self.getGlobalTempDir(), "nullSequence.fa")
     open(nullSequence, 'w').close()
     for heldoutSequence in self.options.heldOutSequences.split():
+        heldOutSequenceNames = set()
         heldOutOutputDir = outputDir + "_" + heldoutSequence
         def fn(i):
             if heldoutSequence == i.split("/")[-1]:
+                #Add sequence to list of held out sequence names
+                fileHandle = open(i, 'r')
+                for header, sequence in fastaRead(fileHandle):
+                    name = header.split()[0]
+                    assert name not in heldOutSequenceNames
+                    heldOutSequenceNames.add(name)
+                fileHandle.close()
                 return nullSequence
             return i
         heldOutSequences = " ".join([ fn(i) for i in options.haplotypeSequences.split() ])
+        #Filter the constraints
+        heldOutConstraints = os.path.join(self.getGlobalTempDir(), "constraints_%s.cig" % heldoutSequence)
+        heldOutConstraintsFileHandle = open(heldOutConstraints, 'w')
+        constraintFileHandle = open(options.constraints, 'r')
+        for cigar in cigarRead(constraintFileHandle):
+            if cigar.contig1 not in heldOutSequenceNames and cigar.contig2 not in heldOutSequenceNames:
+                cigarWrite(heldOutConstraintsFileHandle, cigar)
+        heldOutConstraintsFileHandle.close()
+        constraintFileHandle.close()
+        
         self.addChildTarget(MakeAlignment(options, 
                       heldOutSequences,
+                      heldOutConstraints,
                       heldOutOutputDir, 
                       referenceAlgorithm, minimumBlockDegree, 
                       blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
                       theta, useSimulatedAnnealing, heldoutSequence, pruneOutStubAlignments, gapGamma))
     self.addChildTarget(MakeAlignment(options, 
                   options.haplotypeSequences,
+                  options.constraints,
                   outputDir, 
                   referenceAlgorithm, minimumBlockDegree, 
                   blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
@@ -319,6 +343,7 @@ def main():
     parser.add_option("--heldOutSequences", dest="heldOutSequences")
     parser.add_option("--outgroupEvent", dest="outgroupEvent")
     parser.add_option("--gapGamma", dest="gapGamma")
+    parser.add_option("--constraints", dest="constraints")
     
     Stack.addJobTreeOptions(parser)
     

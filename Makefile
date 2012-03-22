@@ -10,7 +10,7 @@ dataM :
 	cd dataDir/mhcHumanVariantsNsRemovedAndFiltered && make all
 
 test : all
-	cd tests/little && make all
+	cd tests && make all
 
 run : mhcHumanVariantsNsRemoved
 
@@ -24,6 +24,5 @@ mhcHumanVariantsNsRemovedAndFiltered : all
 
 clean : 
 	cd src && make clean
-	cd tests/little && make clean
-	cd tests/big && make clean
+	cd tests && make clean
 	#cd main/mhcHumanVariantsNsRemoved && make clean

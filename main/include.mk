@@ -24,6 +24,7 @@ useSimulatedAnnealing = 0
 permutations = 100
 outgroupEvent=panTro3
 gapGamma = 0.2
+constraints=${dataDir}/constraints.cig
 
 include ${rootPath}/include.mk
 
