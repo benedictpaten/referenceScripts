@@ -77,6 +77,8 @@ for name, sequence in fastaRead(fH):
     for newheader, subsequence in fn( header, sequence, lengthOfNs ):
         if len( subsequence ) > 0:
             logger.info("Writing out a sequence of length %i with header %s" % (len(subsequence), newheader))
+            if newheader in headers:
+                print "Got a repetitive header", newheader
             assert newheader not in headers
             headers.add(newheader)
             fastaWrite(fH2, newheader, subsequence)

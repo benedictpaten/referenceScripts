@@ -21,6 +21,9 @@ mhcHumanVariantsNsRemoved : all
 
 mhcHumanVariantsNsRemovedAndFiltered : all
 	cd main/mhcHumanVariantsNsRemovedAndFiltered && make all
+	
+raymond : all
+	cd raymond && make all
 
 clean : 
 	cd src && make clean
