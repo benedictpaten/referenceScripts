@@ -49,7 +49,7 @@ class MakeAlignment(Target):
                  referenceAlgorithm, minimumBlockDegree, 
                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
                  theta, useSimulatedAnnealing, heldOutSequence, pruneOutStubAlignments, gapGamma):
-        Target.__init__(self, cpu=1, memory=4000000000)
+        Target.__init__(self, cpu=4, memory=8000000000)
         self.sequences = sequences
         self.constraints = constraints
         self.outputDir = outputDir
@@ -133,7 +133,7 @@ class MakeAlignment(Target):
             runCactusWorkflow(experimentFile=tempExperimentFile, jobTreeDir=tempJobTreeDir, 
                               setupAndBuildAlignments=True,
                               buildTrees=False, buildFaces=False, buildReference=True,
-                              batchSystem="single_machine", maxThreads=1, jobTreeStats=True)
+                              batchSystem="single_machine", maxThreads=6, jobTreeStats=True)
             logger.info("Ran the workflow")
             #Check if the jobtree completed sucessively.
             runJobTreeStatusAndFailIfNotComplete(tempJobTreeDir)
