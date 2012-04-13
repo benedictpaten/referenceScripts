@@ -13,7 +13,7 @@
 					compressFiles="1" 
 					overlapSize="10000" 
 					filterByIdentity="1" 
-					identityRatio="12" 
+					identityRatio="100" 
 					minimumDistance="0.01" 
 					minimumSequenceLengthForBlast="30"
 				/>
