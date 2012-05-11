@@ -45,8 +45,9 @@ Segment *getOtherSegment(Segment *segment) {
             return otherSegment;
         }
     }
-    assert(0);
+    st_errAbort("Did not find a segment");
     block_destructInstanceIterator(it);
+    return NULL;
 }
 
 int main(int argc, char *argv[]) {

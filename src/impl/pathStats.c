@@ -200,6 +200,7 @@ void printIndel(IndelEvent *indelEvent, stList *eventStrings, FILE *fileHandle) 
     int32_t i = 0;
     bool b = endsAreAdjacent2(cap_getEnd(indelEvent->cap), cap_getEnd(indelEvent->otherCap), &cap3, &cap4, &i,
             eventStrings);
+    (void)b;
     cap3 = cap_getStrand(cap3) ? cap3 : cap_getReverse(cap3);
     cap4 = cap_getStrand(cap4) ? cap4 : cap_getReverse(cap4);
     if (cap_getSide(cap3)) {
