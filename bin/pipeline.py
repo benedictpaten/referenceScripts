@@ -78,24 +78,21 @@ class MakeAlignment(Target):
             config.find("reference").attrib["matchingAlgorithm"] = self.referenceAlgorithm
             
             #Do the minimum block degree configuration
-            iterations = config.find("alignment").find("iterations")
-            blastIteration = iterations.findall("iteration")[0]
-            baseIteration = iterations.findall("iteration")[1].find("base")
+            blastIteration = config.find("caf") 
+            baseIteration = config.find("bar")
             
             minimumBlastBlockDegree = self.minimumBlockDegree
             if minimumBlastBlockDegree <= 1:
                 minimumBlastBlockDegree = 2
-            blastIteration.find("core").attrib["minimumBlockDegree"] = str(minimumBlastBlockDegree)
+            blastIteration.attrib["minimumBlockDegree"] = str(minimumBlastBlockDegree)
+            if not self.baseLevel:
+                baseIteration.attrib["runBar"] = "0"
             baseIteration.attrib["minimumBlockDegree"] = str(self.minimumBlockDegree)
             baseIteration.attrib["pruneOutStubAlignments"] = str(int(self.pruneOutStubAlignments))
             baseIteration.attrib["gapGamma"] = str(float(self.gapGamma))
             
             #Set the blast string
-            blastIteration.find("blast").attrib["lastzArguments"] = blastIteration.find("blast").attrib["lastzArguments"].replace("PARAMETERS", self.blastAlignmentString)
-            
-            #Get rid of the base level, if needed
-            if not self.baseLevel:
-                iterations.remove(baseIteration)
+            blastIteration.attrib["lastzArguments"] = blastIteration.attrib["lastzArguments"].replace("PARAMETERS", self.blastAlignmentString)
             
             #Set the number of chains to allow in a level, during promotion
             config.find("normal").attrib["maxNumberOfChains"] = str(self.maxNumberOfChains)
@@ -131,8 +128,7 @@ class MakeAlignment(Target):
             cactusWorkflowExperiment.writeExperimentFile(tempExperimentFile)
             #Now run cactus workflow
             runCactusWorkflow(experimentFile=tempExperimentFile, jobTreeDir=tempJobTreeDir, 
-                              setupAndBuildAlignments=True,
-                              buildTrees=False, buildFaces=False, buildReference=True,
+                              buildAvgs=False, buildReference=True,
                               batchSystem="single_machine", maxThreads=6, jobTreeStats=True)
             logger.info("Ran the workflow")
             #Check if the jobtree completed sucessively.
