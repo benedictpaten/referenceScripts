@@ -214,10 +214,10 @@ int main(int argc, char *argv[]) {
                 assert(segment_getSequence(sampleSegment) != NULL);
                 Segment *referenceSegment = stList_get(events, i + 1);
                 assert(segment_getSequence(referenceSegment) != NULL);
-                int64_t coordinate = stIntTuple_getPosition(stList_get(events, i + 2), 0);
-                char base1 = stIntTuple_getPosition(stList_get(events, i + 2), 1);
-                char base2 = stIntTuple_getPosition(stList_get(events, i + 2), 2);
-                int64_t recurrence = stIntTuple_getPosition(stList_get(events, i + 2), 3);
+                int64_t coordinate = stIntTuple_get(stList_get(events, i + 2), 0);
+                char base1 = stIntTuple_get(stList_get(events, i + 2), 1);
+                char base2 = stIntTuple_get(stList_get(events, i + 2), 2);
+                int64_t recurrence = stIntTuple_get(stList_get(events, i + 2), 3);
                 if (recurrence + 1 >= minimumRecurrence) {
                     fprintf(
                             fileHandle,
@@ -245,8 +245,8 @@ int main(int argc, char *argv[]) {
     stHashIterator *hashIt = stHash_getIterator(eventPairsToDistanceMatrix);
     stIntTuple *eventPair;
     while ((eventPair = stHash_getNext(hashIt)) != NULL) {
-        Event *event1 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_getPosition(eventPair, 0));
-        Event *event2 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_getPosition(eventPair, 1));
+        Event *event1 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_get(eventPair, 0));
+        Event *event2 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_get(eventPair, 1));
         assert(event1 != NULL);
         assert(event2 != NULL);
         assert(event1 != event2);

@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
                 stIntTuple *copyNumber = stList_get(copyNumbers, i);
                 int64_t *columnCount = stHash_search(setOfPairs, copyNumber);
                 totalColumnCount += columnCount[0];
-                totalBaseCount += stIntTuple_getPosition(copyNumber, 1) * columnCount[0];
+                totalBaseCount += stIntTuple_get(copyNumber, 1) * columnCount[0];
             }
             fprintf(
                     fileHandle,
@@ -101,8 +101,8 @@ int main(int argc, char *argv[]) {
             for (int64_t i = 0; i < stList_length(copyNumbers); i++) {
                 stIntTuple *copyNumber = stList_get(copyNumbers, i);
                 int64_t *columnCount = stHash_search(setOfPairs, copyNumber);
-                int64_t referenceNumber = stIntTuple_getPosition(copyNumber, 0);
-                int64_t assemblyNumber = stIntTuple_getPosition(copyNumber, 1);
+                int64_t referenceNumber = stIntTuple_get(copyNumber, 0);
+                int64_t assemblyNumber = stIntTuple_get(copyNumber, 1);
                 assert(assemblyNumber >= 0);
                 assert(columnCount != NULL);
                 assert(columnCount[0] >= 0);

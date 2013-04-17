@@ -344,7 +344,7 @@ int64_t getN50(stList *lengths, int64_t genomeLength) {
     int64_t pJ = INT64_MAX;
     stList_sort(lengths, (int(*)(const void *, const void *)) stIntTuple_cmpFn);
     for (int64_t i = stList_length(lengths) - 1; i >= 0; i--) {
-        int64_t j = stIntTuple_getPosition(stList_get(lengths, i), 0);
+        int64_t j = stIntTuple_get(stList_get(lengths, i), 0);
         assert(j <= pJ);
         pJ = j;
         totalLength += j;
@@ -358,7 +358,7 @@ int64_t getN50(stList *lengths, int64_t genomeLength) {
 int64_t getSum(stList *lengths) {
     int64_t j = 0;
     for (int64_t i = 0; i < stList_length(lengths); i++) {
-        j += stIntTuple_getPosition(stList_get(lengths, i), 0);
+        j += stIntTuple_get(stList_get(lengths, i), 0);
     }
     return j;
 }
