@@ -15,21 +15,21 @@
 #include "cactusMafs.h"
 
 const char *sampleEventString;
-int32_t totalSites = 0;
+int64_t totalSites = 0;
 double totalCorrect = 0;
-int32_t totalErrors = 0;
-int32_t totalCalls = 0;
+int64_t totalErrors = 0;
+int64_t totalCalls = 0;
 stList *events = NULL;
 
 stHash *eventPairsToDistanceMatrix;
 
-stInt64Tuple *getKey(Event *event1, Event *event2) {
+stIntTuple *getKey(Event *event1, Event *event2) {
     assert(event1 != NULL);
     assert(event2 != NULL);
     if (cactusMisc_nameCompare(event_getName(event1), event_getName(event2)) <= 0) {
-        return stInt64Tuple_construct(2, event_getName(event1), event_getName(event2));
+        return stIntTuple_construct2( event_getName(event1), event_getName(event2));
     }
-    return stInt64Tuple_construct(2, event_getName(event2), event_getName(event1));
+    return stIntTuple_construct2( event_getName(event2), event_getName(event1));
 }
 
 static void getSnpStatsDistanceMatrix(Block *block, FILE *fileHandle) {
@@ -50,12 +50,12 @@ static void getSnpStatsDistanceMatrix(Block *block, FILE *fileHandle) {
                         assert(strlen(sequence1) == strlen(sequence2));
                         assert(segment_getLength(segment1) == strlen(sequence1));
                         assert(segment_getLength(segment2) == strlen(sequence2));
-                        for (int32_t i = ignoreFirstNBasesOfBlock; i < block_getLength(block)
+                        for (int64_t i = ignoreFirstNBasesOfBlock; i < block_getLength(block)
                                 - ignoreFirstNBasesOfBlock; i++) {
-                            stInt64Tuple *key = getKey(segment_getEvent(segment1), segment_getEvent(segment2));
-                            int32_t *iA = stHash_search(eventPairsToDistanceMatrix, key);
+                            stIntTuple *key = getKey(segment_getEvent(segment1), segment_getEvent(segment2));
+                            int64_t *iA = stHash_search(eventPairsToDistanceMatrix, key);
                             if (iA == NULL) {
-                                iA = st_calloc(2, sizeof(int32_t));
+                                iA = st_calloc(2, sizeof(int64_t));
                                 stHash_insert(eventPairsToDistanceMatrix,
                                         getKey(segment_getEvent(segment1), segment_getEvent(segment2)), iA);
                             }
@@ -64,7 +64,7 @@ static void getSnpStatsDistanceMatrix(Block *block, FILE *fileHandle) {
                                 iA[0]++;
                             }
                             iA[1]++;
-                            stInt64Tuple_destruct(key);
+                            stIntTuple_destruct(key);
                         }
                         free(sequence2);
                     }
@@ -121,7 +121,7 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
             otherReferenceSegment = b ? otherReferenceSegment : segment_getReverse(otherReferenceSegment);
             sampleSegment = b ? sampleSegment : segment_getReverse(sampleSegment);
             stList_setDestructor(otherSegments, free);
-            for (int32_t i = 0; i < stList_length(otherSegments); i++) {
+            for (int64_t i = 0; i < stList_length(otherSegments); i++) {
                 stList_set(
                         otherSegments,
                         i,
@@ -132,7 +132,7 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
             char *otherReferenceSeq = segment_getString(otherReferenceSegment);
             char *sampleSeq = segment_getString(sampleSegment);
             //We're in gravy.
-            for (int32_t i = ignoreFirstNBasesOfBlock; i < block_getLength(block) - ignoreFirstNBasesOfBlock; i++) {
+            for (int64_t i = ignoreFirstNBasesOfBlock; i < block_getLength(block) - ignoreFirstNBasesOfBlock; i++) {
                 totalSites++;
                 if (sampleSeq != NULL) {
                     totalCorrect += bitsScoreFn(sampleSeq[i], referenceSeq[i]);
@@ -142,15 +142,15 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
                         stList_append(events, sampleSegment);
                         assert(referenceSegment != NULL);
                         stList_append(events, referenceSegment);
-                        int32_t k = 0;
-                        for (int32_t j = 0; j < stList_length(otherSegments); j++) {
+                        int64_t k = 0;
+                        for (int64_t j = 0; j < stList_length(otherSegments); j++) {
                             char *seq = stList_get(otherSegments, j);
                             if (bitsScoreFn(sampleSeq[i], seq[i]) != 0) {
                                 k++;
                             }
                         }
                         stList_append(events,
-                                stIntTuple_construct(4, i, (int32_t) sampleSeq[i], (int32_t) referenceSeq[i], k));
+                                stIntTuple_construct4( i, (int64_t) sampleSeq[i], (int64_t) referenceSeq[i], k));
                     }
                     totalErrors += b ? 0 : 1;
                     totalCalls++;
@@ -203,25 +203,25 @@ int main(int argc, char *argv[]) {
                 "sampleName=\"%s\" "
                 "referenceName=\"%s\" "
                 "otherReferenceName=\"%s\" "
-                "totalSites=\"%i\" "
+                "totalSites=\"%" PRIi64 "\" "
                 "totalCorrect=\"%f\" "
-                "totalErrors=\"%i\" "
-                "totalCalls=\"%i\">\n", sampleEventString, referenceEventString, otherReferenceEventString, totalSites,
+                "totalErrors=\"%" PRIi64 "\" "
+                "totalCalls=\"%" PRIi64 "\">\n", sampleEventString, referenceEventString, otherReferenceEventString, totalSites,
                     totalCorrect, totalErrors, totalCalls);
 
-            for (int32_t i = 0; i < stList_length(events); i += 3) {
+            for (int64_t i = 0; i < stList_length(events); i += 3) {
                 Segment *sampleSegment = stList_get(events, i);
                 assert(segment_getSequence(sampleSegment) != NULL);
                 Segment *referenceSegment = stList_get(events, i + 1);
                 assert(segment_getSequence(referenceSegment) != NULL);
-                int32_t coordinate = stIntTuple_getPosition(stList_get(events, i + 2), 0);
+                int64_t coordinate = stIntTuple_getPosition(stList_get(events, i + 2), 0);
                 char base1 = stIntTuple_getPosition(stList_get(events, i + 2), 1);
                 char base2 = stIntTuple_getPosition(stList_get(events, i + 2), 2);
-                int32_t recurrence = stIntTuple_getPosition(stList_get(events, i + 2), 3);
+                int64_t recurrence = stIntTuple_getPosition(stList_get(events, i + 2), 3);
                 if (recurrence + 1 >= minimumRecurrence) {
                     fprintf(
                             fileHandle,
-                            "%s %i %c %s %i %c\n",
+                            "%s %" PRIi64 " %c %s %" PRIi64 " %c\n",
                             sequence_getHeader(segment_getSequence(sampleSegment)),
                             segment_getStart(sampleSegment) + (segment_getStrand(sampleSegment) ? coordinate
                                     : -coordinate) - sequence_getStart(segment_getSequence(sampleSegment)),
@@ -239,23 +239,23 @@ int main(int argc, char *argv[]) {
     eventTree_destructIterator(eventIt);
 
     //Now get snp distance matrix
-    eventPairsToDistanceMatrix = stHash_construct3((uint32_t(*)(const void *)) stInt64Tuple_hashKey,
-            (int(*)(const void *, const void *)) stInt64Tuple_equalsFn, (void(*)(void *)) stInt64Tuple_destruct, free);
+    eventPairsToDistanceMatrix = stHash_construct3((uint64_t(*)(const void *)) stIntTuple_hashKey,
+            (int(*)(const void *, const void *)) stIntTuple_equalsFn, (void(*)(void *)) stIntTuple_destruct, free);
     getMAFs(flower, fileHandle, getSnpStatsDistanceMatrix);
     stHashIterator *hashIt = stHash_getIterator(eventPairsToDistanceMatrix);
-    stInt64Tuple *eventPair;
+    stIntTuple *eventPair;
     while ((eventPair = stHash_getNext(hashIt)) != NULL) {
-        Event *event1 = eventTree_getEvent(flower_getEventTree(flower), stInt64Tuple_getPosition(eventPair, 0));
-        Event *event2 = eventTree_getEvent(flower_getEventTree(flower), stInt64Tuple_getPosition(eventPair, 1));
+        Event *event1 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_getPosition(eventPair, 0));
+        Event *event2 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_getPosition(eventPair, 1));
         assert(event1 != NULL);
         assert(event2 != NULL);
         assert(event1 != event2);
         assert(event_getHeader(event1) != NULL);
         assert(event_getHeader(event2) != NULL);
-        int32_t *iA = stHash_search(eventPairsToDistanceMatrix, eventPair);
+        int64_t *iA = stHash_search(eventPairsToDistanceMatrix, eventPair);
         fprintf(
                 fileHandle,
-                "<distancesForSamples eventName1=\"%s\" eventName2=\"%s\" substitutionNumber=\"%i\" sampleNumber=\"%i\" substitutionRate=\"%f\"/>\n",
+                "<distancesForSamples eventName1=\"%s\" eventName2=\"%s\" substitutionNumber=\"%" PRIi64 "\" sampleNumber=\"%" PRIi64 "\" substitutionRate=\"%f\"/>\n",
                 event_getHeader(event1), event_getHeader(event2), iA[0], iA[1], ((double) iA[0]) / iA[1]);
     }
     stHash_destructIterator(hashIt);

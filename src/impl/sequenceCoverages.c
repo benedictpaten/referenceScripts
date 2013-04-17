@@ -25,7 +25,7 @@ static void removeSegmentLengths(Block *block, FILE *fileHandle) {
         if(sequence != NULL) {
             MetaSequence *metaSequence = sequence_getMetaSequence(sequence);
             stList *list = stHash_search(sequencesToAdjacencyLengths, metaSequence);
-            int32_t *i = stList_get(list, 0);
+            int64_t *i = stList_get(list, 0);
             assert(i != NULL);
             i[0] -= segment_getLength(segment);
             assert(i[0] >= 0);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     sequencesToAdjacencyLengths = stHash_construct();
     while((sequence = flower_getNextSequence(sequenceIt)) != NULL) {
         MetaSequence *metaSequence = sequence_getMetaSequence(sequence);
-        int32_t *i = st_malloc(sizeof(int32_t));
+        int64_t *i = st_malloc(sizeof(int64_t));
         i[0] = metaSequence_getLength(metaSequence);
         stList *list = stList_construct();
         assert(i[0] >= 0);
@@ -81,25 +81,25 @@ int main(int argc, char *argv[]) {
         MetaSequence *metaSequence = sequence_getMetaSequence(sequence);
         stList *list = stHash_search(sequencesToAdjacencyLengths, metaSequence);
         assert(list != NULL);
-        int32_t *i = stList_get(list, 0);
+        int64_t *i = stList_get(list, 0);
         assert(i != NULL);
         assert(i[0] >= 0);
         if(i[0] > 0 && sequence_getLength(sequence)-i[0] < 400 && sequence_getLength(sequence)-i[0] > 0) {
-            fprintf(fileHandle, "%i\t%i\t%s\t%s\t%i", sequence_getLength(sequence)-i[0], sequence_getLength(sequence), event_getHeader(sequence_getEvent(sequence)), sequence_getHeader(sequence), stList_length(list)-1);
-            for(int32_t j=1; j<stList_length(list); j++) {
+            fprintf(fileHandle, "%" PRIi64 "\t%" PRIi64 "\t%s\t%s\t%" PRIi64 "", sequence_getLength(sequence)-i[0], sequence_getLength(sequence), event_getHeader(sequence_getEvent(sequence)), sequence_getHeader(sequence), stList_length(list)-1);
+            for(int64_t j=1; j<stList_length(list); j++) {
                 Segment *segment = stList_get(list, j);
                 fprintf(fileHandle, "\t%s", segment_getString(segment));
                 Segment *otherSegment = getOtherSegment(segment);
                 fprintf(fileHandle, "\t%s", segment_getString(otherSegment));
                 char *cA = segment_getString(segment);
                 char *cA2 = segment_getString(otherSegment);
-                int32_t l = 0;
-                for(int32_t k=0; k<segment_getLength(segment); k++) {
+                int64_t l = 0;
+                for(int64_t k=0; k<segment_getLength(segment); k++) {
                     if(toupper(cA[k]) != toupper(cA2[k]) && toupper(cA[k]) != 'N' && toupper(cA2[k]) != 'N') {
                         l++;
                     }
                 }
-                fprintf(fileHandle, "\t%i\t%i", block_getInstanceNumber(segment_getBlock(segment)), l);
+                fprintf(fileHandle, "\t%" PRIi64 "\t%" PRIi64 "", block_getInstanceNumber(segment_getBlock(segment)), l);
             }
             fprintf(fileHandle, "\n");
         }

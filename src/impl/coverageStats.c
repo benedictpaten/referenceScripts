@@ -15,13 +15,13 @@
 #include "cactusMafs.h"
 
 const char *sampleEventString;
-int32_t *baseCoverages;
-int32_t *totalBaseCoverages;
-int32_t eventNumber;
-int32_t referenceBases;
-int32_t otherReferenceBases;
-int32_t totalReferenceBases;
-int32_t totalOtherReferenceBases;
+int64_t *baseCoverages;
+int64_t *totalBaseCoverages;
+int64_t eventNumber;
+int64_t referenceBases;
+int64_t otherReferenceBases;
+int64_t totalReferenceBases;
+int64_t totalOtherReferenceBases;
 bool ignoreOtherReferenceBlocks;
 
 static void getMAFBlock2(Block *block, FILE *fileHandle) {
@@ -49,7 +49,7 @@ static void getMAFBlock2(Block *block, FILE *fileHandle) {
         stSortedSet *otherSampleEvents = stSortedSet_construct3(
                 (int(*)(const void *, const void *)) strcmp, NULL);
         instanceIt = block_getInstanceIterator(block);
-        int32_t sampleNumber = 0;
+        int64_t sampleNumber = 0;
         while ((segment = block_getNext(instanceIt)) != NULL) {
             const char *segmentEvent = event_getHeader(
                     segment_getEvent(segment));
@@ -72,18 +72,18 @@ static void getMAFBlock2(Block *block, FILE *fileHandle) {
 }
 
 void printStatsForSample(bool addToTotalBaseCoverage, FILE *fileHandle,
-        int32_t denominator) {
+        int64_t denominator) {
     fprintf(fileHandle, "<statsForSample "
         "sampleName=\"%s\" "
         "referenceName=\"%s\" "
         "otherReferenceName=\"%s\" "
-        "referenceBasesMapped=\"%i\" "
-        "otherReferenceBasesMapped=\"%i\" "
+        "referenceBasesMapped=\"%" PRIi64 "\" "
+        "otherReferenceBasesMapped=\"%" PRIi64 "\" "
         "baseCoverages=\"", sampleEventString, referenceEventString,
             otherReferenceEventString, (referenceBases / denominator),
             (otherReferenceBases / denominator));
-    for (int32_t i = 0; i < eventNumber; i++) {
-        fprintf(fileHandle, "%i ", (baseCoverages[i] / denominator));
+    for (int64_t i = 0; i < eventNumber; i++) {
+        fprintf(fileHandle, "%" PRIi64 " ", (baseCoverages[i] / denominator));
         if (addToTotalBaseCoverage) {
             totalBaseCoverages[i] += baseCoverages[i];
         }
@@ -137,24 +137,24 @@ int main(int argc, char *argv[]) {
     FILE *fileHandle = fopen(outputFile, "w");
     fprintf(
             fileHandle,
-            "<coverageStats referenceSequenceLength=\"%i\" otherReferenceSequenceLength=\"%i\">\n",
+            "<coverageStats referenceSequenceLength=\"%" PRIi64 "\" otherReferenceSequenceLength=\"%" PRIi64 "\">\n",
             sequence_getLength(referenceSequence),
             sequence_getLength(otherReferenceSequence));
     EventTree_Iterator *eventIt = eventTree_getIterator(
             flower_getEventTree(flower));
     eventNumber = eventTree_getEventNumber(flower_getEventTree(flower));
     Event * event;
-    totalBaseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
+    totalBaseCoverages = st_calloc(sizeof(int64_t), eventNumber + 1);
     totalReferenceBases = 0;
     totalOtherReferenceBases = 0;
-    int32_t totalSamples = 0;
+    int64_t totalSamples = 0;
     ignoreOtherReferenceBlocks = 0;
     while ((event = eventTree_getNext(eventIt)) != NULL) {
         sampleEventString = event_getHeader(event);
         if (sampleEventString != NULL && strcmp(sampleEventString, "ROOT")
                 != 0 && strcmp(sampleEventString, "") != 0) {
 
-            baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
+            baseCoverages = st_calloc(sizeof(int64_t), eventNumber + 1);
 
             baseCoverages[0] = strcmp(sampleEventString, referenceEventString) != 0 ? getTotalLengthOfAdjacencies(flower,
                     sampleEventString) : 0;
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
             getMAFs(flower, fileHandle, getMAFBlock2);
 
             if(strcmp(sampleEventString, referenceEventString) == 0) {
-                for(int32_t i=2; i<eventNumber + 1; i++) {
+                for(int64_t i=2; i<eventNumber + 1; i++) {
                     baseCoverages[i-1] = baseCoverages[i];
                 }
                 baseCoverages[eventNumber] = 0;
@@ -192,11 +192,11 @@ int main(int argc, char *argv[]) {
 
     //Do all..
     sampleEventString = referenceEventString;
-    baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
+    baseCoverages = st_calloc(sizeof(int64_t), eventNumber + 1);
     baseCoverages[0] = totalBaseCoverages[0];
     referenceBases = 0;
     getMAFs(flower, fileHandle, getMAFBlock2);
-    for(int32_t i=2; i<eventNumber + 1; i++) {
+    for(int64_t i=2; i<eventNumber + 1; i++) {
         baseCoverages[i-1] = baseCoverages[i];
     }
     baseCoverages[eventNumber] = 0;
@@ -208,13 +208,13 @@ int main(int argc, char *argv[]) {
     //Do blocks without other reference
     ignoreOtherReferenceBlocks = 1;
     sampleEventString = referenceEventString;
-    baseCoverages = st_calloc(sizeof(int32_t), eventNumber + 1);
+    baseCoverages = st_calloc(sizeof(int64_t), eventNumber + 1);
     baseCoverages[0] = totalBaseCoverages[0] - getTotalLengthOfAdjacencies(flower,
             otherReferenceEventString);
     referenceBases = 0;
     otherReferenceBases = 0;
     getMAFs(flower, fileHandle, getMAFBlock2);
-    for(int32_t i=2; i<eventNumber + 1; i++) {
+    for(int64_t i=2; i<eventNumber + 1; i++) {
         baseCoverages[i-1] = baseCoverages[i];
     }
     baseCoverages[eventNumber] = 0;

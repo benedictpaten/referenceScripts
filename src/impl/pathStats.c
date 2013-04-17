@@ -14,11 +14,11 @@
 
 typedef struct _indelEvent {
     Cap *cap, *otherCap;
-    int32_t insertionLength;
-    int32_t deletionLength;
+    int64_t insertionLength;
+    int64_t deletionLength;
 } IndelEvent;
 
-IndelEvent *indelEvent_construct(Cap *cap, Cap *otherCap, int32_t insertionLength, int32_t deletionLength) {
+IndelEvent *indelEvent_construct(Cap *cap, Cap *otherCap, int64_t insertionLength, int64_t deletionLength) {
     IndelEvent *indelEvent = st_malloc(sizeof(IndelEvent));
     cap = cap_getStrand(cap) ? cap : cap_getReverse(cap);
     otherCap = cap_getStrand(otherCap) ? otherCap : cap_getReverse(otherCap);
@@ -49,17 +49,17 @@ int indelEvent_cmpFn(IndelEvent *indelEvent1, IndelEvent *indelEvent2) {
 }
 
 typedef struct _sampleStats {
-    int32_t totalCleanEnds;
-    int32_t totalHangingEndWithsNs;
-    int32_t totalScaffoldGaps;
-    int32_t totalAmbiguityGaps;
+    int64_t totalCleanEnds;
+    int64_t totalHangingEndWithsNs;
+    int64_t totalScaffoldGaps;
+    int64_t totalAmbiguityGaps;
 
-    int32_t totalIntraJoins;
-    int32_t totalInterJoins;
-    int32_t totalInsertions;
-    int32_t totalDeletions;
-    int32_t totalInsertionAndDeletions;
-    int32_t totalHangingInsertions;
+    int64_t totalIntraJoins;
+    int64_t totalInterJoins;
+    int64_t totalInsertions;
+    int64_t totalDeletions;
+    int64_t totalInsertionAndDeletions;
+    int64_t totalHangingInsertions;
 
     stList *indelEvents;
 
@@ -93,7 +93,7 @@ void sampleStats_destruct(SampleStats *sampleStats) {
 
 void getHaplotypePathStatsP(Cap *cap, stList *referenceEventStrings, stList *contaminationEventStrings,
         CapCodeParameters *capCodeParameters, SampleStats *sampleStats) {
-    int32_t insertLength, deleteLength;
+    int64_t insertLength, deleteLength;
     Cap *otherCap = NULL;
     switch (getCapCode(cap, &otherCap, referenceEventStrings, contaminationEventStrings, &insertLength, &deleteLength,
             capCodeParameters)) {
@@ -180,16 +180,16 @@ static Cap *getCapForReferenceEventString(End *end, const char *referenceEventSt
 void printNonLinearRearrangement(Cap *cap, Cap *otherCap, FILE *fileHandle, const char *referenceEventString) {
     Cap *cap2 = getCapForReferenceEventString(cap_getEnd(cap), referenceEventString);
     Cap *otherCap2 = getCapForReferenceEventString(cap_getEnd(otherCap), referenceEventString);
-    fprintf(fileHandle, "SEQ1: %s START1: %i SEQ2: %s START2: %i ", sequence_getHeader(cap_getSequence(cap)),
+    fprintf(fileHandle, "SEQ1: %s START1: %" PRIi64 " SEQ2: %s START2: %" PRIi64 " ", sequence_getHeader(cap_getSequence(cap)),
             cap_getCoordinate(cap) + 1 - sequence_getStart(cap_getSequence(cap)),
             sequence_getHeader(cap_getSequence(otherCap)),
             cap_getCoordinate(otherCap) + 1 - sequence_getStart(cap_getSequence(cap)));
     if (cap2 != NULL) {
-        fprintf(fileHandle, "SEQ3: %s START3: %i ", sequence_getHeader(cap_getSequence(cap2)),
+        fprintf(fileHandle, "SEQ3: %s START3: %" PRIi64 " ", sequence_getHeader(cap_getSequence(cap2)),
                 cap_getCoordinate(cap2) + 1 - sequence_getStart(cap_getSequence(cap2)));
     }
     if (otherCap2 != NULL) {
-        fprintf(fileHandle, "SEQ4: %s START4: %i ", sequence_getHeader(cap_getSequence(otherCap2)),
+        fprintf(fileHandle, "SEQ4: %s START4: %" PRIi64 " ", sequence_getHeader(cap_getSequence(otherCap2)),
                 cap_getCoordinate(otherCap2) + 1 - sequence_getStart(cap_getSequence(cap2)));
     }
     fprintf(fileHandle, "# ");
@@ -197,7 +197,7 @@ void printNonLinearRearrangement(Cap *cap, Cap *otherCap, FILE *fileHandle, cons
 
 void printIndel(IndelEvent *indelEvent, stList *eventStrings, FILE *fileHandle) {
     Cap *cap3 = NULL, *cap4 = NULL;
-    int32_t i = 0;
+    int64_t i = 0;
     bool b = endsAreAdjacent2(cap_getEnd(indelEvent->cap), cap_getEnd(indelEvent->otherCap), &cap3, &cap4, &i,
             eventStrings);
     (void)b;
@@ -218,14 +218,14 @@ void printIndel(IndelEvent *indelEvent, stList *eventStrings, FILE *fileHandle) 
 
     fprintf(
             fileHandle,
-            "SEQ1: %s START1: %i LENGTH1: %i STRAND1: 1 SEQ2: %s START2: %i LENGTH2: %i STRAND2: %i\n",
+            "SEQ1: %s START1: %" PRIi64 " LENGTH1: %" PRIi64 " STRAND1: 1 SEQ2: %s START2: %" PRIi64 " LENGTH2: %" PRIi64 " STRAND2: %" PRIi64 "\n",
             sequence_getHeader(cap_getSequence(indelEvent->cap)),
             cap_getCoordinate(indelEvent->cap) + 1 - sequence_getStart(cap_getSequence(indelEvent->cap)),
             indelEvent->insertionLength,
             sequence_getHeader(cap_getSequence(cap3)),
             cap_getSide(cap3) ? cap_getCoordinate(cap3) - 1 - sequence_getStart(cap_getSequence(cap3))
                     : cap_getCoordinate(cap3) + 1 - sequence_getStart(cap_getSequence(cap3)),
-            indelEvent->deletionLength, !cap_getSide(cap3));
+            indelEvent->deletionLength, (int64_t)!cap_getSide(cap3));
 }
 
 void getSequenceLengths(Flower *flower, const char *eventString, stList *sequenceLengths) {
@@ -233,7 +233,7 @@ void getSequenceLengths(Flower *flower, const char *eventString, stList *sequenc
     Sequence *sequence;
     while ((sequence = flower_getNextSequence(sequenceIt)) != NULL) {
         if (strcmp(event_getHeader(sequence_getEvent(sequence)), eventString) == 0) {
-            stList_append(sequenceLengths, stIntTuple_construct(1, sequence_getLength(sequence)));
+            stList_append(sequenceLengths, stIntTuple_construct1( sequence_getLength(sequence)));
         }
     }
     flower_destructSequenceIterator(sequenceIt);
@@ -247,7 +247,7 @@ void getBlockLengths(Flower *flower, const char *sampleEventString, const char *
     while ((block = flower_getNextBlock(blockIt)) != NULL) {
         if (hasCapInEvent(block_get5End(block), sampleEventString) && hasCapInEvent(block_get5End(block),
                 referenceEventString)) {
-            stList_append(blockLengths, stIntTuple_construct(1, block_getLength(block)));
+            stList_append(blockLengths, stIntTuple_construct1( block_getLength(block)));
         }
     }
     flower_destructBlockIterator(blockIt);
@@ -264,16 +264,16 @@ void getBlockLengths(Flower *flower, const char *sampleEventString, const char *
 
 void getScaffoldPathsLengths(stHash *scaffoldPaths, stList *scaffoldPathLengths) {
     stList *scaffoldPathsList = stHash_getValues(scaffoldPaths);
-    for (int32_t i = 0; i < stList_length(scaffoldPathsList); i++) {
+    for (int64_t i = 0; i < stList_length(scaffoldPathsList); i++) {
         stSortedSet *scaffoldPath = stList_get(scaffoldPathsList, i);
         stSortedSetIterator *contigPathIt = stSortedSet_getIterator(scaffoldPath);
         stList *contigPath;
-        int32_t j = 0;
+        int64_t j = 0;
         while ((contigPath = stSortedSet_getNext(contigPathIt)) != NULL) {
             j += contigPathLength(contigPath);
         }
         stSortedSet_destructIterator(contigPathIt);
-        stList_append(scaffoldPathLengths, stIntTuple_construct(1, j));
+        stList_append(scaffoldPathLengths, stIntTuple_construct1( j));
     }
     stList_destruct(scaffoldPathsList);
 }
@@ -295,10 +295,10 @@ SampleStats *getSamplePathStats(Flower *flower, const char *sampleEventString, c
     stHash *scaffoldPaths = getScaffoldPaths(contigPaths, referenceEventStrings, emptyList, capCodeParameters);
 
     //Now calculate the stats for the ends of the contig paths.
-    for (int32_t i = 0; i < stList_length(contigPaths); i++) {
+    for (int64_t i = 0; i < stList_length(contigPaths); i++) {
         stList *contigPath = stList_get(contigPaths, i);
-        stList_append(sampleStats->contigPathLengthDistribution, stIntTuple_construct(1, contigPathLength(contigPath)));
-        for (int32_t j = 0; j < stList_length(contigPath); j++) {
+        stList_append(sampleStats->contigPathLengthDistribution, stIntTuple_construct1( contigPathLength(contigPath)));
+        for (int64_t j = 0; j < stList_length(contigPath); j++) {
             Segment *segment = stList_get(contigPath, j);
             getHaplotypePathStatsP(segment_get5Cap(segment), referenceEventStrings, emptyList, capCodeParameters,
                     sampleStats);
@@ -339,12 +339,12 @@ SampleStats *getSamplePathStats(Flower *flower, const char *sampleEventString, c
     return sampleStats;
 }
 
-int32_t getN50(stList *lengths, int32_t genomeLength) {
-    int32_t totalLength = 0;
-    int32_t pJ = INT32_MAX;
+int64_t getN50(stList *lengths, int64_t genomeLength) {
+    int64_t totalLength = 0;
+    int64_t pJ = INT32_MAX;
     stList_sort(lengths, (int(*)(const void *, const void *)) stIntTuple_cmpFn);
-    for (int32_t i = stList_length(lengths) - 1; i >= 0; i--) {
-        int32_t j = stIntTuple_getPosition(stList_get(lengths, i), 0);
+    for (int64_t i = stList_length(lengths) - 1; i >= 0; i--) {
+        int64_t j = stIntTuple_getPosition(stList_get(lengths, i), 0);
         assert(j <= pJ);
         pJ = j;
         totalLength += j;
@@ -355,18 +355,18 @@ int32_t getN50(stList *lengths, int32_t genomeLength) {
     return 0; //this should not happen!
 }
 
-int32_t getSum(stList *lengths) {
-    int32_t j = 0;
-    for (int32_t i = 0; i < stList_length(lengths); i++) {
+int64_t getSum(stList *lengths) {
+    int64_t j = 0;
+    for (int64_t i = 0; i < stList_length(lengths); i++) {
         j += stIntTuple_getPosition(stList_get(lengths, i), 0);
     }
     return j;
 }
 
-int32_t getGenomeLength(Flower *flower, const char *eventString) {
+int64_t getGenomeLength(Flower *flower, const char *eventString) {
     stList *sequences = stList_construct3(0, (void(*)(void *)) stIntTuple_destruct);
     getSequenceLengths(flower, eventString, sequences);
-    int32_t i = getSum(sequences);
+    int64_t i = getSum(sequences);
     stList_destruct(sequences);
     return i;
 }
@@ -374,7 +374,7 @@ int32_t getGenomeLength(Flower *flower, const char *eventString) {
 void reportPathStatsForReference(Flower *flower, FILE *fileHandle, const char *referenceEventString,
         CapCodeParameters *capCodeParameters) {
 
-    int32_t referenceGenomeLength = getGenomeLength(flower, referenceEventString);
+    int64_t referenceGenomeLength = getGenomeLength(flower, referenceEventString);
 
     EventTree_Iterator *eventIt = eventTree_getIterator(flower_getEventTree(flower));
     Event *event;
@@ -382,36 +382,36 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle, const char *r
         const char *eventString = event_getHeader(event);
         if (eventString != NULL && strcmp(eventString, referenceEventString) != 0) {
             SampleStats *sampleStats = getSamplePathStats(flower, eventString, referenceEventString, capCodeParameters);
-            int32_t minimumNCount = capCodeParameters->minimumNCount;
+            int64_t minimumNCount = capCodeParameters->minimumNCount;
             capCodeParameters->minimumNCount = 0;
             SampleStats *sampleStatsFreeIndels = getSamplePathStats(flower, eventString, referenceEventString,
                     capCodeParameters);
             capCodeParameters->minimumNCount = minimumNCount;
 
-            int32_t genomeLength = getGenomeLength(flower, eventString);
-            int32_t alignedGenomeLength = getSum(sampleStats->blockLengthDistribution);
+            int64_t genomeLength = getGenomeLength(flower, eventString);
+            int64_t alignedGenomeLength = getSum(sampleStats->blockLengthDistribution);
 
             stSortedSet *indelEvents = stList_getSortedSet(sampleStats->indelEvents,
                     (int(*)(const void *, const void *)) indelEvent_cmpFn);
             assert(stList_length(sampleStats->indelEvents) == 2 * stSortedSet_size(indelEvents));
 
-            int32_t totalEvents = sampleStats->totalIntraJoins + sampleStats->totalInterJoins
+            int64_t totalEvents = sampleStats->totalIntraJoins + sampleStats->totalInterJoins
                     + sampleStats->totalInsertions + sampleStats->totalDeletions
                     + sampleStats->totalInsertionAndDeletions + sampleStats->totalHangingInsertions;
 
             fprintf(fileHandle, "<statsForSample "
                 "sampleName=\"%s\" "
                 "referenceName=\"%s\" "
-                "totalScaffoldGaps=\"%i\" "
-                "totalContigEnds=\"%i\" "
-                "totalContigEndsWithNs=\"%i\" "
-                "totalIntraJoin=\"%i\" "
-                "totalInterJoin=\"%i\" "
-                "totalInsertion=\"%i\" "
-                "totalDeletion=\"%i\" "
-                "totalInsertionAndDeletion=\"%i\" "
-                "totalHangingInsertion=\"%i\" "
-                "totalDifferences=\"%i\" "
+                "totalScaffoldGaps=\"%" PRIi64 "\" "
+                "totalContigEnds=\"%" PRIi64 "\" "
+                "totalContigEndsWithNs=\"%" PRIi64 "\" "
+                "totalIntraJoin=\"%" PRIi64 "\" "
+                "totalInterJoin=\"%" PRIi64 "\" "
+                "totalInsertion=\"%" PRIi64 "\" "
+                "totalDeletion=\"%" PRIi64 "\" "
+                "totalInsertionAndDeletion=\"%" PRIi64 "\" "
+                "totalHangingInsertion=\"%" PRIi64 "\" "
+                "totalDifferences=\"%" PRIi64 "\" "
 
                 "totalScaffoldGapsPerAlignedBase=\"%f\" "
                 "totalContigEndsPerAlignedBase=\"%f\" "
@@ -424,20 +424,20 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle, const char *r
                 "totalHangingInsertionPerAlignedBase=\"%f\" "
                 "totalDifferencesPerAlignedBase=\"%f\" "
 
-                "totalSampleGenomeLength=\"%i\" "
-                "totalReferenceGenomeLength=\"%i\" "
-                "totalAlignedGenomeLength=\"%i\" "
-                "sequenceN50=\"%i\" "
-                "blockN50=\"%i\" "
-                "contigPathN50=\"%i\" "
-                "scaffoldPathN50=\"%i\" "
-                "contigPathN50Check=\"%i\" "
-                "indelPathN50=\"%i\" "
-                "totalSequenceNumber=\"%i\" "
-                "totalBlockNumber=\"%i\" "
-                "totalContigPaths=\"%i\" "
-                "totalScaffoldPaths=\"%i\" "
-                "totalIndelPaths=\"%i\" ", eventString, referenceEventString,
+                "totalSampleGenomeLength=\"%" PRIi64 "\" "
+                "totalReferenceGenomeLength=\"%" PRIi64 "\" "
+                "totalAlignedGenomeLength=\"%" PRIi64 "\" "
+                "sequenceN50=\"%" PRIi64 "\" "
+                "blockN50=\"%" PRIi64 "\" "
+                "contigPathN50=\"%" PRIi64 "\" "
+                "scaffoldPathN50=\"%" PRIi64 "\" "
+                "contigPathN50Check=\"%" PRIi64 "\" "
+                "indelPathN50=\"%" PRIi64 "\" "
+                "totalSequenceNumber=\"%" PRIi64 "\" "
+                "totalBlockNumber=\"%" PRIi64 "\" "
+                "totalContigPaths=\"%" PRIi64 "\" "
+                "totalScaffoldPaths=\"%" PRIi64 "\" "
+                "totalIndelPaths=\"%" PRIi64 "\" ", eventString, referenceEventString,
                     sampleStats->totalScaffoldGaps + sampleStats->totalAmbiguityGaps, sampleStats->totalCleanEnds,
                     sampleStats->totalHangingEndWithsNs, sampleStats->totalIntraJoins, sampleStats->totalInterJoins,
                     sampleStats->totalInsertions, sampleStats->totalDeletions, sampleStats->totalInsertionAndDeletions,
@@ -472,17 +472,17 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle, const char *r
             fprintf(fileHandle, "insertionSizeDistribution=\"");
             while ((indelEvent = stSortedSet_getNext(it)) != NULL) {
                 if (indelEvent->insertionLength > 0) {
-                    fprintf(fileHandle, "%i ", indelEvent->insertionLength);
+                    fprintf(fileHandle, "%" PRIi64 " ", indelEvent->insertionLength);
                 }
             }
             fprintf(fileHandle, "\" deletionSizeDistribution=\"");
             while ((indelEvent = stSortedSet_getPrevious(it)) != NULL) {
                 if (indelEvent->deletionLength > 0) {
-                    fprintf(fileHandle, "%i ", indelEvent->deletionLength);
+                    fprintf(fileHandle, "%" PRIi64 " ", indelEvent->deletionLength);
                 }
             }
             fprintf(fileHandle, "\" locationOfNonLinearBreakpoints=\"");
-            for (int32_t i = 0; i < stList_length(sampleStats->nonLinearRearrangements); i += 2) {
+            for (int64_t i = 0; i < stList_length(sampleStats->nonLinearRearrangements); i += 2) {
                 printNonLinearRearrangement(stList_get(sampleStats->nonLinearRearrangements, i),
                         stList_get(sampleStats->nonLinearRearrangements, i + 1), fileHandle, referenceEventString);
             }
@@ -515,15 +515,15 @@ void reportDistanceMatrix(Flower *flower, FILE *fileHandle, CapCodeParameters *c
                 if (eventString2 != NULL && strcmp(eventString2, "ROOT") != 0 && strcmp(eventString2, "") != 0) {
                     SampleStats *sampleStats = getSamplePathStats(flower, eventString, eventString2, capCodeParameters);
                     //Return total length of contig paths, total number of insertion, total number of deletions, total number of indels and total number of indels per base.
-                    int32_t alignedGenomeLength = getSum(sampleStats->blockLengthDistribution);
+                    int64_t alignedGenomeLength = getSum(sampleStats->blockLengthDistribution);
 
                     fprintf(fileHandle, "<indelDistanceForEvents "
                         "eventName1=\"%s\" "
                         "eventName2=\"%s\" "
-                        "alignmentLength=\"%i\" "
-                        "totalInsertions=\"%i\" "
-                        "totalDeletions=\"%i\" "
-                        "totalIndels=\"%i\" "
+                        "alignmentLength=\"%" PRIi64 "\" "
+                        "totalInsertions=\"%" PRIi64 "\" "
+                        "totalDeletions=\"%" PRIi64 "\" "
+                        "totalIndels=\"%" PRIi64 "\" "
                         "indelsPerBase=\"%f\" "
                         "/>\n", eventString, eventString2, alignedGenomeLength, sampleStats->totalInsertions,
                             sampleStats->totalDeletions, sampleStats->totalInsertions + sampleStats->totalDeletions,
@@ -556,7 +556,7 @@ int main(int argc, char *argv[]) {
     reportDistanceMatrix(flower, fileHandle, capCodeParameters);
     fprintf(fileHandle, "</pathStats>\n");
     fclose(fileHandle);
-    st_logInfo("Got the stats in %i seconds/\n", time(NULL) - startTime);
+    st_logInfo("Got the stats in %" PRIi64 " seconds/\n", time(NULL) - startTime);
 
     return 0;
 }

@@ -45,9 +45,9 @@ static void printDanielBlock(Block *block, FILE *fileHandle) {
         sampleSegment = b ? sampleSegment : segment_getReverse(sampleSegment);
         char *referenceSeq = segment_getString(referenceSegment);
         char *sampleSeq = segment_getString(sampleSegment);
-        fprintf(fileHandle, "%s %i 1 %s %i %i %s %s\n", sequence_getHeader(segment_getSequence(referenceSegment)),
+        fprintf(fileHandle, "%s %" PRIi64 " 1 %s %" PRIi64 " %" PRIi64 " %s %s\n", sequence_getHeader(segment_getSequence(referenceSegment)),
                 segment_getStart(referenceSegment) - sequence_getStart(segment_getSequence(referenceSegment)), sequence_getHeader(segment_getSequence(sampleSegment)),
-                segment_getStart(sampleSegment) - sequence_getStart(segment_getSequence(sampleSegment)), segment_getStrand(sampleSegment), referenceSeq, sampleSeq);
+                segment_getStart(sampleSegment) - sequence_getStart(segment_getSequence(sampleSegment)), (int64_t)segment_getStrand(sampleSegment), referenceSeq, sampleSeq);
         free(referenceSeq);
         free(sampleSeq);
     }

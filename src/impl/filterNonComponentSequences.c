@@ -15,8 +15,8 @@
 #include "cactusMafs.h"
 
 stSortedSet *connectedSequences;
-int32_t minCoordinate = INT32_MAX;
-int32_t maxCoordinate = 0;
+int64_t minCoordinate = INT32_MAX;
+int64_t maxCoordinate = 0;
 
 static void getConnectedSequences(Block *block, FILE *fileHandle) {
     Block_InstanceIterator *instanceIterator1 = block_getInstanceIterator(block);
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     getMAFs(flower, fileHandle, getConnectedSequences);
     fprintf(
             fileHandle,
-            "<disconnectedSequences minOtherReferenceCoordinate=\"%i\" maxOtherReferenceCoordinate=\"%i\" referenceEventString=\"%s\" otherReferenceEventString=\"%s\">\n",
+            "<disconnectedSequences minOtherReferenceCoordinate=\"%" PRIi64 "\" maxOtherReferenceCoordinate=\"%" PRIi64 "\" referenceEventString=\"%s\" otherReferenceEventString=\"%s\">\n",
             minCoordinate, maxCoordinate, referenceEventString, otherReferenceEventString);
     Flower_SequenceIterator *sequenceIt = flower_getSequenceIterator(flower);
     Sequence *sequence;

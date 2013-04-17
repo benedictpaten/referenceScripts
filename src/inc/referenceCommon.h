@@ -15,7 +15,7 @@
  * Returns the sum of bases contained within adjacencies for the sequences
  * with the given event names.
  */
-int32_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName);
+int64_t getTotalLengthOfAdjacencies(Flower *flower, const char *eventName);
 
 /*
  * Global parameters shared by all the scripts.
@@ -32,13 +32,13 @@ extern char *outgroupEventString;
 /*
  * Optional parameter used by copy number and substitution scripts.
  */
-extern int32_t minimumBlockLength;
+extern int64_t minimumBlockLength;
 
 /*
  * Parameters for the substitution script.
  */
-extern int32_t ignoreFirstNBasesOfBlock;
-extern int32_t minimumIndentity;
+extern int64_t ignoreFirstNBasesOfBlock;
+extern int64_t minimumIndentity;
 extern bool printIndelPositions;
 
 /*
@@ -49,15 +49,15 @@ extern bool ignoreAdjacencies;
 /*
  * For the linkage script.
  */
-extern int32_t bucketNumber;
-extern int32_t upperLinkageBound;
-extern int32_t sampleNumber;
+extern int64_t bucketNumber;
+extern int64_t upperLinkageBound;
+extern int64_t sampleNumber;
 extern bool doNotSampleDuplicatedPositions;
 
 /*
  * For the snps script
  */
-extern int32_t minimumRecurrence;
+extern int64_t minimumRecurrence;
 
 stList *getEventStrings(const char *hapA1EventString, const char *hapA2EventString);
 
