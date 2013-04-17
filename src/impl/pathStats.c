@@ -341,7 +341,7 @@ SampleStats *getSamplePathStats(Flower *flower, const char *sampleEventString, c
 
 int64_t getN50(stList *lengths, int64_t genomeLength) {
     int64_t totalLength = 0;
-    int64_t pJ = INT32_MAX;
+    int64_t pJ = INT64_MAX;
     stList_sort(lengths, (int(*)(const void *, const void *)) stIntTuple_cmpFn);
     for (int64_t i = stList_length(lengths) - 1; i >= 0; i--) {
         int64_t j = stIntTuple_getPosition(stList_get(lengths, i), 0);

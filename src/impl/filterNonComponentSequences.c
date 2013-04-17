@@ -15,7 +15,7 @@
 #include "cactusMafs.h"
 
 stSortedSet *connectedSequences;
-int64_t minCoordinate = INT32_MAX;
+int64_t minCoordinate = INT64_MAX;
 int64_t maxCoordinate = 0;
 
 static void getConnectedSequences(Block *block, FILE *fileHandle) {
