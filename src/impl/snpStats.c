@@ -103,7 +103,7 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
                 sampleSegment = segment;
             }
             if (strcmp(event_getHeader(segment_getEvent(segment)), otherReferenceEventString) == 0) {
-                if (otherReferenceSegment != NULL) {
+                if (otherReferenceSegment != NULL || ignoreSitesWithOtherReferencePresent) {
                     goto end;
                 }
                 otherReferenceSegment = segment;

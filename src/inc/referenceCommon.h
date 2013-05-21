@@ -53,6 +53,7 @@ extern int64_t bucketNumber;
 extern int64_t upperLinkageBound;
 extern int64_t sampleNumber;
 extern bool doNotSampleDuplicatedPositions;
+extern bool ignoreSitesWithOtherReferencePresent;
 
 /*
  * For the snps script

@@ -98,6 +98,7 @@ bool doNotSampleDuplicatedPositions = 0;
  * For the snps script
  */
 int64_t minimumRecurrence = 0;
+bool ignoreSitesWithOtherReferencePresent = 0;
 
 void basicUsage(const char *programName) {
     fprintf(stderr, "%s\n", programName);
@@ -134,6 +135,7 @@ void basicUsage(const char *programName) {
             "-B --otherReferenceEventString : The other reference event string (only look at sites that also contain this reference)\n");
     fprintf(stderr, "-C --minimumRecurrence : \n");
     fprintf(stderr, "-D --ignoreAdjacencies : \n");
+    fprintf(stderr, "-F --ignoreSitesWithOtherReferencePresent : \n");
 }
 
 int parseBasicArguments(int argc, char *argv[], const char *programName) {
@@ -169,7 +171,9 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 "otherReferenceEventString", required_argument, 0, 'B' }, {
                 "minimumRecurrence", required_argument, 0, 'C' }, {
                 "ignoreAdjacencies", no_argument, 0, 'D' }, {
-                "outgroupEventString", required_argument, 0, 'E' }, { 0, 0, 0,
+                "outgroupEventString", required_argument, 0, 'E' },
+                { "ignoreSitesWithOtherReferencePresent", no_argument, 0, 'F' },
+                { 0, 0, 0,
                 0 } };
 
         int option_index = 0;
@@ -274,6 +278,9 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 break;
             case 'E':
                 outgroupEventString = stString_copy(optarg);
+                break;
+            case 'F':
+                ignoreSitesWithOtherReferencePresent = 1;
                 break;
             default:
                 st_errAbort("Unrecognised option %s", optarg);

@@ -116,12 +116,16 @@ class MakeAlignment(Target):
             #Make the supporting temporary files
             tempExperimentFile = os.path.join(self.getLocalTempDir(), "experiment.xml")
             tempJobTreeDir = os.path.join(self.getLocalTempDir(), "jobTree")
+            c2hFile = os.path.join(self.getLocalTempDir(), "out.c2h")
+            fastaFile = os.path.join(self.getLocalTempDir(), "out.fa")
             #Make the experiment file
             cactusWorkflowExperiment = CactusWorkflowExperiment(
                                                  sequences=self.sequences.split(), 
                                                  newickTreeString=self.options.newickTree, 
                                                  outgroupEvents = self.options.outgroupEvent,
                                                  databaseName=cactusAlignmentName,
+                                                 halFile=c2hFile,
+                                                 fastaFile=fastaFile,
                                                  outputDir=self.getLocalTempDir(),
                                                  configFile=tempConfigFile,
                                                  constraints=self.constraints)
@@ -138,6 +142,10 @@ class MakeAlignment(Target):
             system("cp %s %s/constraints.cig" % (self.constraints, self.outputDir))
             system("mv %s %s/experiment.xml" % (tempExperimentFile, self.outputDir))
             system("mv %s %s/config.xml" % (tempConfigFile, self.outputDir))
+            halFile = os.path.join(self.getLocalTempDir(), "out.hal")
+            system("halAppendCactusSubtree %s %s '%s' %s" % (c2hFile, fastaFile, self.options.newickTree, halFile))
+            system("mv %s %s/" % (halFile, self.outputDir))
+            system("mv %s %s/" % (fastaFile, self.outputDir))
             #Copy across the final alignment
             localCactusDisk = os.path.join(self.getLocalTempDir(), cactusAlignmentName)
             #Move the final db
@@ -306,7 +314,9 @@ class MakeStats5(MakeStats):
     def run(self):       
         ref1, ref2 = self.options.referenceSpecies.split()
         self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s" % (ref1, ref2))
-        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s" % (ref2, ref1))                 
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s" % (ref2, ref1))   
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_ignoreSitesWithOtherReferencePresent_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s --ignoreSitesWithOtherReferencePresent" % (ref1, ref2))
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_ignoreSitesWithOtherReferencePresent_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s --ignoreSitesWithOtherReferencePresent" % (ref2, ref1))                 
         self.addChildTarget(MakeStats6(self.alignment, self.outputDir, self.options))
 
 class MakeStats6(MakeStats):

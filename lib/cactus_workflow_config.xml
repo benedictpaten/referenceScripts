@@ -86,7 +86,8 @@
 		<CactusCheckWrapper/>
 	</check>
 	<hal
-		buildHal="0"
+		buildHal="1"
+		buildFasta="1"
 		showOnlySubstitutionsWithRespectToReference="0"
 	>
 		<CactusHalGeneratorRecursion maxFlowerGroupSize="10000000"/>
