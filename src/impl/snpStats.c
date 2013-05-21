@@ -115,10 +115,10 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
             }
         }
 
-        if (referenceSegment != NULL && otherReferenceSegment != NULL && sampleSegment != NULL) {
+        if (referenceSegment != NULL && (otherReferenceSegment != NULL || ignoreSitesWithOtherReferencePresent) && sampleSegment != NULL) {
             bool b = segment_getStrand(referenceSegment);
             referenceSegment = b ? referenceSegment : segment_getReverse(referenceSegment);
-            otherReferenceSegment = b ? otherReferenceSegment : segment_getReverse(otherReferenceSegment);
+            //otherReferenceSegment = b ? otherReferenceSegment : segment_getReverse(otherReferenceSegment);
             sampleSegment = b ? sampleSegment : segment_getReverse(sampleSegment);
             stList_setDestructor(otherSegments, free);
             for (int64_t i = 0; i < stList_length(otherSegments); i++) {
@@ -129,7 +129,7 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
                                 b ? stList_get(otherSegments, i) : segment_getReverse(stList_get(otherSegments, i))));
             }
             char *referenceSeq = segment_getString(referenceSegment);
-            char *otherReferenceSeq = segment_getString(otherReferenceSegment);
+            //char *otherReferenceSeq = segment_getString(otherReferenceSegment);
             char *sampleSeq = segment_getString(sampleSegment);
             //We're in gravy.
             for (int64_t i = ignoreFirstNBasesOfBlock; i < block_getLength(block) - ignoreFirstNBasesOfBlock; i++) {
@@ -157,7 +157,7 @@ static void getSnpStats(Block *block, FILE *fileHandle) {
                 }
             }
             free(referenceSeq);
-            free(otherReferenceSeq);
+            //free(otherReferenceSeq);
             free(sampleSeq);
         }
         end: stList_destruct(otherSegments);
