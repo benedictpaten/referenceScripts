@@ -143,8 +143,8 @@ class MakeAlignment(Target):
             system("mv %s %s/experiment.xml" % (tempExperimentFile, self.outputDir))
             system("mv %s %s/config.xml" % (tempConfigFile, self.outputDir))
             halFile = os.path.join(self.getLocalTempDir(), "out.hal")
-            #system("halAppendCactusSubtree %s %s '%s' %s" % (c2hFile, fastaFile, self.options.newickTree, halFile))
-            #system("mv %s %s/" % (halFile, self.outputDir))
+            system("halAppendCactusSubtree %s %s '%s' %s" % (c2hFile, fastaFile, self.options.newickTree, halFile))
+            system("mv %s %s/" % (halFile, self.outputDir))
             system("mv %s %s/" % (c2hFile, self.outputDir))
             system("mv %s %s/" % (fastaFile, self.outputDir))
             #Copy across the final alignment
