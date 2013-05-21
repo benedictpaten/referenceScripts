@@ -298,8 +298,11 @@ class MakeStats4(MakeStats):
                                                     ("snpStats_%s_recurrent.xml", "snpStats", "--minimumRecurrence 2"),
                                                     ("snpStats_filtered_%s_recurrent.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5 --minimumRecurrence 2")
                                      ):
-            for reference in self.options.referenceSpecies.split():
-                self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
+            ref1, ref2 = self.options.referenceSpecies.split()
+            self.runScript(program, os.path.join(self.outputDir, outputFile % ref1), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref1, specialOptions, ref2))
+            self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref2, specialOptions, ref1))
+            #for reference in self.options.referenceSpecies.split():
+            #    self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
 
         for reference in self.options.referenceSpecies.split():
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_%s.xml") % reference))

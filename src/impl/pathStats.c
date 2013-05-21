@@ -195,11 +195,26 @@ void printNonLinearRearrangement(Cap *cap, Cap *otherCap, FILE *fileHandle, cons
     fprintf(fileHandle, "# ");
 }
 
-void printIndel(IndelEvent *indelEvent, stList *eventStrings, FILE *fileHandle) {
+bool indelCanBeDescribedWithRespectToGivenReference(IndelEvent *indelEvent, const char *reference) {
+    stList *eventStrings = stList_construct();
+    stList_append(eventStrings, (char *)reference);
     Cap *cap3 = NULL, *cap4 = NULL;
     int64_t i = 0;
     bool b = endsAreAdjacent2(cap_getEnd(indelEvent->cap), cap_getEnd(indelEvent->otherCap), &cap3, &cap4, &i,
             eventStrings);
+    stList_destruct(eventStrings);
+    return b;
+}
+
+void printIndel(IndelEvent *indelEvent, const char *referenceEventString,
+        const char *otherReferenceEventString, FILE *fileHandle) {
+    stList *eventStrings = stList_construct();
+    stList_append(eventStrings, (void *) referenceEventString);
+    Cap *cap3 = NULL, *cap4 = NULL;
+    int64_t i = 0;
+    bool b = endsAreAdjacent2(cap_getEnd(indelEvent->cap), cap_getEnd(indelEvent->otherCap), &cap3, &cap4, &i,
+            eventStrings);
+    stList_destruct(eventStrings);
     (void)b;
     cap3 = cap_getStrand(cap3) ? cap3 : cap_getReverse(cap3);
     cap4 = cap_getStrand(cap4) ? cap4 : cap_getReverse(cap4);
@@ -218,14 +233,14 @@ void printIndel(IndelEvent *indelEvent, stList *eventStrings, FILE *fileHandle) 
 
     fprintf(
             fileHandle,
-            "SEQ1: %s START1: %" PRIi64 " LENGTH1: %" PRIi64 " STRAND1: 1 SEQ2: %s START2: %" PRIi64 " LENGTH2: %" PRIi64 " STRAND2: %" PRIi64 "\n",
+            "SEQ1: %s START1: %" PRIi64 " LENGTH1: %" PRIi64 " STRAND1: 1 SEQ2: %s START2: %" PRIi64 " LENGTH2: %" PRIi64 " STRAND2: %" PRIi64 " PRESENT_IN_OTHER_REFERENCE: %" PRIi64 "\n",
             sequence_getHeader(cap_getSequence(indelEvent->cap)),
             cap_getCoordinate(indelEvent->cap) + 1 - sequence_getStart(cap_getSequence(indelEvent->cap)),
             indelEvent->insertionLength,
             sequence_getHeader(cap_getSequence(cap3)),
             cap_getSide(cap3) ? cap_getCoordinate(cap3) - 1 - sequence_getStart(cap_getSequence(cap3))
                     : cap_getCoordinate(cap3) + 1 - sequence_getStart(cap_getSequence(cap3)),
-            indelEvent->deletionLength, (int64_t)!cap_getSide(cap3));
+            indelEvent->deletionLength, (int64_t)!cap_getSide(cap3), (int64_t)indelCanBeDescribedWithRespectToGivenReference(indelEvent, otherReferenceEventString));
 }
 
 void getSequenceLengths(Flower *flower, const char *eventString, stList *sequenceLengths) {
@@ -371,7 +386,7 @@ int64_t getGenomeLength(Flower *flower, const char *eventString) {
     return i;
 }
 
-void reportPathStatsForReference(Flower *flower, FILE *fileHandle, const char *referenceEventString,
+void reportPathStatsForReference(Flower *flower, FILE *fileHandle, const char *referenceEventString, const char *otherReferenceEventString,
         CapCodeParameters *capCodeParameters) {
 
     int64_t referenceGenomeLength = getGenomeLength(flower, referenceEventString);
@@ -487,12 +502,9 @@ void reportPathStatsForReference(Flower *flower, FILE *fileHandle, const char *r
                         stList_get(sampleStats->nonLinearRearrangements, i + 1), fileHandle, referenceEventString);
             }
             fprintf(fileHandle, "\">\n");
-            stList *eventStrings = stList_construct();
-            stList_append(eventStrings, (void *) referenceEventString);
             while ((indelEvent = stSortedSet_getNext(it)) != NULL) {
-                printIndel(indelEvent, eventStrings, fileHandle);
+                printIndel(indelEvent, referenceEventString, otherReferenceEventString, fileHandle);
             }
-            stList_destruct(eventStrings);
             stSortedSet_destructIterator(it);
             stSortedSet_destruct(indelEvents);
             fprintf(fileHandle, "</statsForSample>\n");
@@ -552,7 +564,10 @@ int main(int argc, char *argv[]) {
     int64_t startTime = time(NULL);
     FILE *fileHandle = fopen(outputFile, "w");
     fprintf(fileHandle, "<pathStats>\n");
-    reportPathStatsForReference(flower, fileHandle, referenceEventString, capCodeParameters);
+    if(otherReferenceEventString == NULL) {
+        otherReferenceEventString = referenceEventString;
+    }
+    reportPathStatsForReference(flower, fileHandle, referenceEventString, otherReferenceEventString, capCodeParameters);
     reportDistanceMatrix(flower, fileHandle, capCodeParameters);
     fprintf(fileHandle, "</pathStats>\n");
     fclose(fileHandle);
