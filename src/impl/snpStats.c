@@ -253,10 +253,12 @@ int main(int argc, char *argv[]) {
         assert(event_getHeader(event1) != NULL);
         assert(event_getHeader(event2) != NULL);
         int64_t *iA = stHash_search(eventPairsToDistanceMatrix, eventPair);
+        assert(iA[0] % 2 == 0);
+        assert(iA[1] % 2 == 0);
         fprintf(
                 fileHandle,
                 "<distancesForSamples eventName1=\"%s\" eventName2=\"%s\" substitutionNumber=\"%" PRIi64 "\" sampleNumber=\"%" PRIi64 "\" substitutionRate=\"%f\"/>\n",
-                event_getHeader(event1), event_getHeader(event2), iA[0], iA[1], ((double) iA[0]) / iA[1]);
+                event_getHeader(event1), event_getHeader(event2), iA[0]/2, iA[1]/2, ((double) iA[0]) / iA[1]);
     }
     stHash_destructIterator(hashIt);
     stHash_destruct(eventPairsToDistanceMatrix);
