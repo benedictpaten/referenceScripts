@@ -292,15 +292,22 @@ class MakeStats3(MakeStats):
 class MakeStats4(MakeStats):
     def run(self):          
         for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
-                                                    ("pathStats_ignoreAdjacencies_%s.xml", "pathStats", "--ignoreAdjacencies"), 
-                                                    ("snpStats_%s.xml", "snpStats", ""),
+                                                    ("pathStats_ignoreAdjacencies_%s.xml", "pathStats", "--ignoreAdjacencies")
+                                     ):
+            ref1, ref2 = self.options.referenceSpecies.split()
+            self.runScript(program, os.path.join(self.outputDir, outputFile % ref1), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref1, specialOptions, ref2))
+            self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref2, specialOptions, ref1))
+            #for reference in self.options.referenceSpecies.split():
+            #    self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
+        
+        for outputFile, program, specialOptions in (("snpStats_%s.xml", "snpStats", ""),
                                                     ("snpStats_filtered_%s.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5"),
                                                     ("snpStats_%s_recurrent.xml", "snpStats", "--minimumRecurrence 2"),
                                                     ("snpStats_filtered_%s_recurrent.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5 --minimumRecurrence 2")
                                      ):
             ref1, ref2 = self.options.referenceSpecies.split()
-            self.runScript(program, os.path.join(self.outputDir, outputFile % ref1), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref1, specialOptions, ref2))
-            self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref2, specialOptions, ref1))
+            self.runScript(program, os.path.join(self.outputDir, outputFile % ref1), "--referenceEventString %s %s" % (ref1, specialOptions))
+            self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s " % (ref2, specialOptions))
             #for reference in self.options.referenceSpecies.split():
             #    self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
 
@@ -319,8 +326,8 @@ class MakeStats5(MakeStats):
         ref1, ref2 = self.options.referenceSpecies.split()
         self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s" % (ref1, ref2))
         self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s" % (ref2, ref1))   
-        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_ignoreSitesWithOtherReferencePresent_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s --ignoreSitesWithOtherReferencePresent" % (ref1, ref2))
-        self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_ignoreSitesWithOtherReferencePresent_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s --ignoreSitesWithOtherReferencePresent" % (ref2, ref1))                 
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStats_ignoreSitesWithOtherReferencePresent_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s --ignoreSitesWithOtherReferencePresent" % (ref1, ref2))
+        self.runScript("snpStats", os.path.join(self.outputDir, "snpStats_ignoreSitesWithOtherReferencePresent_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s --ignoreSitesWithOtherReferencePresent" % (ref2, ref1))                 
         self.addChildTarget(MakeStats6(self.alignment, self.outputDir, self.options))
 
 class MakeStats6(MakeStats):

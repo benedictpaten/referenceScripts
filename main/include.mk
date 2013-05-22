@@ -12,7 +12,7 @@ dataDir=${dataPath}/${experimentName}
 sequences=${dataDir}/panTro3 ${dataDir}/NA12878 ${dataDir}/NA12892 ${dataDir}/NA19239 ${dataDir}/apd ${dataDir}/dbb ${dataDir}/mann ${dataDir}/nigerian ${dataDir}/qbl ${dataDir}/venter ${dataDir}/yanhuang ${dataDir}/NA19238 ${dataDir}/NA19240 ${dataDir}/cox ${dataDir}/hg19 ${dataDir}/mcf ${dataDir}/ssto ${dataDir}/cgIndelContigs.fa ${dataDir}/1kIndelContigs.fa ${dataDir}/snp135IndelContigs.fa
 outputDir=${outputPath}/main/${experimentName}
 referenceSpecies=reference hg19
-minimumBlockDegreeRange=1 2 
+minimumBlockDegreeRange=2 
 #3 4 5 6 7 8
 #algorithms: greedy maxCardinality maxWeight blossom5
 referenceAlgorithms = maxWeight
