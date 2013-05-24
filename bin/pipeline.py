@@ -281,12 +281,14 @@ class MakeStats2(MakeStats):
         self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
 
 class MakeStats3(MakeStats):
-    def run(self):          
+    def run(self):   
+        """       
         for outputFile, program, specialOptions in ( 
                                      ("contiguityStats_%s.xml", "contiguityStats", ""), 
                                      ):
             for reference in self.options.referenceSpecies.split():
                 self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
+        """
         self.addChildTarget(MakeStats4(self.alignment, self.outputDir, self.options))
 
 class MakeStats4(MakeStats):
