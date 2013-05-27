@@ -292,7 +292,8 @@ class MakeStats3(MakeStats):
         self.addChildTarget(MakeStats4(self.alignment, self.outputDir, self.options))
 
 class MakeStats4(MakeStats):
-    def run(self):          
+    def run(self):  
+        """        
         for outputFile, program, specialOptions in (("pathStats_%s.xml", "pathStats", ""), 
                                                     ("pathStats_ignoreAdjacencies_%s.xml", "pathStats", "--ignoreAdjacencies")
                                      ):
@@ -301,6 +302,7 @@ class MakeStats4(MakeStats):
             self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref2, specialOptions, ref1))
             #for reference in self.options.referenceSpecies.split():
             #    self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
+        """
         
         for outputFile, program, specialOptions in (("snpStats_%s.xml", "snpStats", ""),
                                                     ("snpStats_filtered_%s.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5"),
@@ -318,8 +320,8 @@ class MakeStats4(MakeStats):
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_%s_recurrent.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s_recurrent.xml") % reference))
-            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_%s.xml") % reference))
-            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_ignoreAdjacencies_%s.xml") % reference))
+            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "indelStats_%s.xml") % reference))
+            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "indelStats_ignoreAdjacencies_%s.xml") % reference))
 
         self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
 
