@@ -549,6 +549,7 @@ void reportDistanceMatrix(Flower *flower, FILE *fileHandle, CapCodeParameters *c
     eventTree_destructIterator(eventIt);
 }
 
+
 int main(int argc, char *argv[]) {
     //////////////////////////////////////////////
     //Parse the inputs
