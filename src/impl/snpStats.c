@@ -238,30 +238,32 @@ int main(int argc, char *argv[]) {
     }
     eventTree_destructIterator(eventIt);
 
-    //Now get snp distance matrix
-    eventPairsToDistanceMatrix = stHash_construct3((uint64_t(*)(const void *)) stIntTuple_hashKey,
-            (int(*)(const void *, const void *)) stIntTuple_equalsFn, (void(*)(void *)) stIntTuple_destruct, free);
-    getMAFs(flower, fileHandle, getSnpStatsDistanceMatrix);
-    stHashIterator *hashIt = stHash_getIterator(eventPairsToDistanceMatrix);
-    stIntTuple *eventPair;
-    while ((eventPair = stHash_getNext(hashIt)) != NULL) {
-        Event *event1 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_get(eventPair, 0));
-        Event *event2 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_get(eventPair, 1));
-        assert(event1 != NULL);
-        assert(event2 != NULL);
-        assert(event1 != event2);
-        assert(event_getHeader(event1) != NULL);
-        assert(event_getHeader(event2) != NULL);
-        int64_t *iA = stHash_search(eventPairsToDistanceMatrix, eventPair);
-        assert(iA[0] % 2 == 0);
-        assert(iA[1] % 2 == 0);
-        fprintf(
-                fileHandle,
-                "<distancesForSamples eventName1=\"%s\" eventName2=\"%s\" substitutionNumber=\"%" PRIi64 "\" sampleNumber=\"%" PRIi64 "\" substitutionRate=\"%f\"/>\n",
-                event_getHeader(event1), event_getHeader(event2), iA[0]/2, iA[1]/2, ((double) iA[0]) / iA[1]);
+    if(makeDistanceMatrix) {
+        //Now get snp distance matrix
+        eventPairsToDistanceMatrix = stHash_construct3((uint64_t(*)(const void *)) stIntTuple_hashKey,
+                (int(*)(const void *, const void *)) stIntTuple_equalsFn, (void(*)(void *)) stIntTuple_destruct, free);
+        getMAFs(flower, fileHandle, getSnpStatsDistanceMatrix);
+        stHashIterator *hashIt = stHash_getIterator(eventPairsToDistanceMatrix);
+        stIntTuple *eventPair;
+        while ((eventPair = stHash_getNext(hashIt)) != NULL) {
+            Event *event1 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_get(eventPair, 0));
+            Event *event2 = eventTree_getEvent(flower_getEventTree(flower), stIntTuple_get(eventPair, 1));
+            assert(event1 != NULL);
+            assert(event2 != NULL);
+            assert(event1 != event2);
+            assert(event_getHeader(event1) != NULL);
+            assert(event_getHeader(event2) != NULL);
+            int64_t *iA = stHash_search(eventPairsToDistanceMatrix, eventPair);
+            assert(iA[0] % 2 == 0);
+            assert(iA[1] % 2 == 0);
+            fprintf(
+                    fileHandle,
+                    "<distancesForSamples eventName1=\"%s\" eventName2=\"%s\" substitutionNumber=\"%" PRIi64 "\" sampleNumber=\"%" PRIi64 "\" substitutionRate=\"%f\"/>\n",
+                    event_getHeader(event1), event_getHeader(event2), iA[0]/2, iA[1]/2, ((double) iA[0]) / iA[1]);
+        }
+        stHash_destructIterator(hashIt);
+        stHash_destruct(eventPairsToDistanceMatrix);
     }
-    stHash_destructIterator(hashIt);
-    stHash_destruct(eventPairsToDistanceMatrix);
 
     fprintf(fileHandle, "</substitutionStats>\n");
 

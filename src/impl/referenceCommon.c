@@ -99,6 +99,7 @@ bool doNotSampleDuplicatedPositions = 0;
  */
 int64_t minimumRecurrence = 0;
 bool ignoreSitesWithOtherReferencePresent = 0;
+bool makeDistanceMatrix = 0;
 
 void basicUsage(const char *programName) {
     fprintf(stderr, "%s\n", programName);
@@ -136,6 +137,7 @@ void basicUsage(const char *programName) {
     fprintf(stderr, "-C --minimumRecurrence : \n");
     fprintf(stderr, "-D --ignoreAdjacencies : \n");
     fprintf(stderr, "-F --ignoreSitesWithOtherReferencePresent : \n");
+    fprintf(stderr, "-G --reportDistanceMatrix : \n");
 }
 
 int parseBasicArguments(int argc, char *argv[], const char *programName) {
@@ -173,13 +175,14 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
                 "ignoreAdjacencies", no_argument, 0, 'D' }, {
                 "outgroupEventString", required_argument, 0, 'E' },
                 { "ignoreSitesWithOtherReferencePresent", no_argument, 0, 'F' },
+                { "reportDistanceMatrix", no_argument, 0, 'G' },
                 { 0, 0, 0,
                 0 } };
 
         int option_index = 0;
 
         int key = getopt_long(argc, argv,
-                "a:c:e:hm:n:o:p:t:u:v:wx:y:z:AB:C:DE:", long_options,
+                "a:c:e:hm:n:o:p:t:u:v:wx:y:z:AB:C:DE:FG", long_options,
                 &option_index);
 
         if (key == -1) {
@@ -282,6 +285,9 @@ int parseBasicArguments(int argc, char *argv[], const char *programName) {
             case 'F':
                 ignoreSitesWithOtherReferencePresent = 1;
                 break;
+            case 'G':
+               makeDistanceMatrix = 1;
+               break;
             default:
                 st_errAbort("Unrecognised option %s", optarg);
                 break;

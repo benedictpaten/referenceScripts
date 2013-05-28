@@ -568,7 +568,9 @@ int main(int argc, char *argv[]) {
         otherReferenceEventString = referenceEventString;
     }
     reportPathStatsForReference(flower, fileHandle, referenceEventString, otherReferenceEventString, capCodeParameters);
-    reportDistanceMatrix(flower, fileHandle, capCodeParameters);
+    if(makeDistanceMatrix) {
+        reportDistanceMatrix(flower, fileHandle, capCodeParameters);
+    }
     fprintf(fileHandle, "</pathStats>\n");
     fclose(fileHandle);
     st_logInfo("Got the stats in %" PRIi64 " seconds/\n", time(NULL) - startTime);

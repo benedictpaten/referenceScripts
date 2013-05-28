@@ -58,6 +58,9 @@ extern bool ignoreSitesWithOtherReferencePresent;
 /*
  * For the snps script
  */
+
+extern bool makeDistanceMatrix;
+
 extern int64_t minimumRecurrence;
 
 stList *getEventStrings(const char *hapA1EventString, const char *hapA2EventString);

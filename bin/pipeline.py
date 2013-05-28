@@ -245,17 +245,55 @@ class MakeStats(Target):
         self.options = options
     
     def runScript(self, binaryName, outputFile, specialOptions):
-        if not os.path.exists(outputFile):
+        self.addChildTarget(RunScript(self.alignment, self.outputDir, self.options, binaryName, outputFile, specialOptions))
+        
+    def run(self):
+        self.addChildTarget(MakeStats1(self.alignment, self.outputDir, self.options))    
+        self.addChildTarget(MakeStats2(self.alignment, self.outputDir, self.options))    
+        self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
+        self.addChildTarget(MakeStats4(self.alignment, self.outputDir, self.options))
+        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
+        self.addChildTarget(MakeStats6(self.alignment, self.outputDir, self.options))    
+        self.addChildTarget(MakeStats7(self.alignment, self.outputDir, self.options))    
+        self.addChildTarget(MakeAssemblyHub(self.alignment, self.outputDir, self.options)) 
+        
+class RunScript(MakeStats):
+    """Builds basic stats and the maf alignment.
+    """
+    def __init__(self, alignment, outputDir, options, binaryName, outputFile, specialOptions):
+        MakeStats.__init__(self, alignment, outputDir, options)
+        self.binaryName = binaryName
+        self.outputFile = outputFile
+        self.specialOptions = specialOptions
+  
+    def run(self):
+        if not os.path.exists(self.outputFile):
+            tempAlignmentDir = getTempDirectory(rootDir=self.getLocalTempDir())
+            system("cp %s/* %s/" % (self.alignment, tempAlignmentDir))
             tempOutputFile = getTempFile(rootDir=self.getLocalTempDir())
             os.remove(tempOutputFile)
             system("%s --cactusDisk '%s' --outputFile %s --minimumNsForScaffoldGap %s --sampleNumber %s %s" % 
-            (os.path.join(getRootPathString(), "bin", binaryName),
-             getCactusDiskString(self.alignment),
+            (os.path.join(getRootPathString(), "bin", self.binaryName),
+             getCactusDiskString(tempAlignmentDir), #self.alignment),
              tempOutputFile, 
-             self.options.minimumNsForScaffoldGap, self.options.sampleNumber, specialOptions))
-            system("mv %s %s" % (tempOutputFile, outputFile))
+             self.options.minimumNsForScaffoldGap, self.options.sampleNumber, self.specialOptions))
+            system("mv %s %s" % (tempOutputFile, self.outputFile))
+            system("rm -rf %s" % (tempAlignmentDir))
         
-    def run(self):
+class MakeAssemblyHub(MakeStats):
+    def run(self):          
+        #Make the assembly hub if faToTwoBit is installed
+        makeAssemblyHub = True
+        try:
+            system("which faToTwoBit")
+        except RuntimeError:
+            makeAssemblyHub = False
+        if makeAssemblyHub:
+            system("hal2assemblyHub.py %s/out.hal %s/outBrowser --lod --shortLabel='%s' --longLabel='%s'" % \
+                   (self.outputDir, self.outputDir, self.outputDir, self.outputDir))
+
+class MakeStats1(MakeStats):
+    def run(self):  
         for outputFile, program in (("treeStats.xml", runCactusTreeStats),
                                     ("alignment.maf", runCactusMAFGenerator),
                                     ("alignment_substitutionsOnly.maf", runCactusMAFGenerator)):
@@ -267,7 +305,6 @@ class MakeStats(Target):
                 else:
                     program(tempFile, getCactusDiskString(self.alignment))
                 system("mv %s %s" % (tempFile, outputFile))
-        self.addChildTarget(MakeStats2(self.alignment, self.outputDir, self.options))    
 
 class MakeStats2(MakeStats):
     def run(self):  
@@ -278,18 +315,16 @@ class MakeStats2(MakeStats):
             outputFile = os.path.join(self.outputDir, outputFile)
             ref1, ref2 = self.options.referenceSpecies.split()
             self.runScript(program, outputFile, "--referenceEventString %s --otherReferenceEventString %s --outgroupEventString %s" % (ref1, ref2, self.options.outgroupEvent))
-        self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
+        #self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
 
 class MakeStats3(MakeStats):
-    def run(self):   
-        """       
+    def run(self):        
         for outputFile, program, specialOptions in ( 
                                      ("contiguityStats_%s.xml", "contiguityStats", ""), 
                                      ):
             for reference in self.options.referenceSpecies.split():
                 self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
-        """
-        self.addChildTarget(MakeStats4(self.alignment, self.outputDir, self.options))
+        #self.addChildTarget(MakeStats4(self.alignment, self.outputDir, self.options))
 
 class MakeStats4(MakeStats):
     def run(self):          
@@ -301,27 +336,36 @@ class MakeStats4(MakeStats):
             self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref2, specialOptions, ref1))
             #for reference in self.options.referenceSpecies.split():
             #    self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
-        
-        for outputFile, program, specialOptions in (("snpStats_%s.xml", "snpStats", ""),
+        self.setFollowOnTarget(MakeStats4B(self.alignment, self.outputDir, self.options))
+
+class MakeStats4B(MakeStats):
+    def run(self):
+        for reference in self.options.referenceSpecies.split():
+            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_%s.xml") % reference))
+            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_ignoreAdjacencies_%s.xml") % reference))
+
+class MakeStats7(MakeStats):
+    def run(self):          
+        for outputFile, program, specialOptions in (("snpStats_%s.xml", "snpStats", "--reportDistanceMatrix"),
                                                     ("snpStats_filtered_%s.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5"),
                                                     ("snpStats_%s_recurrent.xml", "snpStats", "--minimumRecurrence 2"),
-                                                    ("snpStats_filtered_%s_recurrent.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5 --minimumRecurrence 2")
+                                                    ("snpStats_filtered_%s_recurrent.xml", "snpStats", "--ignoreFirstNBasesOfBlock 5 --minimumRecurrence 2 --reportDistanceMatrix")
                                      ):
             ref1, ref2 = self.options.referenceSpecies.split()
             self.runScript(program, os.path.join(self.outputDir, outputFile % ref1), "--referenceEventString %s %s" % (ref1, specialOptions))
             self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s " % (ref2, specialOptions))
             #for reference in self.options.referenceSpecies.split():
             #    self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
+        self.setFollowOnTarget(MakeStats7B(self.alignment, self.outputDir, self.options))
 
+class MakeStats7B(MakeStats):
+    def run(self):  
         for reference in self.options.referenceSpecies.split():
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_%s.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_%s_recurrent.xml") % reference))
             system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "snpIntersection.py"), os.path.join(self.outputDir, "snpStats_filtered_%s_recurrent.xml") % reference))
-            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_%s.xml") % reference))
-            system("python %s %s" % (os.path.join(getRootPathString(), "src", "scripts", "indelIntersection.py"), os.path.join(self.outputDir, "pathStats_ignoreAdjacencies_%s.xml") % reference))
-
-        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
+        #self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
 
 class MakeStats5(MakeStats):
     def run(self):       
@@ -330,7 +374,6 @@ class MakeStats5(MakeStats):
         self.runScript("snpStats", os.path.join(self.outputDir, "snpStatsIntersection_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s" % (ref2, ref1))   
         self.runScript("snpStats", os.path.join(self.outputDir, "snpStats_ignoreSitesWithOtherReferencePresent_%s.xml" % ref1), "--referenceEventString %s --otherReferenceEventString %s --ignoreSitesWithOtherReferencePresent" % (ref1, ref2))
         self.runScript("snpStats", os.path.join(self.outputDir, "snpStats_ignoreSitesWithOtherReferencePresent_%s.xml" % ref2), "--referenceEventString %s --otherReferenceEventString %s --ignoreSitesWithOtherReferencePresent" % (ref2, ref1))                 
-        self.addChildTarget(MakeStats6(self.alignment, self.outputDir, self.options))
 
 class MakeStats6(MakeStats):
     def run(self):
