@@ -49,7 +49,7 @@ class MakeAlignment(Target):
                  referenceAlgorithm, minimumBlockDegree, 
                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
                  theta, useSimulatedAnnealing, heldOutSequence, pruneOutStubAlignments, gapGamma):
-        Target.__init__(self, cpu=4, memory=8000000000)
+        Target.__init__(self, cpu=20, memory=8000000000)
         self.sequences = sequences
         self.constraints = constraints
         self.outputDir = outputDir
@@ -133,7 +133,7 @@ class MakeAlignment(Target):
             #Now run cactus workflow
             runCactusWorkflow(experimentFile=tempExperimentFile, jobTreeDir=tempJobTreeDir, 
                               buildAvgs=False, buildReference=True,
-                              batchSystem="single_machine", maxThreads=6, jobTreeStats=True)
+                              batchSystem="single_machine", maxThreads=20, jobTreeStats=True)
             logger.info("Ran the workflow")
             #Check if the jobtree completed sucessively.
             runJobTreeStatusAndFailIfNotComplete(tempJobTreeDir)
@@ -289,8 +289,11 @@ class MakeAssemblyHub(MakeStats):
         except RuntimeError:
             makeAssemblyHub = False
         if makeAssemblyHub:
-            system("hal2assemblyHub.py %s/out.hal %s/outBrowser --lod --shortLabel='%s' --longLabel='%s'" % \
-                   (self.outputDir, self.outputDir, self.outputDir, self.outputDir))
+            cwd = os.getcwd()
+            os.chdir(self.ouputDir)
+            system("hal2assemblyHub.py out.hal outBrowser --lod --shortLabel='%s' --longLabel='%s'" % \
+                   (self.outputDir[-10:], self.outputDir))
+            os.chdir(cwd)
 
 class MakeStats1(MakeStats):
     def run(self):  
@@ -314,7 +317,7 @@ class MakeStats2(MakeStats):
                                     ("filterNonComponentSequences.xml", "filterNonComponentSequences")):
             outputFile = os.path.join(self.outputDir, outputFile)
             ref1, ref2 = self.options.referenceSpecies.split()
-            self.runScript(program, outputFile, "--referenceEventString %s --otherReferenceEventString %s --outgroupEventString %s" % (ref1, ref2, self.options.outgroupEvent))
+            self.runScript(program, outputFile, "--referenceEventString %s --otherReferenceEventString %s --outgroupEventString %s" % (ref1, ref2, =))
         #self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
 
 class MakeStats3(MakeStats):

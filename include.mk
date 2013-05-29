@@ -1,5 +1,5 @@
 #jobTreeFlags = --batchSystem parasol --logDebug --retryCount 0 --maxThreads 4 --defaultMemory 4294967296
-jobTreeFlags = --batchSystem singleMachine --maxThreads 20 --logDebug --retryCount 0
+jobTreeFlags = --batchSystem singleMachine --maxThreads 40 --logDebug --retryCount 0
 configFile=${libPath}/config_fast.xml
 minimumNsForScaffoldGap=15
 sampleNumber=1000000
