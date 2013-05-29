@@ -14,6 +14,9 @@ test : all
 
 run : mhcHumanVariantsNsRemoved
 
+ecoli : all
+	cd main/ecoli && make all
+
 runFiltered : mhcHumanVariantsNsRemovedAndFiltered
 	
 mhcHumanVariantsNsRemoved : all
