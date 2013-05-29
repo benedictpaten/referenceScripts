@@ -290,7 +290,7 @@ class MakeAssemblyHub(MakeStats):
             makeAssemblyHub = False
         if makeAssemblyHub:
             cwd = os.getcwd()
-            os.chdir(self.ouputDir)
+            os.chdir(self.outputDir)
             system("hal2assemblyHub.py out.hal outBrowser --lod --shortLabel='%s' --longLabel='%s'" % \
                    (self.outputDir[-10:], self.outputDir))
             os.chdir(cwd)
