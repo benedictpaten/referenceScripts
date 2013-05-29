@@ -64,8 +64,14 @@ int main(int argc, char *argv[]) {
             while ((metaSequence = stSortedSet_getNext(it)) != NULL) {
                 if(metaSequence_getLength(metaSequence) > 20) {
                     int64_t i = sampleNumber * (((double) metaSequence_getLength(metaSequence)) / metaSequencesLength);
-                    samplePoints(flower, metaSequence, referenceEventString, i, correct, aligned, samples, bucketNumber, bucketSize,
-                            sortedSegments, !doNotSampleDuplicatedPositions, 0.9);
+                    if(otherReferenceEventString != NULL) {
+                        samplePointsWithOtherReference(flower, metaSequence, referenceEventString, otherReferenceEventString, i, correct, aligned, samples, bucketNumber, bucketSize,
+                                                        sortedSegments, !doNotSampleDuplicatedPositions, 0.9);
+                    }
+                    else {
+                        samplePoints(flower, metaSequence, referenceEventString, i, correct, aligned, samples, bucketNumber, bucketSize,
+                                sortedSegments, !doNotSampleDuplicatedPositions, 0.9);
+                    }
                 }
             }
             stSortedSet_destructIterator(it);

@@ -29,6 +29,7 @@ outgroupEvent=Shigella_sonnei_Ss046_uid58217
 gapGamma = 0.0
 #gapGamma = 0.2
 constraints=${dataDir}/constraints.cig
+singleCopyIngroup=1 0
 
 include ${rootPath}/include.mk
 

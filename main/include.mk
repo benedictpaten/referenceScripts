@@ -27,6 +27,7 @@ permutations = 100
 outgroupEvent=panTro3
 gapGamma = 0.0
 #gapGamma = 0.2
+singleCopyIngroup=1 0
 constraints=${dataDir}/constraints.cig
 
 include ${rootPath}/include.mk

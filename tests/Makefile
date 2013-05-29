@@ -22,6 +22,7 @@ heldOutSequences=CHIMP
 outgroupEvent=HUMAN3
 gapGamma = 0.0 0.2
 constraints=${dataDir}/constraints.cig
+singleCopyIngroup=1 0
 
 #maxCardinality maxWeight blossom5
 

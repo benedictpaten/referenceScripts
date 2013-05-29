@@ -11,7 +11,7 @@ sampleNumber=1000000
 pipeline :
 	rm -rf ./jobTree
 	#Running pipeline to build comparisons
-	python ${binPath}/pipeline.py --gapGamma '${gapGamma}' --constraints ${constraints} --outgroupEvent ${outgroupEvent} --heldOutSequences '${heldOutSequences}' --sampleNumber ${sampleNumber} --permutations '${permutations}' --useSimulatedAnnealing '${useSimulatedAnnealing}' --theta '${theta}' --blastAlignmentStrings '${blastAlignmentStrings}' --baseLevel '${baseLevel}' --maxNumberOfChains '${maxNumberOfChains}' --referenceSpecies '${referenceSpecies}' --haplotypeSequences '${sequences}' --newickTree '${newickTree}' --outputDir ${outputDir} --configFile ${configFile} --referenceAlgorithms '${referenceAlgorithms}' --minimumNsForScaffoldGap ${minimumNsForScaffoldGap} --rangeOfMinimumBlockDegrees '${minimumBlockDegreeRange}' --jobTree ./jobTree ${jobTreeFlags}
+	python ${binPath}/pipeline.py --singleCopyIngroup '${singleCopyIngroup}' --gapGamma '${gapGamma}' --constraints ${constraints} --outgroupEvent ${outgroupEvent} --heldOutSequences '${heldOutSequences}' --sampleNumber ${sampleNumber} --permutations '${permutations}' --useSimulatedAnnealing '${useSimulatedAnnealing}' --theta '${theta}' --blastAlignmentStrings '${blastAlignmentStrings}' --baseLevel '${baseLevel}' --maxNumberOfChains '${maxNumberOfChains}' --referenceSpecies '${referenceSpecies}' --haplotypeSequences '${sequences}' --newickTree '${newickTree}' --outputDir ${outputDir} --configFile ${configFile} --referenceAlgorithms '${referenceAlgorithms}' --minimumNsForScaffoldGap ${minimumNsForScaffoldGap} --rangeOfMinimumBlockDegrees '${minimumBlockDegreeRange}' --jobTree ./jobTree ${jobTreeFlags}
 	jobTreeStatus --jobTree ./jobTree --failIfNotComplete
 	rm -rf ./jobTree
 	
