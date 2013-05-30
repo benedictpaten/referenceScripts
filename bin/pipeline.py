@@ -7,6 +7,7 @@ import os
 import xml.etree.ElementTree as ET
 import xml
 import sys
+from threading import Thread
 from optparse import OptionParser
 
 from jobTree.scriptTree.target import Target 
@@ -27,6 +28,16 @@ from sonLib.bioio import system
 
 from jobTree.src.common import runJobTreeStatusAndFailIfNotComplete
 
+from cactus.progressive.experimentWrapper import ExperimentWrapper
+from cactus.progressive.configWrapper import ConfigWrapper
+from cactus.progressive.cactus_createMultiCactusProject import cleanEventTree
+from cactus.pipeline.ktserverControl import runKtserver
+from cactus.pipeline.ktserverControl import killKtServer
+from cactus.pipeline.ktserverControl import blockUntilKtserverIsRunnning
+from cactus.pipeline.cactus_workflow import CactusPhasesTarget
+
+from cactus.pipeline.ktserverJobTree import addKtserverDependentChild
+
 def getRootPathString():
     """
     function for finding external location
@@ -36,8 +47,15 @@ def getRootPathString():
     i = os.path.abspath(referenceScripts.bin.pipeline.__file__)
     return os.path.split(os.path.split(i)[0])[0] #os.path.split(os.path.split(os.path.split(i)[0])[0])[0]
 
-def getCactusDiskString(alignmentFile):
-    return "<st_kv_database_conf type=\"tokyo_cabinet\"><tokyo_cabinet database_dir=\"%s\"/></st_kv_database_conf>" % alignmentFile
+def getCactusDiskString(options, outputDir):
+    dbConfElem = ET.Element("st_kv_database_conf", type="kyoto_tycoon")
+    ET.SubElement(dbConfElem, "kyoto_tycoon", host=options.databaseHost, port="1978", database_dir=outputDir, in_memory="true", snapshot="true")                
+    return dbConfElem
+
+class A:
+    def __init__(self, cactusWorkflowExperiment, experimentFile):
+        self.experimentNode = cactusWorkflowExperiment
+        self.experimentFile = experimentFile
 
 class MakeAlignment(Target):
     """Target runs the alignment.
@@ -50,7 +68,7 @@ class MakeAlignment(Target):
                  blastAlignmentString, baseLevel, maxNumberOfChains, permutations,
                  theta, useSimulatedAnnealing, heldOutSequence, pruneOutStubAlignments, gapGamma,
                  singleCopyIngroup):
-        Target.__init__(self, cpu=20, memory=8000000000)
+        Target.__init__(self, cpu=int(options.maxThreads), memory=8000000000)
         self.sequences = sequences
         self.constraints = constraints
         self.outputDir = outputDir
@@ -74,6 +92,8 @@ class MakeAlignment(Target):
         cactusAlignmentName = "cactusAlignment"
         outputFile = os.path.join(self.outputDir, cactusAlignmentName)
         if not os.path.exists(outputFile):
+            #Set up the database
+            dbConfElem = getCactusDiskString(self.options, self.outputDir)
             config = ET.parse(os.path.join(getRootPathString(), "lib", "cactus_workflow_config.xml")).getroot()
             
             #Set the reference algorithm
@@ -121,6 +141,10 @@ class MakeAlignment(Target):
             tempJobTreeDir = os.path.join(self.getLocalTempDir(), "jobTree")
             c2hFile = os.path.join(self.getLocalTempDir(), "out.c2h")
             fastaFile = os.path.join(self.getLocalTempDir(), "out.fa")
+            
+            #Make the logfile for jobTree
+            jobTreeLogFile = os.path.join(self.outputDir, "log.txt")
+            
             #Make the experiment file
             cactusWorkflowExperiment = CactusWorkflowExperiment(
                                                  sequences=self.sequences.split(), 
@@ -131,12 +155,17 @@ class MakeAlignment(Target):
                                                  fastaFile=fastaFile,
                                                  outputDir=self.getLocalTempDir(),
                                                  configFile=tempConfigFile,
-                                                 constraints=self.constraints)
+                                                 constraints=self.constraints,
+                                                 databaseConf = dbConfElem)
             cactusWorkflowExperiment.writeExperimentFile(tempExperimentFile)
+        
             #Now run cactus workflow
             runCactusWorkflow(experimentFile=tempExperimentFile, jobTreeDir=tempJobTreeDir, 
                               buildAvgs=False, buildReference=True,
-                              batchSystem="single_machine", maxThreads=20, jobTreeStats=True)
+                              maxThreads=int(self.options.maxThreads), jobTreeStats=True,
+                              batchSystem=self.options.batchSystemForAlignments,
+                              logFile = jobTreeLogFile,
+                              extraJobTreeArgumentsString="--parasolCommand '%s'" % self.options.parasolCommandForAlignment)
             logger.info("Ran the workflow")
             #Check if the jobtree completed sucessively.
             runJobTreeStatusAndFailIfNotComplete(tempJobTreeDir)
@@ -150,14 +179,13 @@ class MakeAlignment(Target):
             system("mv %s %s/" % (halFile, self.outputDir))
             system("mv %s %s/" % (c2hFile, self.outputDir))
             system("mv %s %s/" % (fastaFile, self.outputDir))
-            #Copy across the final alignment
-            localCactusDisk = os.path.join(self.getLocalTempDir(), cactusAlignmentName)
-            #Move the final db
-            system("mv %s %s" % (localCactusDisk, outputFile))
+            
             #Compute the stats
-            system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir, self.outputDir))
-            #We're done!
-        self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
+            #system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir,  v))
+
+        #self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
+        experimentFile = os.path.join(self.outputDir, "experiment.xml")
+        addKtserverDependentChild(self, MakeStats(A(ET.parse(experimentFile).getroot(), experimentFile), self.outputDir, self.options), isSecondary = False)
 
 def makeHeldOutAlignments(self, options, outputDir, 
                  referenceAlgorithm, minimumBlockDegree, 
@@ -239,50 +267,47 @@ class MakeAlignments(Target):
                                                                           baseLevel, maxNumberOfChains, permutations, 
                                                                           theta, useSimulatedAnnealing, pruneOutStubAlignments, gapGamma, singleCopyIngroup)
 
-class MakeStats(Target):
+class MakeStats(CactusPhasesTarget):
     """Builds basic stats and the maf alignment.
     """
-    def __init__(self, alignment, outputDir, options, cpu=1, memory=4000000000):
+    def __init__(self, cactusWorkflowArguments, outputDir, options, cpu=1, memory=4000000000):
         Target.__init__(self, cpu=cpu, memory=memory)
-        self.alignment = alignment
+        self.cactusWorkflowArguments = cactusWorkflowArguments
         self.outputDir = outputDir
         self.options = options
     
     def runScript(self, binaryName, outputFile, specialOptions):
-        self.addChildTarget(RunScript(self.alignment, self.outputDir, self.options, binaryName, outputFile, specialOptions))
+        self.addChildTarget(RunScript(self.cactusWorkflowArguments, self.outputDir, self.options, binaryName, outputFile, specialOptions))
         
     def run(self):
-        self.addChildTarget(MakeStats1(self.alignment, self.outputDir, self.options))    
-        self.addChildTarget(MakeStats2(self.alignment, self.outputDir, self.options))    
-        self.addChildTarget(MakeStats3(self.alignment, self.outputDir, self.options))
-        self.addChildTarget(MakeStats4(self.alignment, self.outputDir, self.options))
-        self.addChildTarget(MakeStats5(self.alignment, self.outputDir, self.options))
-        self.addChildTarget(MakeStats6(self.alignment, self.outputDir, self.options))    
-        self.addChildTarget(MakeStats7(self.alignment, self.outputDir, self.options))    
-        self.addChildTarget(MakeAssemblyHub(self.alignment, self.outputDir, self.options)) 
+        self.addChildTarget(MakeStats1(self.cactusWorkflowArguments, self.outputDir, self.options))    
+        self.addChildTarget(MakeStats2(self.cactusWorkflowArguments, self.outputDir, self.options))    
+        self.addChildTarget(MakeStats3(self.cactusWorkflowArguments, self.outputDir, self.options))
+        self.addChildTarget(MakeStats4(self.cactusWorkflowArguments, self.outputDir, self.options))
+        self.addChildTarget(MakeStats5(self.cactusWorkflowArguments, self.outputDir, self.options))
+        self.addChildTarget(MakeStats6(self.cactusWorkflowArguments, self.outputDir, self.options))    
+        self.addChildTarget(MakeStats7(self.cactusWorkflowArguments, self.outputDir, self.options))    
+        self.addChildTarget(MakeAssemblyHub(self.cactusWorkflowArguments, self.outputDir, self.options)) 
         
 class RunScript(MakeStats):
     """Builds basic stats and the maf alignment.
     """
-    def __init__(self, alignment, outputDir, options, binaryName, outputFile, specialOptions):
-        MakeStats.__init__(self, alignment, outputDir, options)
+    def __init__(self, cactusWorkflowArguments, outputDir, options, binaryName, outputFile, specialOptions):
+        MakeStats.__init__(self, cactusWorkflowArguments, outputDir, options)
         self.binaryName = binaryName
         self.outputFile = outputFile
         self.specialOptions = specialOptions
   
     def run(self):
         if not os.path.exists(self.outputFile):
-            tempAlignmentDir = getTempDirectory(rootDir=self.getLocalTempDir())
-            system("cp %s/* %s/" % (self.alignment, tempAlignmentDir))
             tempOutputFile = getTempFile(rootDir=self.getLocalTempDir())
             os.remove(tempOutputFile)
             system("%s --cactusDisk '%s' --outputFile %s --minimumNsForScaffoldGap %s --sampleNumber %s %s" % 
             (os.path.join(getRootPathString(), "bin", self.binaryName),
-             getCactusDiskString(tempAlignmentDir), #self.alignment),
+             self.cactusWorkflowArguments.cactusDiskDatabaseString, #self.alignment),
              tempOutputFile, 
              self.options.minimumNsForScaffoldGap, self.options.sampleNumber, self.specialOptions))
             system("mv %s %s" % (tempOutputFile, self.outputFile))
-            system("rm -rf %s" % (tempAlignmentDir))
         
 class MakeAssemblyHub(MakeStats):
     def run(self):          
@@ -308,9 +333,9 @@ class MakeStats1(MakeStats):
             if not os.path.exists(outputFile):
                 tempFile = os.path.join(self.getLocalTempDir(), "temp")
                 if "alignment_substitutionsOnly.maf" in outputFile:
-                    program(tempFile, getCactusDiskString(self.alignment), showOnlySubstitutionsWithRespectToTheReference=True)
+                    program(tempFile, self.cactusWorkflowArguments.cactusDiskDatabaseString, showOnlySubstitutionsWithRespectToTheReference=True)
                 else:
-                    program(tempFile, getCactusDiskString(self.alignment))
+                    program(tempFile, self.cactusWorkflowArguments.cactusDiskDatabaseString)
                 system("mv %s %s" % (tempFile, outputFile))
 
 class MakeStats2(MakeStats):
@@ -347,7 +372,7 @@ class MakeStats4(MakeStats):
             self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s --otherReferenceEventString %s" % (ref2, specialOptions, ref1))
             #for reference in self.options.referenceSpecies.split():
             #    self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
-        self.setFollowOnTarget(MakeStats4B(self.alignment, self.outputDir, self.options))
+        self.setFollowOnTarget(MakeStats4B(self.cactusWorkflowArguments, self.outputDir, self.options))
 
 class MakeStats4B(MakeStats):
     def run(self):
@@ -367,7 +392,7 @@ class MakeStats7(MakeStats):
             self.runScript(program, os.path.join(self.outputDir, outputFile % ref2), "--referenceEventString %s %s " % (ref2, specialOptions))
             #for reference in self.options.referenceSpecies.split():
             #    self.runScript(program, os.path.join(self.outputDir, outputFile % reference), "--referenceEventString %s %s" % (reference, specialOptions))
-        self.setFollowOnTarget(MakeStats7B(self.alignment, self.outputDir, self.options))
+        self.setFollowOnTarget(MakeStats7B(self.cactusWorkflowArguments, self.outputDir, self.options))
 
 class MakeStats7B(MakeStats):
     def run(self):  
@@ -418,6 +443,10 @@ def main():
     parser.add_option("--gapGamma", dest="gapGamma")
     parser.add_option("--constraints", dest="constraints")
     parser.add_option("--singleCopyIngroup", dest="singleCopyIngroup")
+    
+    parser.add_option("--databaseHost", default="localhost")
+    parser.add_option("--batchSystemForAlignments", default="singleMachine")
+    parser.add_option("--parasolCommandForAlignment", default="parasol")
     
     Stack.addJobTreeOptions(parser)
     
