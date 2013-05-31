@@ -1,96 +1,141 @@
 <cactusWorkflowConfig>
-	<preprocessor>
-	</preprocessor>
+  <preprocessor chunkSize="100000000" memory="2147483648" overlapSize="1000" preprocessorString="cactus_lastzRepeatMask.py --minPeriod=10 --lastzOpts='--step=20 --notransition --ambiguous=iupac --nogapped' QUERY_FILE TARGET_FILE OUT_FILE" scope="all" />
 	<setup>
 	</setup>
-	<caf
-		lastzArguments="--ambiguous=iupac PARAMETERS --identity=IDENTITY"
-		chunkSize="2000000" 
-		chunksPerJob="1" 
+	<caf 
+		chunkSize="25000000" 
+		lastzArguments="--step=5 --nogapped --masking=20 --hspthresh=3000 --ambiguous=iupac"
 		compressFiles="1" 
 		overlapSize="10000" 
-		filterByIdentity="1" 
-		identityRatio="100" 
+		filterByIdentity="0" 
+		identityRatio="6" 
 		minimumDistance="0.01" 
-		minimumSequenceLengthForBlast="30"
-		annealingRounds="2 3 4 8 16 32 64 128" 
+		minimumSequenceLengthForBlast="100"
+		annealingRounds="2 4 16 128" 
 		deannealingRounds="1 2 3 4 8 16 32 64" 
-		blockTrim="2" 
+		blockTrim="0" 
 		minimumTreeCoverage="0.0" 
-		trim="0 0 0 0 0 0 0 0 0 0 0"
+		trim="5 5 5 5 5 5 5 5 5 5 5 5" 
 		minimumBlockDegree="2"
-		requiredInGroupFraction="0.0"
-		requiredOutGroupFraction="0.0"
+		requiredIngroupFraction="0.0"
+		requiredOutgroupFraction="0.0"
+		requiredAllFraction="1.0"
 		singleCopyIngroup="1"
 		singleCopyOutgroup="1"
+		maxAdjacencyComponentSizeRatio="10"
+		minLengthForChromosome="1000000"
+		proportionOfUnalignedBasesForNewChromosome="0.8"
+		lastzMemory="2147483648"
 	>
 		<CactusCafRecursion maxFlowerGroupSize="100000000"/>
-		<CactusCafWrapper minFlowerSize="5000" maxFlowerGroupSize="1000000"/>
+		<CactusCafWrapper minFlowerSize="5000" maxFlowerGroupSize="10000000" memory="2147483648"/>
+	</caf>
+	<caf minDivergence="0.1"
+		chunkSize="1000000" 
+		lastzArguments="--step=1 --masking=20 --nogapped --hspthresh=1800 --ambiguous=iupac"
+		compressFiles="1" 
+		overlapSize="10000" 
+		filterByIdentity="0" 
+		identityRatio="6" 
+		minimumDistance="0.01" 
+		minimumSequenceLengthForBlast="100"
+		annealingRounds="2 4 16 128" 
+		deannealingRounds="1 2 3 4 8 16 32 64" 
+		blockTrim="0" 
+		minimumTreeCoverage="0.0" 
+		trim="3 3 3 3 3 3 3 3 3 3 3 3" 
+		minimumBlockDegree="2"
+		requiredIngroupFraction="1.0"
+		requiredOutgroupFraction="0.0"
+		requiredAllFraction="0.0"
+		singleCopyIngroup="1"
+		singleCopyOutgroup="1" 
+		maxAdjacencyComponentSizeRatio="10"
+		lastzMemory="2147483648"
+	>
+		<CactusCafRecursion maxFlowerGroupSize="100000000"/>
+		<CactusCafWrapper minFlowerSize="5000" maxFlowerGroupSize="1000000" memory="2147483648"/>
 	</caf>
 	<bar
 		runBar="1"
-		maxFlowerGroupSize="40000"
-		numThreads="1" 
-		spanningTrees="10" 
+		spanningTrees="2" 
 		gapGamma="0.2" 
 		useBanding="1" 
 		bandingLimit="100000" 
 		splitMatrixBiggerThanThis="3000" 
         anchorMatrixBiggerThanThis="500"
         repeatMaskMatrixBiggerThanThis="500"
-        diagonalExpansion="20"
+		diagonalExpansion="20"
 		constraintDiagonalTrim="14" 
-		minimumBlockDegree="0" 
+		minimumBlockDegree="2" 
 		alignAmbiguityCharacters="1"
-		requiredInGroupFraction="0.0"
-		requiredOutGroupFraction="0.0"
+		requiredIngroupFraction="0.0"
+		requiredOutgroupFraction="0.0"
+		requiredAllFraction="0.67"
+		largeEndSize="100000"
+		veryLargeEndSize="1500000"
+		maximumNumberOfSequencesBeforeSwitchingToFast="50"
 	>
 		<CactusBarRecursion maxFlowerGroupSize="100000000"/>
-		<CactusBarWrapper maxFlowerGroupSize="40000"/>
+		<CactusBarWrapper maxFlowerGroupSize="1500000" memory="2147483648"/>
+		<CactusBarEndAlignerWrapper memory="2147483648"/>
 	</bar>
 	<normal 
-		iterations="2"
-		maxNumberOfChains="30" 
+		iterations="0"
 	>
-		<CactusNormalRecursion maxFlowerGroupSize="100000000" maxFlowerWrapperGroupSize="1000000"/>
+		<CactusNormalRecursion maxFlowerGroupSize="500000000" maxFlowerWrapperGroupSize="50000000"/>
 		<CactusNormalWrapper/>
 	</normal>
 	<avg
+		buildAvgs="0"
 	>
-		<CactusAVGRecursion maxFlowerGroupSize="100000000" maxFlowerWrapperGroupSize="1000000"/>
+		<CactusAVGRecursion maxFlowerGroupSize="500000000" maxFlowerWrapperGroupSize="50000000"/>
 		<CactusAVGWrapper/>
 	</avg>
 	<reference 
 		buildReference="1"
-		maxFlowerGroupSize="1000000"
 		matchingAlgorithm="blossom5" 
 		reference="reference" 
 		useSimulatedAnnealing="1" 
-		theta="0.001" 
+		theta="0.0001" 
 		maxWalkForCalculatingZ="100000" 
-		permutations="10"
+		permutations="5"
 		ignoreUnalignedGaps="1"
-		wiggle="0.98"
+		wiggle="0.9"
 	>
-		<CactusReferenceRecursion maxFlowerGroupSize="100000000" maxFlowerWrapperGroupSize="1000000"/>
+		<CactusReferenceRecursion maxFlowerGroupSize="500000000" maxFlowerWrapperGroupSize="50000000"/>
 	 	<CactusReferenceWrapper/>
-	 	<CactusSetReferenceCoordinatesUpWrapper />
-	 	<CactusSetReferenceCoordinatesDownRecursion maxFlowerGroupSize="100000000" maxFlowerWrapperGroupSize="1000000"/>
+	 	<CactusSetReferenceCoordinatesUpWrapper/>
+	 	<CactusSetReferenceCoordinatesDownRecursion maxFlowerGroupSize="500000000" maxFlowerWrapperGroupSize="50000000"/>
 	 	<CactusSetReferenceCoordinatesDownWrapper/>
 	</reference>
 	<check 
-		runCheck="1"
-		maxFlowerGroupSize="1000000"
+		runCheck="0"
 	>
-		<CactusCheckRecursion maxFlowerGroupSize="100000000" maxFlowerWrapperGroupSize="1000000"/>
+		<CactusCheckRecursion maxFlowerGroupSize="500000000" maxFlowerWrapperGroupSize="50000000"/>
 		<CactusCheckWrapper/>
 	</check>
 	<hal
 		buildHal="1"
+		buildMaf="1"
 		buildFasta="1"
 		showOnlySubstitutionsWithRespectToReference="0"
+		joinMaf="0"
 	>
-		<CactusHalGeneratorRecursion maxFlowerGroupSize="10000000"/>
+		<CactusHalGeneratorRecursion maxFlowerGroupSize="50000000"/>
 		<CactusHalGeneratorUpWrapper/>
 	</hal>
+  	<multi_cactus>
+		<outgroup 
+			strategy="greedyLeaves" 
+			threshold="0"
+			ancestor_quality_fraction="0.75"
+		/>
+	 	<decomposition 
+	 		subtree_size="2" 
+	 		self_alignment="false" 
+	 		default_internal_node_prefix="Anc"
+			max_parallel_subtrees="5"
+	 	/>
+  	</multi_cactus>
 </cactusWorkflowConfig>

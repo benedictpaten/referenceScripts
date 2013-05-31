@@ -165,6 +165,7 @@ class MakeAlignment(Target):
                               maxThreads=int(self.options.maxThreads), jobTreeStats=True,
                               defaultMemory=int(self.options.defaultMemory),
                               batchSystem=self.options.batchSystemForAlignments,
+                              retryCount=2,
                               logFile = jobTreeLogFile,
                               extraJobTreeArgumentsString="--parasolCommand '%s'" % self.options.parasolCommandForAlignment)
             logger.info("Ran the workflow")
