@@ -9,6 +9,8 @@ import xml
 import sys
 from threading import Thread
 from optparse import OptionParser
+import time
+import random
 
 from jobTree.scriptTree.target import Target 
 from jobTree.scriptTree.stack import Stack
@@ -182,6 +184,16 @@ class MakeAlignment(Target):
             #system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir,  v))
 
         #self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
+        self.addChildTarget(MakeAlignment2(self.outputDir, self.options))
+    
+class MakeAlignment2(Target):
+    def __init__(self, outputDir, options):
+        Target.__init__(self)
+        self.outputDir = outputDir
+        self.options = options
+    
+    def run(self):
+        time.sleep(random.random()*100)
         experimentFile = os.path.join(self.outputDir, "experiment.xml")
         addKtserverDependentChild(self, MakeStats(A(ET.parse(experimentFile).getroot(), experimentFile), self.outputDir, self.options), isSecondary = False)
 
