@@ -163,6 +163,7 @@ class MakeAlignment(Target):
             runCactusWorkflow(experimentFile=tempExperimentFile, jobTreeDir=tempJobTreeDir, 
                               buildAvgs=False, buildReference=True,
                               maxThreads=int(self.options.maxThreads), jobTreeStats=True,
+                              defaultMemory=int(self.options.defaultMemory),
                               batchSystem=self.options.batchSystemForAlignments,
                               logFile = jobTreeLogFile,
                               extraJobTreeArgumentsString="--parasolCommand '%s'" % self.options.parasolCommandForAlignment)
