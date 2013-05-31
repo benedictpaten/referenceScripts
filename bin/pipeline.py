@@ -130,17 +130,17 @@ class MakeAlignment(Target):
             config.find("reference").attrib["theta"] = str(self.theta)
             
             #Write the config file
-            tempConfigFile = os.path.join(self.getLocalTempDir(), "config.xml")
-            fileHandle = open(tempConfigFile, 'w')
+            configFile = os.path.join(self.outputDir, "config.xml")
+            fileHandle = open(configFile, 'w')
             tree = ET.ElementTree(config)
             tree.write(fileHandle)
             fileHandle.close()
             
             #Make the supporting temporary files
-            tempExperimentFile = os.path.join(self.getLocalTempDir(), "experiment.xml")
-            tempJobTreeDir = os.path.join(self.getLocalTempDir(), "jobTree")
-            c2hFile = os.path.join(self.getLocalTempDir(), "out.c2h")
-            fastaFile = os.path.join(self.getLocalTempDir(), "out.fa")
+            experimentFile = os.path.join(self.outputDir, "experiment.xml")
+            jobTreeDir = os.path.join(self.outputDir, "jobTree")
+            c2hFile = os.path.join(self.outputDir, "out.c2h")
+            fastaFile = os.path.join(self.outputDir, "out.fa")
             
             #Make the logfile for jobTree
             jobTreeLogFile = os.path.join(self.outputDir, "log.txt")
@@ -153,14 +153,14 @@ class MakeAlignment(Target):
                                                  databaseName=cactusAlignmentName,
                                                  halFile=c2hFile,
                                                  fastaFile=fastaFile,
-                                                 outputDir=self.getLocalTempDir(),
-                                                 configFile=tempConfigFile,
+                                                 outputDir=self.outputDir,
+                                                 configFile=configFile,
                                                  constraints=self.constraints,
                                                  databaseConf = dbConfElem)
-            cactusWorkflowExperiment.writeExperimentFile(tempExperimentFile)
+            cactusWorkflowExperiment.writeExperimentFile(experimentFile)
         
             #Now run cactus workflow
-            runCactusWorkflow(experimentFile=tempExperimentFile, jobTreeDir=tempJobTreeDir, 
+            runCactusWorkflow(experimentFile=experimentFile, jobTreeDir=jobTreeDir, 
                               buildAvgs=False, buildReference=True,
                               maxThreads=int(self.options.maxThreads), jobTreeStats=True,
                               defaultMemory=int(self.options.defaultMemory),
@@ -171,17 +171,12 @@ class MakeAlignment(Target):
                               extraJobTreeArgumentsString="--parasolCommand '%s'" % self.options.parasolCommandForAlignment)
             logger.info("Ran the workflow")
             #Check if the jobtree completed sucessively.
-            runJobTreeStatusAndFailIfNotComplete(tempJobTreeDir)
+            runJobTreeStatusAndFailIfNotComplete(jobTreeDir)
             logger.info("Checked the job tree dir")
             #Now copy the true assembly back to the output
             system("cp %s %s/constraints.cig" % (self.constraints, self.outputDir))
-            system("mv %s %s/experiment.xml" % (tempExperimentFile, self.outputDir))
-            system("mv %s %s/config.xml" % (tempConfigFile, self.outputDir))
-            halFile = os.path.join(self.getLocalTempDir(), "out.hal")
+            halFile = os.path.join(self.outputDir, "out.hal")
             system("halAppendCactusSubtree %s %s '%s' %s" % (c2hFile, fastaFile, self.options.newickTree, halFile))
-            system("mv %s %s/" % (halFile, self.outputDir))
-            system("mv %s %s/" % (c2hFile, self.outputDir))
-            system("mv %s %s/" % (fastaFile, self.outputDir))
             
             #Compute the stats
             #system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir,  v))
