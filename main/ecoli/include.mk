@@ -33,7 +33,7 @@ singleCopyIngroup=1 0
 
 include ${rootPath}/include.mk
 
-sampleNumber=100000000
+sampleNumber=1000000
 
 
 
