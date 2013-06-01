@@ -333,6 +333,8 @@ class MakeAssemblyHub(MakeStats):
             system("hal2assemblyHub.py out.hal outBrowser --lod --shortLabel='%s' --longLabel='%s'" % \
                    (self.outputDir[-10:], self.outputDir))
             os.chdir(cwd)
+        else:
+            self.logToMaster("Not building assembly hub")
 
 class MakeStats1(MakeStats):
     def run(self):  
