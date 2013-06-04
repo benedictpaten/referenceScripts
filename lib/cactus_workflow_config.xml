@@ -1,28 +1,28 @@
 <cactusWorkflowConfig>
-  	<preprocessor memory="2147483648" preprocessorString="cactus_makeAlphaNumericHeaders.py IN_FILE OUT_FILE" scope="leaves" />
-  	<preprocessor check="1" memory="2147483648" preprocessorString="cactus_checkUniqueHeaders.py IN_FILE" scope="leaves" />
-  	<preprocessor chunkSize="100000000" memory="2147483648" preprocessorString="cactus_lastzRepeatMask.py --minPeriod=10 --lastzOpts='--step=20 --notransition --ambiguous=iupac --nogapped' GENOME_FILE IN_FILE OUT_FILE" scope="leaves" />	
-  	<setup makeEventHeadersAlphaNumeric="1">
+  <preprocessor memory="2147483648" preprocessorString="cactus_makeAlphaNumericHeaders.py IN_FILE OUT_FILE" scope="leaves" />
+  <preprocessor check="1" memory="2147483648" preprocessorString="cactus_checkUniqueHeaders.py IN_FILE" scope="leaves" />
+  <preprocessor chunkSize="100000000" memory="2147483648" preprocessorString="cactus_lastzRepeatMask.py --minPeriod=10 --lastzOpts='--step=20 --notransition --ambiguous=iupac --nogapped' GENOME_FILE IN_FILE OUT_FILE" scope="leaves" />
+  	<setup makeEventHeadersAlphaNumeric="0">
 	</setup>
 	<caf 
 		chunkSize="25000000" 
-		lastzArguments="--step=5 --nogapped --masking=20 --hspthresh=3000 --ambiguous=iupac"
+		lastzArguments="--ambiguous=iupac --masking=20 --step=5"
 		compressFiles="1" 
 		overlapSize="10000" 
 		filterByIdentity="0" 
 		identityRatio="6" 
 		minimumDistance="0.01" 
-		minimumSequenceLengthForBlast="100"
-		annealingRounds="2 4 16 128" 
+		minimumSequenceLengthForBlast="30"
+		annealingRounds="2 4 16 64 128 64" 
 		deannealingRounds="1 2 3 4 8 16 32 64" 
 		blockTrim="0" 
 		minimumTreeCoverage="0.0" 
-		trim="5 5 5 5 5 5 5 5 5 5 5 5" 
+		trim="3 3 3 3 3 3 3 3 3 3 3 3 3 3 3" 
 		minimumBlockDegree="2"
 		requiredIngroupFraction="0.0"
 		requiredOutgroupFraction="0.0"
 		requiredAllFraction="0.0"
-		singleCopyIngroup="1"
+		singleCopyIngroup="0"
 		singleCopyOutgroup="1"
 		maxAdjacencyComponentSizeRatio="10"
 		minLengthForChromosome="1000000"
@@ -31,32 +31,6 @@
 	>
 		<CactusCafRecursion maxFlowerGroupSize="100000000"/>
 		<CactusCafWrapper minFlowerSize="5000" maxFlowerGroupSize="10000000" memory="2147483648"/>
-	</caf>
-	<caf minDivergence="0.1"
-		chunkSize="1000000" 
-		lastzArguments="--step=1 --masking=20 --nogapped --hspthresh=1800 --ambiguous=iupac"
-		compressFiles="1" 
-		overlapSize="10000" 
-		filterByIdentity="0" 
-		identityRatio="6" 
-		minimumDistance="0.01" 
-		minimumSequenceLengthForBlast="100"
-		annealingRounds="2 4 16 128" 
-		deannealingRounds="1 2 3 4 8 16 32 64" 
-		blockTrim="0" 
-		minimumTreeCoverage="0.0" 
-		trim="3 3 3 3 3 3 3 3 3 3 3 3" 
-		minimumBlockDegree="2"
-		requiredIngroupFraction="0.0"
-		requiredOutgroupFraction="0.0"
-		requiredAllFraction="0.0"
-		singleCopyIngroup="1"
-		singleCopyOutgroup="1" 
-		maxAdjacencyComponentSizeRatio="10"
-		lastzMemory="2147483648"
-	>
-		<CactusCafRecursion maxFlowerGroupSize="100000000"/>
-		<CactusCafWrapper minFlowerSize="5000" maxFlowerGroupSize="1000000" memory="2147483648"/>
 	</caf>
 	<bar
 		runBar="1"
@@ -103,7 +77,7 @@
 		maxWalkForCalculatingZ="100000" 
 		permutations="5"
 		ignoreUnalignedGaps="1"
-		wiggle="0.95"
+		wiggle="0.9"
 	>
 		<CactusReferenceRecursion maxFlowerGroupSize="500000000" maxFlowerWrapperGroupSize="50000000"/>
 	 	<CactusReferenceWrapper/>
@@ -119,8 +93,10 @@
 	</check>
 	<hal
 		buildHal="1"
+		buildMaf="0"
 		buildFasta="1"
 		showOnlySubstitutionsWithRespectToReference="0"
+		joinMaf="0"
 	>
 		<CactusHalGeneratorRecursion maxFlowerGroupSize="50000000"/>
 		<CactusHalGeneratorUpWrapper/>
