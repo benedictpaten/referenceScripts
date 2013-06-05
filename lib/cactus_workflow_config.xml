@@ -50,7 +50,7 @@
 		requiredAllFraction="0.0"
 		largeEndSize="100000"
 		veryLargeEndSize="1500000"
-		maximumNumberOfSequencesBeforeSwitchingToFast="50"
+		maximumNumberOfSequencesBeforeSwitchingToFast="100"
 	>
 		<CactusBarRecursion maxFlowerGroupSize="100000000"/>
 		<CactusBarWrapper maxFlowerGroupSize="1500000" memory="2147483648"/>
