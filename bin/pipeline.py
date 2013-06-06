@@ -73,6 +73,7 @@ class MakeAlignment(Target):
         Target.__init__(self, cpu=int(options.maxThreads), memory=8000000000)
         self.sequences = sequences
         self.constraints = constraints
+        self.options.constraints = constraints #re-assign the constraint file
         self.outputDir = outputDir
         self.referenceAlgorithm = referenceAlgorithm
         self.minimumBlockDegree = int(minimumBlockDegree)
@@ -298,7 +299,8 @@ class MakeStats(CactusPhasesTarget):
         self.addChildTarget(MakeStats6(self.cactusWorkflowArguments, self.outputDir, self.options))    
         self.addChildTarget(MakeStats7(self.cactusWorkflowArguments, self.outputDir, self.options))    
         self.addChildTarget(MakeAssemblyHub(self.cactusWorkflowArguments, self.outputDir, self.options)) 
-        
+        self.addChildTarget(MakeCheckConstraints(self.cactusWorkflowArguments, self.outputDir, self.options))
+
 class RunScript(MakeStats):
     """Builds basic stats and the maf alignment.
     """
@@ -335,6 +337,20 @@ class MakeAssemblyHub(MakeStats):
             os.chdir(cwd)
         else:
             self.logToMaster("Not building assembly hub")
+
+class MakeCheckConstraints(MakeStats):
+    def run(self):
+        outputFile = os.path.join(self.outputDir, "constraintStats.txt")
+        program = "checkConstraints"
+        if not os.path.exists(outputFile):
+            tempOutputFile = getTempFile(rootDir=self.getLocalTempDir())
+            os.remove(tempOutputFile)
+            system( "%s --cactusDisk '%s' --outputFile %s --constraintFile %s" % 
+             ( os.path.join(getRootPathString(), "bin", program),
+               self.cactusWorkflowArguments.cactusDiskDatabaseString, #self.alignment),
+               tempOutputFile,
+               self.options.constraints ) )
+            system("mv %s %s" % (tempOutputFile, outputFile))
 
 class MakeStats1(MakeStats):
     def run(self):  
