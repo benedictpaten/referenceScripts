@@ -208,7 +208,11 @@ void writeCigars(stList *cigars, char *outfile){
 int64_t segment_start(Segment *segment){
     assert(segment != NULL);
     Sequence * sequence = segment_getSequence(segment);
-    return segment_getStart(segment) - sequence_getStart(sequence);
+    int64_t start = segment_getStart(segment) - sequence_getStart(sequence);
+    if (!segment_getStrand(segment)){//negative strand
+        start = (sequence_getStart(sequence) + sequence_getLength(sequence) - 1) - segment_getStart(segment);
+    }
+    return start;
 }
 
 int64_t segment_end(Segment *segment){
