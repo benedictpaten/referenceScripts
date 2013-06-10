@@ -55,16 +55,20 @@ void cigar_setMatchedBlocks(Cigar *cigar){
         char * letter = stList_get(items, i);
         int64_t len = (int64_t) strtol( stList_get(items, i+1), (char **)NULL, 10 );
         if (strcmp(letter, "M") == 0){ //match
-            int64_t s1 = currstart1;
+            //int64_t s1 = currstart1;
+            stIntTuple *s1 = stIntTuple_construct1(currstart1);
             stList_append(cigar->starts1, s1);
             currstart1 += len;
-            int64_t e1 = currstart1;
+            //int64_t e1 = currstart1;
+            stIntTuple *e1 = stIntTuple_construct1(currstart1);
             stList_append(cigar->ends1, e1);
             
-            int64_t s2 = currstart2;
+            //int64_t s2 = currstart2;
+            stIntTuple *s2 = stIntTuple_construct1(currstart2);
             stList_append(cigar->starts2, s2);
             currstart2 += len;
-            int64_t e2 = currstart2;
+            //int64_t e2 = currstart2;
+            stIntTuple *e2 = stIntTuple_construct1(currstart2);
             stList_append(cigar->ends2, e2);
         }else if( strcmp(letter, "I") == 0 ){ //insertion
             currstart1 += len;
@@ -103,8 +107,26 @@ void cigar_destruct(Cigar *cigar){
 }
 
 /////////////////////////////////////
+int64_t stList_getInt(stList * intTupleList, int64_t index){
+    stIntTuple * intTuple = stList_get(intTupleList, index);
+    return stIntTuple_get(intTuple, 0);
+}
 
-int cigar_cmp(Cigar *cig1, Cigar *cig2){ 
+void stList_appendInt(stList * intTupleList, int64_t value){
+    stIntTuple * intTuple = stIntTuple_construct1(value); 
+    stList_append(intTupleList, intTuple);
+}
+
+int64_t stList_removeFirstInt(stList * intTupleList){
+    stIntTuple * intTuple = stList_removeFirst(intTupleList);
+    return stIntTuple_get(intTuple, 0);
+}
+
+//int cigar_cmp(Cigar *cig1, Cigar *cig2){ 
+int cigar_cmp(const void *a, const void *b){ 
+    Cigar *cig1 = (Cigar *)a;
+    Cigar *cig2 = (Cigar *)b;
+
     //currently constraints have to be on positive strands
     assert( cig1.strand1 == '+' && cig1.strand2 == '+' );
     assert( cig2.strand1 == '+' && cig2.strand2 == '+' );
@@ -185,10 +207,10 @@ void writeCigar_long(Cigar *cig, FILE *fh){
     fprintf(fh, "\tCorrectBases %" PRId64 ", Total Length: %" PRId64 ", pcCorrect: %f.\n", cig->correctBases, cig->end1 - cig->start1, (float)cig->correctBases/(cig->end1 - cig->start1));
     //write the left-over matched blocks
     for(int64_t i=0; i < stList_length(cig->starts1); i++){
-        int64_t s1 = stList_get(cig->starts1, i);
-        int64_t e1 = stList_get(cig->ends1, i);
-        int64_t s2 = stList_get(cig->starts2, i);
-        int64_t e2 = stList_get(cig->ends2, i);
+        int64_t s1 = stList_getInt(cig->starts1, i);
+        int64_t e1 = stList_getInt(cig->ends1, i);
+        int64_t s2 = stList_getInt(cig->starts2, i);
+        int64_t e2 = stList_getInt(cig->ends2, i);
         fprintf(fh, "\t[%" PRId64 ", %" PRId64 ")\t[%" PRId64 ", %" PRId64 ")\n", s1, e1, s2, e2);
     }
 }
@@ -196,8 +218,11 @@ void writeCigar_long(Cigar *cig, FILE *fh){
 void writeCigars(stList *cigars, char *outfile){
     FILE *fh = fopen(outfile, "w");
     for (int64_t i=0; i < stList_length(cigars); i++) {
-        Cigar *cig = stList_get(cigars, i);
-        fprintf(fh, "cigar: %s %" PRId64 " %" PRId64 " %c %s %" PRId64 " %" PRId64 " %c %" PRId64 " %s\n", cig->header1, cig->start1, cig->end1, cig->strand1, cig->header2, cig->start2, cig->end2, cig->strand2, cig->score, cig->cigarStr);
+        stList *subCigs = stList_get(cigars, i);
+        for (int64_t j=0; j < stList_length(subCigs); j++) {
+            Cigar *cig = stList_get(subCigs, j);
+            writeCigar(cig, fh); 
+        }
     }
     fclose(fh);
 }
@@ -289,10 +314,10 @@ stList * blockGetConstraints(Block *block, stList *constraintsList){
                         /*//DEBUG
                         st_logInfo("\nVisit %d: \n", cig->numVisited);
                         for(int64_t s=0; s < stList_length(cig->starts1); s++){
-                            int64_t s1 = stList_get(cig->starts1, s);
-                            int64_t e1 = stList_get(cig->ends1, s);
-                            int64_t s2 = stList_get(cig->starts2, s);
-                            int64_t e2 = stList_get(cig->ends2, s);
+                            int64_t s1 = stList_getInt(cig->starts1, s);
+                            int64_t e1 = stList_getInt(cig->ends1, s);
+                            int64_t s2 = stList_getInt(cig->starts2, s);
+                            int64_t e2 = stList_getInt(cig->ends2, s);
                             st_logInfo("\t(%" PRId64 ", %" PRId64 ")\t(%" PRId64 ", %" PRId64 ")\n", s1, e1, s2, e2);
                         }
                         //END DEBUG*/
@@ -331,12 +356,12 @@ stList * getNonOverlap(int64_t s1, int64_t e1, int64_t s2, int64_t e2){
     stList *positions = stList_construct();
     assert (s1 < e2 && s2 < e1);
     if ( s1 < s2 ){ 
-        stList_append(positions, s1);
-        stList_append(positions, s2);
+        stList_appendInt(positions, s1);
+        stList_appendInt(positions, s2);
     }
     if ( e2 < e1 ){
-        stList_append(positions, e2);
-        stList_append(positions, e1);
+        stList_appendInt(positions, e2);
+        stList_appendInt(positions, e1);
     }
     return positions;
 }
@@ -344,8 +369,8 @@ stList * getNonOverlap(int64_t s1, int64_t e1, int64_t s2, int64_t e2){
 stList * getNonOverlap2(int64_t offset, stList *positions1){
     stList *positions2 = stList_construct();
     for(int64_t i=0; i < stList_length(positions1); i++){
-        int64_t pos1 = (int64_t) stList_get(positions1, i);
-        stList_append(positions2, pos1 + offset);
+        int64_t pos1 = (int64_t) stList_getInt(positions1, i);
+        stList_appendInt(positions2, pos1 + offset);
     }
     return positions2;
 }
@@ -379,10 +404,10 @@ int cmpCigarAndBlock2(Cigar *cig, Segment *query, Segment *target, int64_t *true
     int64_t tend = tstart + segment_getLength(target);
     
     while( stList_length(cig->starts1) > 0 ){ //each matched block of the constraint
-        int64_t s1 = (int64_t) stList_removeFirst( cig->starts1 );
-        int64_t e1 = (int64_t) stList_removeFirst( cig->ends1 );
-        int64_t s2 = (int64_t) stList_removeFirst( cig->starts2 );
-        int64_t e2 = (int64_t) stList_removeFirst( cig->ends2 );
+        int64_t s1 = stList_removeFirstInt( cig->starts1 );
+        int64_t e1 = stList_removeFirstInt( cig->ends1 );
+        int64_t s2 = stList_removeFirstInt( cig->starts2 );
+        int64_t e2 = stList_removeFirstInt( cig->ends2 );
         //check to see if the alignment agrees with the alignment in the constraint cigar
         if ((s1 < qend && qstart < e1) && (s2 < tend && tstart < e2) &&//both q&t have overlap with block threads
             (s1 - qstart == s2 - tstart)){ //alignment agrees with the constraint cigar
@@ -397,10 +422,10 @@ int cmpCigarAndBlock2(Cigar *cig, Segment *query, Segment *target, int64_t *true
                 stList_append(ends2, stList_get(positions2, i+1));
             }
         }else{
-            stList_append(starts1, s1);
-            stList_append(ends1, e1);
-            stList_append(starts2, s2);
-            stList_append(ends2, e2);
+            stList_appendInt(starts1, s1);
+            stList_appendInt(ends1, e1);
+            stList_appendInt(starts2, s2);
+            stList_appendInt(ends2, e2);
         }
     }
 
@@ -434,10 +459,10 @@ int removeDisagreement(Cigar *cig, stList *segments, FILE *fh){
         stList *ends2 = stList_construct();
             
         while( stList_length(cig->starts1) > 0 ){ //each matched block of the constraint
-            int64_t s1 = (int64_t) stList_removeFirst( cig->starts1 );
-            int64_t e1 = (int64_t) stList_removeFirst( cig->ends1 );
-            int64_t s2 = (int64_t) stList_removeFirst( cig->starts2 );
-            int64_t e2 = (int64_t) stList_removeFirst( cig->ends2 );
+            int64_t s1 = stList_removeFirstInt( cig->starts1 );
+            int64_t e1 = stList_removeFirstInt( cig->ends1 );
+            int64_t s2 = stList_removeFirstInt( cig->starts2 );
+            int64_t e2 = stList_removeFirstInt( cig->ends2 );
             
             if (s1 < qend && qstart < e1){
                 stList *positions1 = getNonOverlap(s1, e1, qstart, qend);
@@ -450,10 +475,10 @@ int removeDisagreement(Cigar *cig, stList *segments, FILE *fh){
                     stList_append(ends2, stList_get(positions2, i+1));
                 }
             }else{
-                stList_append(starts1, s1);
-                stList_append(ends1, e1);
-                stList_append(starts2, s2);
-                stList_append(ends2, e2);
+                stList_appendInt(starts1, s1);
+                stList_appendInt(ends1, e1);
+                stList_appendInt(starts2, s2);
+                stList_appendInt(ends2, e2);
             }
         }
         if ( stList_length(starts1) > 0 ){
@@ -471,8 +496,8 @@ int removeDisagreement(Cigar *cig, stList *segments, FILE *fh){
     /*float minCorrect = 0.98;
     int64_t leftoverBases = 0;
     for (int64_t i=0; i < stList_length(cig->starts1); i ++){
-        int64_t s1 = stList_get(cig->starts1, i);
-        int64_t e1 = stList_get(cig->ends1, i);
+        int64_t s1 = stList_getInt(cig->starts1, i);
+        int64_t e1 = stList_getInt(cig->ends1, i);
         leftoverBases += e1 - s1;
     }
     float maxPossibleCorrect = (float)(leftoverBases + cig->correctBases)/(cig->end1 - cig->start1);
@@ -682,6 +707,7 @@ int main(int argc, char *argv[]){
     st_logInfo("Done reading in the constraints: %" PRId64 " cigars total.\n", numConstraints);
     stList *constraintsList = splitCigarsByQueryName(constraints);
     st_logInfo("Number of constraint lists: %" PRId64 ".\n", stList_length(constraintsList));
+    writeCigars(constraintsList, "sorted.cig");
 
     //Check how many constraints the cactus alignment abide by
     FILE *fh = fopen(outputFile, "w");
