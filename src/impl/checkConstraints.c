@@ -128,8 +128,8 @@ int cigar_cmp(const void *a, const void *b){
     Cigar *cig2 = (Cigar *)b;
 
     //currently constraints have to be on positive strands
-    assert( cig1.strand1 == '+' && cig1.strand2 == '+' );
-    assert( cig2.strand1 == '+' && cig2.strand2 == '+' );
+    assert( cig1->strand1 == '+' && cig1->strand2 == '+' );
+    assert( cig2->strand1 == '+' && cig2->strand2 == '+' );
 
     int cmpHeader1 = strcmp(cig1->header1, cig2->header1);
     if ( cmpHeader1 == 0 ){ //same query contig/chromosome 
