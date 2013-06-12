@@ -73,7 +73,6 @@ class MakeAlignment(Target):
         Target.__init__(self, cpu=int(options.maxThreads), memory=8000000000)
         self.sequences = sequences
         self.constraints = constraints
-        self.options.constraints = constraints #re-assign the constraint file
         self.outputDir = outputDir
         self.referenceAlgorithm = referenceAlgorithm
         self.minimumBlockDegree = int(minimumBlockDegree)
@@ -185,6 +184,7 @@ class MakeAlignment(Target):
             #system("jobTreeStats --jobTree %s --outputFile %s/jobTreeStats.xml" % (tempJobTreeDir,  v))
 
         #self.addChildTarget(MakeStats(outputFile, self.outputDir, self.options))
+        self.options.constraints = self.constraints #re-assign the constraint file
         self.addChildTarget(MakeAlignment2(self.outputDir, self.options))
     
 class MakeAlignment2(Target):
