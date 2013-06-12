@@ -24,7 +24,7 @@
 		requiredAllFraction="0.0"
 		singleCopyIngroup="1"
 		singleCopyOutgroup="1"
-		maxAdjacencyComponentSizeRatio="50"
+		maxAdjacencyComponentSizeRatio="1000"
 		minLengthForChromosome="1000000"
 		proportionOfUnalignedBasesForNewChromosome="0.8"
 		lastzMemory="2147483648"
