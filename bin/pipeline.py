@@ -312,7 +312,7 @@ class RunScript(MakeStats):
   
     def run(self):
         if not os.path.exists(self.outputFile):
-            tempOutputFile = getTempFile(rootDir=self.getLocalTempDir())
+            tempOutputFile = getTempFile(rootDir=self.getGlobalTempDir())
             os.remove(tempOutputFile)
             system("%s --cactusDisk '%s' --outputFile %s --minimumNsForScaffoldGap %s --sampleNumber %s %s" % 
             (os.path.join(getRootPathString(), "bin", self.binaryName),
