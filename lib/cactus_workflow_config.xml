@@ -6,15 +6,15 @@
 	</setup>
 	<caf 
 		chunkSize="25000000" 
-		lastzArguments="--step=5 --masking=20 --ambiguous=iupac"
+		lastzArguments="--step=1 --masking=20 --ambiguous=iupac"
 		compressFiles="1" 
 		overlapSize="10000" 
 		filterByIdentity="0" 
 		identityRatio="6" 
 		minimumDistance="0.01" 
 		minimumSequenceLengthForBlast="30"
-		annealingRounds="16 128 64" 
-		deannealingRounds="1 2 3 4 8 16 32 64" 
+		annealingRounds="64" 
+		deannealingRounds="1 2 8" 
 		blockTrim="0" 
 		minimumTreeCoverage="0.0" 
 		trim="3 3 3 3 3 3 3 3 3 3 3 3" 
