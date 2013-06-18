@@ -75,9 +75,9 @@
 		useSimulatedAnnealing="1" 
 		theta="0.0001" 
 		maxWalkForCalculatingZ="100000" 
-		permutations="5"
+		permutations="20"
 		ignoreUnalignedGaps="1"
-		wiggle="0.95"
+		wiggle="0.9999"
 	>
 		<CactusReferenceRecursion maxFlowerGroupSize="500000000" maxFlowerWrapperGroupSize="50000000"/>
 	 	<CactusReferenceWrapper/>
