@@ -1,12 +1,11 @@
 <cactusWorkflowConfig>
   <preprocessor memory="2147483648" preprocessorString="cactus_makeAlphaNumericHeaders.py IN_FILE OUT_FILE" scope="leaves" />
   <preprocessor check="1" memory="2147483648" preprocessorString="cactus_checkUniqueHeaders.py IN_FILE" scope="leaves" />
-  <preprocessor chunkSize="100000000" memory="2147483648" preprocessorString="cactus_lastzRepeatMask.py --minPeriod=10 --lastzOpts='--step=20 --notransition --ambiguous=iupac --nogapped' GENOME_FILE IN_FILE OUT_FILE" scope="leaves" />
   	<setup makeEventHeadersAlphaNumeric="0">
 	</setup>
 	<caf 
 		chunkSize="25000000" 
-		lastzArguments="--step=1 --masking=20 --ambiguous=iupac"
+		lastzArguments="--step=1 --ambiguous=iupac"
 		compressFiles="1" 
 		overlapSize="10000" 
 		filterByIdentity="0" 
@@ -17,7 +16,7 @@
 		deannealingRounds="1 2 8" 
 		blockTrim="0" 
 		minimumTreeCoverage="0.0" 
-		trim="3 3 3 3 3 3 3 3 3 3 3 3" 
+		trim="0 0 0 0 0 0 0 0 0 0 0" 
 		minimumBlockDegree="2"
 		requiredIngroupFraction="0.0"
 		requiredOutgroupFraction="0.0"
