@@ -7,13 +7,13 @@ sampleNumber=1000000
 batchSystemForAlignments = singleMachine
 databaseHost = localhost
 parasolCommandForAlignment = parasol
-extraJobTreeArgs = 
+extraJobTreeArgs = --maxMemory 746870912000 --maxCpus 25 --maxThreads 25
 
-#batchSystemForAlignments = parasol singleMachine 2147483648 10000000
+#batchSystemForAlignments = parasol
 #databaseHost = kolossus-10
 #parasolCommandForAlignment = /hive/users/benedict/parasol -host=swarm-10
 #batchSystemForAlignments = parasol
-#extraJobTreeArgs = --bigBatchSystem singleMachine --bigMemoryThreshold 2147483648 --bigMaxMemory 536870912000 --bigCpuThreshold 4 --bigMaxCpus 25
+#extraJobTreeArgs = --bigBatchSystem singleMachine --bigMemoryThreshold 2147483648 --bigMaxMemory 746870912000 --bigCpuThreshold 4 --bigMaxCpus 25 --maxThreads 25
 
 #########
 #Build basic cactus alignment
@@ -22,7 +22,7 @@ extraJobTreeArgs =
 pipeline :
 	rm -rf ./jobTree
 	#Running pipeline to build comparisons
-	python ${binPath}/pipeline.py --defaultMemory 8589934593 --databaseHost='${databaseHost}' ${extraJobTreeArgs} --batchSystemForAlignments='${batchSystemForAlignments}' --parasolCommandForAlignment='${parasolCommandForAlignment}' --singleCopyIngroup '${singleCopyIngroup}' --gapGamma '${gapGamma}' --constraints ${constraints} --outgroupEvent ${outgroupEvent} --heldOutSequences '${heldOutSequences}' --sampleNumber ${sampleNumber} --permutations '${permutations}' --useSimulatedAnnealing '${useSimulatedAnnealing}' --theta '${theta}' --blastAlignmentStrings '${blastAlignmentStrings}' --baseLevel '${baseLevel}' --maxNumberOfChains '${maxNumberOfChains}' --referenceSpecies '${referenceSpecies}' --haplotypeSequences '${sequences}' --newickTree '${newickTree}' --outputDir ${outputDir} --configFile ${configFile} --referenceAlgorithms '${referenceAlgorithms}' --minimumNsForScaffoldGap ${minimumNsForScaffoldGap} --rangeOfMinimumBlockDegrees '${minimumBlockDegreeRange}' --jobTree ./jobTree ${jobTreeFlags}
+	python ${binPath}/pipeline.py --defaultMemory 8589934593 --databaseHost='${databaseHost}' --extraJobTreeArgs '${extraJobTreeArgs}' --batchSystemForAlignments='${batchSystemForAlignments}' --parasolCommandForAlignment='${parasolCommandForAlignment}' --singleCopyIngroup '${singleCopyIngroup}' --gapGamma '${gapGamma}' --constraints ${constraints} --outgroupEvent ${outgroupEvent} --heldOutSequences '${heldOutSequences}' --sampleNumber ${sampleNumber} --permutations '${permutations}' --useSimulatedAnnealing '${useSimulatedAnnealing}' --theta '${theta}' --blastAlignmentStrings '${blastAlignmentStrings}' --baseLevel '${baseLevel}' --maxNumberOfChains '${maxNumberOfChains}' --referenceSpecies '${referenceSpecies}' --haplotypeSequences '${sequences}' --newickTree '${newickTree}' --outputDir ${outputDir} --configFile ${configFile} --referenceAlgorithms '${referenceAlgorithms}' --minimumNsForScaffoldGap ${minimumNsForScaffoldGap} --rangeOfMinimumBlockDegrees '${minimumBlockDegreeRange}' --jobTree ./jobTree ${jobTreeFlags}
 	jobTreeStatus --jobTree ./jobTree --failIfNotComplete
 	rm -rf ./jobTree
 	

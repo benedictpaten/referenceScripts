@@ -164,13 +164,15 @@ class MakeAlignment(Target):
             #Now run cactus workflow
             runCactusWorkflow(experimentFile=experimentFile, jobTreeDir=jobTreeDir, 
                               buildAvgs=False, buildReference=True,
-                              maxThreads=int(self.options.maxThreads), jobTreeStats=True,
+                              #maxThreads=int(self.options.maxThreads), 
+                              jobTreeStats=True,
                               defaultMemory=int(self.options.defaultMemory),
                               batchSystem=self.options.batchSystemForAlignments,
                               retryCount=2,
                               logLevel="DEBUG",
                               logFile = jobTreeLogFile,
-                              extraJobTreeArgumentsString="--parasolCommand '%s'" % self.options.parasolCommandForAlignment)
+                              extraJobTreeArgumentsString="--parasolCommand '%s' %s" % (self.options.parasolCommandForAlignment, self.options.extraJobTreeArgs))
+                              #extraJobTreeArgumentsString="--parasolCommand '%s'" % self.options.parasolCommandForAlignment)
             logger.info("Ran the workflow")
             #Check if the jobtree completed sucessively.
             runJobTreeStatusAndFailIfNotComplete(jobTreeDir)
@@ -475,6 +477,7 @@ def main():
     parser.add_option("--databaseHost", default="localhost")
     parser.add_option("--batchSystemForAlignments", default="singleMachine")
     parser.add_option("--parasolCommandForAlignment", default="parasol")
+    parser.add_option("--extraJobTreeArgs", default=None)
     
     Stack.addJobTreeOptions(parser)
     
