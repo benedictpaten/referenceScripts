@@ -53,13 +53,13 @@
 		requiredIngroupFraction="0.0"
 		requiredOutgroupFraction="0.0"
 		requiredAllFraction="0.0"
-		largeEndSize="100000"
+		largeEndSize="10000"
 		veryLargeEndSize="100000"
 		maximumNumberOfSequencesBeforeSwitchingToFast="100"
 		pruneOutStubAlignments="1"
 	>
 		<CactusBarRecursion maxFlowerGroupSize="100000000"/>
-		<CactusBarWrapper maxFlowerGroupSize="100000" memory="littleMemory"/>
+		<CactusBarWrapper maxFlowerGroupSize="10000" memory="littleMemory"/>
 		<CactusBarEndAlignerWrapper memory="littleMemory"/>
 	</bar>
 	<normal 
