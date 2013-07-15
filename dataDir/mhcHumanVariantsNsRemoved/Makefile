@@ -5,7 +5,8 @@ sequences= ${grcSequences} NA12892 NA19239 NA19238 NA19240 NA12878 nigerian vent
 baseDir=../mhcHumanVariants
 constraints= ${baseDir}/all.cigar ${baseDir}/1kIndelConstraints.cig ${baseDir}/cgIndelConstraints.cig ${baseDir}/snp135IndelConstraints.cig
 
-all : ${sequences:%=../mhcHumanVariantsNsRemoved/%} constraints.cig
+all : ${sequences:%=../mhcHumanVariantsNsRemoved/%} 
+#constraints.cig
 
 ../mhcHumanVariantsNsRemoved/% : 
 	python ../../src/scripts/makeHaploid.py ${baseDir}/$* $*_haploid
