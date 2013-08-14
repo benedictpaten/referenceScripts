@@ -11,7 +11,7 @@ extraJobTreeArgs = --maxMemory 746870912000 --maxCpus 25 --maxThreads 25
 
 #batchSystemForAlignments = parasol
 #databaseHost = kolossus-10
-#parasolCommandForAlignment = /hive/users/benedict/parasol -host=swarm-10
+#parasolCommandForAlignment = /hive/scratch/benedict/parasol -host=swarm-10
 #batchSystemForAlignments = parasol
 #extraJobTreeArgs = --bigBatchSystem singleMachine --bigMemoryThreshold 2147483648 --bigMaxMemory 746870912000 --bigCpuThreshold 4 --bigMaxCpus 25 --maxThreads 25
 
