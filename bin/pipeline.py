@@ -18,7 +18,6 @@ from jobTree.scriptTree.stack import Stack
 from sonLib.bioio import logger
 from sonLib.bioio import setLoggingFromOptions
 
-from cactus.shared.config import CactusWorkflowExperiment
 from cactus.shared.common import runCactusWorkflow
 
 from cactusTools.shared.common import runCactusTreeStats
@@ -30,8 +29,8 @@ from sonLib.bioio import system
 
 from jobTree.src.common import runJobTreeStatusAndFailIfNotComplete
 
-from cactus.progressive.experimentWrapper import ExperimentWrapper
-from cactus.progressive.configWrapper import ConfigWrapper
+from cactus.shared.experimentWrapper import ExperimentWrapper
+from cactus.shared.configWrapper import ConfigWrapper
 from cactus.progressive.cactus_createMultiCactusProject import cleanEventTree
 from cactus.pipeline.ktserverControl import runKtserver
 from cactus.pipeline.ktserverControl import killKtServer
@@ -148,22 +147,23 @@ class MakeAlignment(Target):
             jobTreeLogFile = os.path.join(self.outputDir, "log.txt")
             
             #Make the experiment file
-            cactusWorkflowExperiment = CactusWorkflowExperiment(
+            cactusWorkflowExperiment = ExperimentWrapper.createExperimentWrapper(
                                                  sequences=self.sequences.split(), 
                                                  newickTreeString=self.options.newickTree, 
-                                                 outgroupEvents = self.options.outgroupEvent,
-                                                 databaseName=cactusAlignmentName,
+                                                 outgroupEvents = [ self.options.outgroupEvent ],
                                                  halFile=c2hFile,
                                                  fastaFile=fastaFile,
                                                  outputDir=self.outputDir,
                                                  configFile=configFile,
                                                  constraints=self.constraints,
                                                  databaseConf = dbConfElem)
-            cactusWorkflowExperiment.writeExperimentFile(experimentFile)
+            cactusWorkflowExperiment.setDbName(cactusAlignmentName)
+            cactusWorkflowExperiment.writeXML(experimentFile)
         
             #Now run cactus workflow
             runCactusWorkflow(experimentFile=experimentFile, jobTreeDir=jobTreeDir, 
                               buildAvgs=False, buildReference=True,
+                              buildHal=True, buildFasta=True,
                               #maxThreads=int(self.options.maxThreads), 
                               jobTreeStats=True,
                               defaultMemory=int(self.options.defaultMemory),
@@ -334,7 +334,7 @@ class MakeAssemblyHub(MakeStats):
         if makeAssemblyHub:
             cwd = os.getcwd()
             os.chdir(self.outputDir)
-            system("hal2assemblyHub.py out.hal outBrowser --lod --shortLabel='%s' --longLabel='%s' --jobTree ./jobTreeAssemblyHub" % \
+            system("hal2assemblyHub.py out.hal outBrowser --lod --cpHalFileToOut --shortLabel='%s' --longLabel='%s' --jobTree ./jobTreeAssemblyHub" % \
                    (self.outputDir[-10:], self.outputDir))
             os.chdir(cwd)
         else:
