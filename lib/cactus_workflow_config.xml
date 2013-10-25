@@ -4,13 +4,13 @@
   		<defines littleMemory="2147483648" mediumMemory="8589934592" bigMemory="207374182400" maxFlowerGroupSizeRecursion="100000000"/>
   </constants>
   <preprocessor check="1" memory="2147483648" preprocessorString="cactus_checkUniqueHeaders.py IN_FILE" scope="leaves" />
-  <preprocessor chunkSize="100000000" memory="littleMemory" preprocessorString="cactus_lastzRepeatMask.py --minPeriod=100 --lastzOpts='--step=20 --notransition --ambiguous=iupac --nogapped' GENOME_FILE IN_FILE OUT_FILE" scope="leaves" />
+  <preprocessor chunkSize="100000000" memory="littleMemory" preprocessorString="cactus_lastzRepeatMask.py --minPeriod=50 --lastzOpts='--step=2 --ambiguous=iupac --nogapped' GENOME_FILE IN_FILE OUT_FILE" />
   	<setup makeEventHeadersAlphaNumeric="0">
 	</setup>
 	<caf 
 		chunkSize="25000000" 
 		lastzArguments="--step=2 --ambiguous=iupac,100 --ydrop=3000"
-		realign="1"
+		realign="0"
 		realignArguments="--gapGamma 0.9 --diagonalExpansion 4 --splitMatrixBiggerThanThis 10 --constraintDiagonalTrim 0 --alignAmbiguityCharacters"
 		compressFiles="1" 
 		overlapSize="10000" 
