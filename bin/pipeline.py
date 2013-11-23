@@ -198,7 +198,7 @@ class MakeAlignment2(Target):
     def run(self):
         time.sleep(random.random()*100)
         experimentFile = os.path.join(self.outputDir, "experiment.xml")
-        addKtserverDependentChild(self, MakeStats(A(ET.parse(experimentFile).getroot(), experimentFile), self.outputDir, self.options), isSecondary = False)
+        addKtserverDependentChild(self, MakeStats(A(ET.parse(experimentFile).getroot(), experimentFile), self.outputDir, self.options), sys.maxint, sys.maxint, isSecondary = False)
 
 def makeHeldOutAlignments(self, options, outputDir, 
                  referenceAlgorithm, minimumBlockDegree, 
