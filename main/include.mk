@@ -27,9 +27,9 @@ theta = 0.00001
 useSimulatedAnnealing = 0
 permutations = 100
 outgroupEvent=panTro3
-gapGamma = 0.0
+gapGamma = 0.9
 #gapGamma = 0.2
-singleCopyIngroup=1 0
+singleCopyIngroup=1
 constraints=${dataDir}/constraints-all.cig
 #constraints.cig
 

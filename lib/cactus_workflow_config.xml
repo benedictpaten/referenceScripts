@@ -1,21 +1,31 @@
-<cactusWorkflowConfig>
-  <constants defaultMemory="mediumMemory" defaultOverlargeMemory="mediumMemory" defaultCpu="1" defaultOverlargeCpu="1">
+<!-- This XML tree contains the parameters to cactus_progressive.py -->
+<!-- The distanceToAddToRootAlignment parameter is how much extra divergence distance to allow when aligning children of the root genome -->
+<cactusWorkflowConfig distanceToAddToRootAlignment="0.1">
+	<constants defaultMemory="mediumMemory" defaultOverlargeMemory="mediumMemory" defaultCpu="1" defaultOverlargeCpu="1">
 		<!-- These constants are used to control the amount of memory and cpu the different jobs in a batch are using. -->
-  		<defines littleMemory="2147483648" mediumMemory="8589934592" bigMemory="207374182400" maxFlowerGroupSizeRecursion="100000000"/>
-  </constants>
-  <preprocessor check="1" memory="2147483648" preprocessorString="cactus_checkUniqueHeaders.py IN_FILE" scope="leaves" />
-  <preprocessor chunkSize="100000000" memory="littleMemory" preprocessorString="cactus_lastzRepeatMask.py --minPeriod=50 --lastzOpts='--step=2 --ambiguous=iupac --nogapped' GENOME_FILE IN_FILE OUT_FILE" />
-  	<setup makeEventHeadersAlphaNumeric="0">
-	</setup>
+  		<defines littleMemory="8589934592" mediumMemory="34359738368" bigMemory="137438953472" maxFlowerGroupSizeRecursion="100000000"/>
+  		<!-- These constants are used to control parameters that depend on phylogenetic distance. Setting
+  		     useDefault to 0 will force it to use the default divergence controlled parameter -->
+  		<divergences useDefault="0" one="0.1" two="0.15" three="0.2" four="0.25" five="0.35"/>
+	</constants>
+	<!-- The preprocessor tags are used to modify/check the input sequences before alignment -->
+	<!-- The first preprocessor tag checks that the first word of every fasta header is unique, as this is required for HAL. It throws errors if this is not the case -->
+	<!-- The checkUCSC option (if enabled) ensures that suffix of the first word after the last period character (or the whole word if no period character exists) contains only alphanumeric or underscore characters as is unique -->
+	<preprocessor check="1" memory="littleMemory" preprocessorString="cactus_checkUniqueHeaders.py --checkUCSC IN_FILE"/>
+	<!-- The preprocessor for cactus_lastzRepeatMask masks every seed that is part of more than XX other alignments, this stops a combinatorial explosion in pairwise alignments -->
+	<preprocessor chunkSize="3000000" proportionToSample="0.2" memory="littleMemory" preprocessorString="cactus_lastzRepeatMask.py --proportionSampled=PROPORTION_SAMPLED --tempDir=TEMP_DIR --minPeriod=50 --lastzOpts='--step=3 --ambiguous=iupac,100 --ungapped' IN_FILE OUT_FILE "/>
+	<ktserver memory="mediumMemory"/>
+	<setup makeEventHeadersAlphaNumeric="0"/>
+	<!-- The caf tag contains parameters for the caf algorithm. -->
+	<!-- Increase the chunkSize in the caf tag to reduce the number of blast jobs approximately quadratically -->
 	<caf 
 		chunkSize="25000000" 
-		lastzArguments="--step=2 --ambiguous=iupac,100 --ydrop=3000"
-		realign="0"
-		realignArguments="--gapGamma 0.9 --diagonalExpansion 4 --splitMatrixBiggerThanThis 10 --constraintDiagonalTrim 0 --alignAmbiguityCharacters"
+		realign="1"
+		realignArguments="--rescoreByIdentity --gapGamma 0.9 --diagonalExpansion 4 --splitMatrixBiggerThanThis 10 --constraintDiagonalTrim 0 --alignAmbiguityCharacters"
 		compressFiles="1" 
 		overlapSize="10000" 
-		filterByIdentity="0" 
-		identityRatio="6" 
+		filterByIdentity="1" 
+		identityRatio="3" 
 		minimumDistance="0.01" 
 		minimumSequenceLengthForBlast="30"
 		annealingRounds="128" 
@@ -28,21 +38,35 @@
 		minimumOutgroupDegree="0"
 		singleCopyIngroup="0"
 		singleCopyOutgroup="1"
-		maxAdjacencyComponentSizeRatio="1000"
+		maxAdjacencyComponentSizeRatio="10000"
 		minLengthForChromosome="1000000"
 		proportionOfUnalignedBasesForNewChromosome="0.8"
 		maximumMedianSequenceLengthBetweenLinkedEnds="1000"
 		lastzMemory="littleMemory"
 	>
-		<!-- Change the chunk size to alter the number of blast jobs approximately quadratically -->
+		<!-- The following are parametrised to produce the same results as the default settings, 
+		within a margin of 0.2% sensitivity, should be very fast for close genomes, these were tuned using the blast/blastParametersScript.py
+		We could go even faster for less than 0.05 divergence using, but want to be robust to poor branch length estimates -->
+		<divergence 
+			argName="lastzArguments"
+		 	one="--step=2 --ambiguous=iupac,100 --ydrop=3000 --notransition"
+		 	two="--step=5 --ambiguous=iupac,100 --ydrop=3000"
+		 	three="--step=4 --ambiguous=iupac,100 --ydrop=3000"
+		 	four="--step=3 --ambiguous=iupac,100 --ydrop=3000"
+		 	five="--step=2 --ambiguous=iupac,100 --ydrop=3000"
+		 	default="--step=1 --ambiguous=iupac,100 --ydrop=3000"
+		 />
 		<CactusCafRecursion maxFlowerGroupSize="100000000"/>
 		<CactusCafWrapper minFlowerSize="1" maxFlowerGroupSize="25000000"/>
 		<CactusCafWrapperLarge2 overlargeMemory="bigMemory"/>
 	</caf>
+	<!-- The caf tag contains parameters for the bar algorithm. -->
+	<!-- The veryLargeEndSize parameter determines how big an end needs to be (in terms of bases in sequences incident with the end)
+	for the end to be aligned on its own. -->
 	<bar
 		runBar="1"
 		spanningTrees="10" 
-		gapGamma="0.2" 
+		gapGamma="0.95" 
 		useBanding="1" 
 		bandingLimit="100000" 
 		splitMatrixBiggerThanThis="3000" 
@@ -55,27 +79,32 @@
 		minimumOutgroupDegree="0"
 		alignAmbiguityCharacters="1"
 		largeEndSize="5000"
-		veryLargeEndSize="1000000"
+		veryLargeEndSize="2000000"
 		maximumNumberOfSequencesBeforeSwitchingToFast="10"
 		pruneOutStubAlignments="1"
 	>
 		<CactusBarRecursion maxFlowerGroupSize="maxFlowerGroupSizeRecursion"/>
-		<CactusBarWrapper maxFlowerGroupSize="1000000" memory="littleMemory"/>
-		<CactusBarWrapperLarge maxFlowerGroupSize="1000000"/>
+		<!-- The maxFlowerGroupSize in cactusBarWrapper determines how many bases to allow in one "small" job which will be run using the "littleMemory" -->
+		<CactusBarWrapper maxFlowerGroupSize="2000000" memory="littleMemory"/>
+		<!-- The maxFlowerGroupSize in cactusBarWrapperLarge determines how many of each large broken up to allow in one "small" job which will be run using the "littleMemory" -->
+		<CactusBarWrapperLarge maxFlowerGroupSize="2000000"/>
 		<CactusBarEndAlignerWrapper memory="littleMemory"/>
 	</bar>
+	<!-- The normal tag provides parameters to the cactus_normalisation script, which "normalises" a cactus to make all chains of maximal length. This is not used much now. -->
 	<normal 
 		iterations="0"
 	>
 		<CactusNormalRecursion maxFlowerGroupSize="maxFlowerGroupSizeRecursion" maxFlowerWrapperGroupSize="10000000"/>
 		<CactusNormalWrapper/>
 	</normal>
+	<!-- The avg tag is for a prototype algorithm, currently just builds trees. Not currently compatible with cactus_progressive -->
 	<avg
 		buildAvgs="0"
 	>
 		<CactusAVGRecursion maxFlowerGroupSize="maxFlowerGroupSizeRecursion" maxFlowerWrapperGroupSize="10000000"/>
 		<CactusAVGWrapper/>
 	</avg>
+	<!-- The reference tag provides parameters to cactus_reference, a method used to construct a reference genome for a given cactus database. -->
 	<reference 
 		buildReference="1"
 		matchingAlgorithm="blossom5" 
@@ -93,25 +122,24 @@
 	 	<CactusSetReferenceCoordinatesDownRecursion maxFlowerGroupSize="maxFlowerGroupSizeRecursion" maxFlowerWrapperGroupSize="50000000"/>
 	 	<CactusSetReferenceCoordinatesDownWrapper/>
 	</reference>
+	<!-- The check tag provides parameters to cactus_check, a script which checks that a constructed cactus database is as expected. -->
 	<check 
 		runCheck="0"
 	>
 		<CactusCheckRecursion maxFlowerGroupSize="maxFlowerGroupSizeRecursion" maxFlowerWrapperGroupSize="50000000"/>
 		<CactusCheckWrapper/>
 	</check>
+	<!-- The hal tag controls the creation of hal and fasta files from the pipeline. -->
 	<hal
 		buildHal="1"
-		buildMaf="0"
 		buildFasta="1"
-		showOnlySubstitutionsWithRespectToReference="0"
-		joinMaf="0"
 	>
 		<CactusHalGeneratorRecursion maxFlowerGroupSize="50000000"/>
 		<CactusHalGeneratorUpWrapper/>
 	</hal>
   	<multi_cactus>
 		<outgroup 
-			strategy="greedyLeaves" 
+			strategy="greedy" 
 			threshold="0"
 			ancestor_quality_fraction="0.75"
 		/>

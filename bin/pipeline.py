@@ -115,7 +115,7 @@ class MakeAlignment(Target):
             baseIteration.attrib["gapGamma"] = str(float(self.gapGamma))
             
             #Set the blast string
-            blastIteration.attrib["lastzArguments"] = blastIteration.attrib["lastzArguments"].replace("PARAMETERS", self.blastAlignmentString)
+            #blastIteration.attrib["lastzArguments"] = blastIteration.attrib["lastzArguments"].replace("PARAMETERS", self.blastAlignmentString)
             blastIteration.attrib["singleCopyIngroup"] = str(int(self.singleCopyIngroup))
             
             #Set the number of chains to allow in a level, during promotion
