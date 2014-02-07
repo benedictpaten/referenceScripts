@@ -98,8 +98,8 @@ def main():
     def refNodeName(i, j):
         return "n%ip%ipn" % (abs(i), abs(j))
     
-    def queryNodeName(i):
-        return "n%in" % i
+    def queryNodeName(i, j):
+        return "n%im%in" % (i, j)
     
     id = 0
     for j in xrange(len(genome)):
@@ -123,7 +123,7 @@ def main():
             
             #Graph vis
             if options.showContextSets:
-                addNodeToGraph(nodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | 5\'=%s | %s | 3\'=%s }" % (id, leftContextString, string[i], rightContextString))
+                addNodeToGraph(nodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | L=%s | %s | R=%s }" % (id, leftContextString, string[i], rightContextString))
             else:
                 addNodeToGraph(nodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | %s }" % (id, string[i]))
             id += 1
@@ -133,48 +133,50 @@ def main():
                                childNodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, colour="black", weight="100", dir="both, arrowtail=inv, arrowhead=normal", style="solid", length="1")
       
     if len(args) > 1:
-        string = args[1]
-        for i in xrange(len(string)):
-            leftString = getReverseComplement(string[:i+1])
-            leftContextSet = getMatchingRightContextSet(rightContextSets, leftString, mismatches=options.mismatches)
-            if leftContextSet != None:
-                j, k = leftContextSet
-                leftContextSet = j, -k
-            
-            rightString = string[i:]
-            rightContextSet = getMatchingRightContextSet(rightContextSets, rightString, mismatches=options.mismatches)
-            
-            print "String-position", i, "left-mapping", leftContextSet, "right-mapping", rightContextSet
-            
-            #Graph vis
-            addNodeToGraph(nodeName=queryNodeName(i), graphFileHandle=graphVizFileHandle, label=string[i], shape="record")
-            if i > 0:
-                addEdgeToGraph(parentNodeName=queryNodeName(i-1), 
-                               childNodeName=queryNodeName(i), graphFileHandle=graphVizFileHandle, weight="100", style="solid", dir="both, arrowtail=inv, arrowhead=normal", length="1")
-            
-            if rightContextSet != None and leftContextSet != None:
-                if leftContextSet == rightContextSet:
-                    j, k = rightContextSet
-                    addEdgeToGraph(parentNodeName=queryNodeName(i), 
-                               childNodeName=refNodeName(k, j), graphFileHandle=graphVizFileHandle, weight="0.0", colour="red", style="dotted", dir="forward", length="1", label="B")
-                else:
-                    j, k = rightContextSet
-                    addEdgeToGraph(parentNodeName=queryNodeName(i), 
-                               childNodeName=refNodeName(k, j), graphFileHandle=graphVizFileHandle, weight="0.0", colour="blue", style="dotted", dir="forward", length="1", label="3")
+        strings = args[1].split()
+        for stringIndex in xrange(len(strings)):
+            string = strings[stringIndex]
+            for i in xrange(len(string)):
+                leftString = getReverseComplement(string[:i+1])
+                leftContextSet = getMatchingRightContextSet(rightContextSets, leftString, mismatches=options.mismatches)
+                if leftContextSet != None:
                     j, k = leftContextSet
-                    addEdgeToGraph(parentNodeName=queryNodeName(i), 
-                               childNodeName=refNodeName(k, j), graphFileHandle=graphVizFileHandle, weight="0.0", colour="blue", style="dotted", dir="forward", length="1", label="5") 
-                    
-            elif rightContextSet != None:
-                j, k = rightContextSet
-                addEdgeToGraph(parentNodeName=queryNodeName(i), 
-                               childNodeName=refNodeName(k, j), graphFileHandle=graphVizFileHandle, weight="0.0", colour="black", style="dotted", dir="forward", length="1", label="3")
+                    leftContextSet = j, -k
                 
-            elif leftContextSet != None:
-                j, k = leftContextSet
-                addEdgeToGraph(parentNodeName=queryNodeName(i), 
-                               childNodeName=refNodeName(k, j) + ":bottom", graphFileHandle=graphVizFileHandle, weight="0.0", colour="black", style="dotted", dir="forward", length="1", label="5")
-    
+                rightString = string[i:]
+                rightContextSet = getMatchingRightContextSet(rightContextSets, rightString, mismatches=options.mismatches)
+                
+                print "String-position", i, "left-mapping", leftContextSet, "right-mapping", rightContextSet
+                
+                #Graph vis
+                addNodeToGraph(nodeName=queryNodeName(stringIndex,i), graphFileHandle=graphVizFileHandle, label=string[i], shape="record")
+                if i > 0:
+                    addEdgeToGraph(parentNodeName=queryNodeName(stringIndex,i-1), 
+                                   childNodeName=queryNodeName(stringIndex,i), graphFileHandle=graphVizFileHandle, weight="100", style="solid", dir="both, arrowtail=inv, arrowhead=normal", length="1")
+                
+                if rightContextSet != None and leftContextSet != None:
+                    if leftContextSet == rightContextSet:
+                        j, k = rightContextSet
+                        addEdgeToGraph(parentNodeName=queryNodeName(stringIndex,i), 
+                                   childNodeName=refNodeName(k, j), graphFileHandle=graphVizFileHandle, weight="0.0", colour="red", style="dotted", dir="forward", length="1", label="B")
+                    else:
+                        j, k = rightContextSet
+                        addEdgeToGraph(parentNodeName=queryNodeName(stringIndex,i), 
+                                   childNodeName=refNodeName(k, j), graphFileHandle=graphVizFileHandle, weight="0.0", colour="blue", style="dotted", dir="forward", length="1", label="R")
+                        j, k = leftContextSet
+                        addEdgeToGraph(parentNodeName=queryNodeName(stringIndex,i), 
+                                   childNodeName=refNodeName(k, j), graphFileHandle=graphVizFileHandle, weight="0.0", colour="blue", style="dotted", dir="forward", length="1", label="L") 
+                        
+                elif rightContextSet != None:
+                    j, k = rightContextSet
+                    addEdgeToGraph(parentNodeName=queryNodeName(stringIndex,i), 
+                                   childNodeName=refNodeName(k, j), graphFileHandle=graphVizFileHandle, weight="0.0", colour="black", style="dotted", dir="forward", length="1", label="R")
+                    
+                elif leftContextSet != None:
+                    j, k = leftContextSet
+                    addEdgeToGraph(parentNodeName=queryNodeName(stringIndex,i), 
+                                   childNodeName=refNodeName(k, j) + ":bottom", graphFileHandle=graphVizFileHandle, weight="0.0", colour="black", style="dotted", dir="forward", length="1", label="L")
+        
     finishGraphFile(graphVizFileHandle)   
     graphVizFileHandle.close()  
 
