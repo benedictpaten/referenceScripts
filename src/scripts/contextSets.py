@@ -15,6 +15,94 @@ def getReverseComplement(string):
         return i
     return "".join([ fn(i) for i in string[::-1] ])
 
+class BasePosition:
+    def __init__(self, id, base):
+        self.base = base
+        self.id = id
+        
+    def getDotNodeName(self):
+        return "n%sn" % self.bP.id
+
+class Side:
+    def __init__(self, bP, orientation):
+        self.adj = []
+        self.otherSide = None
+        self.bP = bP
+        self.orientation = orientation
+    
+    def base(self):
+        if self.orientation:
+            return self.bP.base
+        return getReverseComplement(self.bP.base)
+    
+    def enumerateThreads(self):
+    
+def getRightContextString(sG, string, mismatches, minContextLength):
+    startPoints = sG.sides
+    while len(startPoints) > 1 and index < len(string):
+        l = []
+        for side, diff in startPoints:
+            diff += side.base() == string[index]
+            if diff < mismatches:
+                for adjSide in side.otherSide.adj:
+                    l.append((adjSide, diff)) 
+        startPoints = l
+        index += 1
+    if len(startPoints) == 1:
+        if index < minContextLength:
+            if len(string) < minContextLength:
+                return None
+            index = minContextLength
+        return string[:index]
+
+def getRightContextStrings(sG, side, mismatches, minContextLength):
+    #Enumerate the threads
+    return []
+        
+class SequenceGraph:
+    def __init__(self):
+        self.id = 0
+        self.sides = []
+        self.contextSets = {}
+    
+    def merge(self, side1, side2):
+        assert side1 in self.sides and side2 in self.sides
+        self.sides.remove(side2)
+        #
+        
+    def _computeContextSets(self):
+        pass
+    
+    def positiveSides(self):
+        return [ side for side in self.sides if side.orientation ]
+        
+    def getMatch(self, side):
+        pass
+        
+    def addString(self, string):
+        return None #Return the end of the string.
+    
+    def renumber(self, startID):
+        pass #Give the sides IDs in accordance with their
+    
+    def printDotFile(self, fileHandle, showContextSets):
+        for side in self.positiveSides():
+            #Graph vis
+            if options.showContextSets:
+                addNodeToGraph(nodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | L=%s | %s | R=%s }" % (side.basePosition.getDotNodeName(), 
+                                                                                                                                                       " ".join(side.leftContextStrings), side.basePosition.base, " ".join(side.rightContextStrings)))
+            else:
+                addNodeToGraph(nodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | %s }" % (side.basePosition.getDotNodeName(), side.basePosition.base))
+        
+        seen = set()
+        for side in self.sides:
+            for adjSide in side.adjacencies:
+                if not (adjSide, side) in seen:
+                    #Add in the orientations to adjacencies
+                    addEdgeToGraph(parentNodeName=adjSide.basePosition.getDotNodeName(), 
+                                   childNodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, colour="black", weight="100", dir="both, arrowtail=inv, arrowhead=normal", style="solid", length="1")
+                    seen.add((side, adjSide))
+
 def getSubstrings(string):
     return [ string[i:] for i in xrange(len(string))]
 
@@ -68,9 +156,13 @@ def main():
                      help="File to do dump graphViz representation in (dot format)",
                      default="/dev/null")
     
-    parser.add_option("--showContextSets", dest="showContextSets",  action="store_true",
-                     help="Show the context sets",
-                     default=False)
+    parser.add_option("--showContextSets", dest="showContextSets", type="string",
+                     help="Show the context sets for the selected graphs (enumerated starting from 0)",
+                     default="")
+    
+    parser.add_option("--mergeContigs", dest="mergeContigs", type="string",
+                     help="Merge the contig in the selected graphs (enumerated starting from 0)",
+                     default="")
     
     parser.add_option("--mismatches", dest="mismatches", type="int", 
                      help="Number of mismatches to allow",
@@ -80,6 +172,13 @@ def main():
                      help="Minimum length of a context set",
                      default=0)
     
+    parser.add_option("--showDoubleMaps", dest="showDoubleMaps", action="store_true"
+                     help="Show doubly mapped match edges",
+                     default=False)
+    
+    parser.add_option("--showOnlyLowestMaps", dest="showOnlyLowestMaps", action="store_true"
+                     help="Show maps to one level in the hierarchy",
+                     default=False)
     
     options, args = parser.parse_args()
     
@@ -87,23 +186,89 @@ def main():
         parser.print_help()
         return 1
     
-    graphVizFileHandle = open(options.graphVizFile, 'w')
+    mergeContigs = [ int(i) for i in options.mergeContigs.split() ]   
     
-    genome = args[0].split()
+    #First create the sequence graphs for each input graph
+    sequenceGraphs = []
     
-    rightContextSets = {}
+    for index in xrange(len(args)):
+        assembly = args[index]
+        sG = SequenceGraph()
+        sequenceGraphs.append(sG)
+        for string in assembly.split():
+            if index in mergeContigs: #Merge the new contig into the previous contigs
+                sG2 = SequenceGraph()
+                sG2.addString(string)
+                matches = []
+                for side in sG2.positiveSides():
+                    leftMatch = sGTarget.getMatch(side)
+                    rightMatch = sGTarget.getMatch(side.otherSide)
+                    if leftMatch != None:
+                        if rightMatch == None || leftMatch.oppositeSide == rightMatch:
+                            matches.append((side, leftSide))
+                    elif rightMatch != None:
+                            matches.append((side, leftSide))
+                sG.addSequenceGraph(sG2)
+                for targetSide, inputSide in matches:
+                    sG.merge(targetSide, inputSide)
+            else:
+                sG.addString(string)
+     
+    
+    #Now reindex them and print them
+    showContextSets = [ int(i) for i in options.showContextSets.split() ]  
+    graphVizFileHandle = open(options.graphVizFile, 'w')           
     
     setupGraphFile(graphVizFileHandle)
     
-    def refNodeName(i, j):
-        return "n%ip%ipn" % (abs(i), abs(j))
+    i = 0
+    for index in len(sequenceGraphs):
+        sG = sequenceGraphs[index]
+        sG.renumber(i)
+        i += len(sG.positiveSides())
+        sG.printDotFile(graphVizFileHandle, showContextSets[index])
+        
+    #Now print the matching edges between the graphs
+    for index in xrange(1, len(sequenceGraphs)):
+        sGInput = sequenceGraphs[i]
+        for side in sGInput.positiveSides():
+            haveMatched = False
+            for pIndex in xrange(index-1, 0, -1):
+                sGTarget = sequenceGraphs[pIndex]
+                
+                leftMatch = sGTarget.getMatch(side)
+                rightMatch = sGTarget.getMatch(side.otherSide)
+                
+                def addMatchEdge(colour, label, matchSide):
+                    if not showOnlyLowestMaps or not haveMatched:
+                        addEdgeToGraph(parentNodeName=matchingSide.getDotName(), 
+                                       childNodeName=side.getDotName(), graphFileHandle=graphVizFileHandle, colour=colour, weight="100", dir="%s, arrowtail=inv, arrowhead=normal" % label, style="solid", length="1")
+                if leftMatch != None:
+                    if rightMatch != None:
+                        if leftMatch.oppositeSide == rightMatch: 
+                            addMatchEdge("red", "B", leftMatch)
+                            haveMatched = True
+                        else:
+                            if options.showDoubleMaps:
+                                addMatchEdge("grey", "L", leftMatch)
+                                addMatchEdge("grey", "R", rightMatch)
+                    else:
+                        addMatchEdge("blue", "L", leftMatch)
+                        haveMatched = True
+                else:
+                    if rightMatch != None:
+                        addMatchEdge("blue", "R", rightMatch)
+                        haveMatched = True
+            
+        
+    finishGraphFile(graphVizFileHandle)   
+    graphVizFileHandle.close()  
     
-    def queryNodeName(i, j):
-        return "n%im%in" % (i, j)
+    
     
     id = 0
     for j in xrange(len(genome)):
-        string = genome[j]
+        string = genome[j].upper()
         for i in xrange(len(string)):
             leftContextString = getReverseComplement(getRightContextString(genome, getReverseComplement(string[:(i+1)]), mismatches=options.mismatches, minContextLength=options.minContextLength))
             rightContextString = getRightContextString(genome, string[i:], mismatches=options.mismatches, minContextLength=options.minContextLength)
@@ -131,11 +296,12 @@ def main():
             if i > 0:
                 addEdgeToGraph(parentNodeName=refNodeName(i-1, j), 
                                childNodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, colour="black", weight="100", dir="both, arrowtail=inv, arrowhead=normal", style="solid", length="1")
-      
+    
+    """  
     if len(args) > 1:
         strings = args[1].split()
         for stringIndex in xrange(len(strings)):
-            string = strings[stringIndex]
+            string = strings[stringIndex].upper()
             for i in xrange(len(string)):
                 leftString = getReverseComplement(string[:i+1])
                 leftContextSet = getMatchingRightContextSet(rightContextSets, leftString, mismatches=options.mismatches)
@@ -176,6 +342,7 @@ def main():
                     j, k = leftContextSet
                     addEdgeToGraph(parentNodeName=queryNodeName(stringIndex,i), 
                                    childNodeName=refNodeName(k, j) + ":bottom", graphFileHandle=graphVizFileHandle, weight="0.0", colour="black", style="dotted", dir="forward", length="1", label="L")
+    """
         
     finishGraphFile(graphVizFileHandle)   
     graphVizFileHandle.close()  
