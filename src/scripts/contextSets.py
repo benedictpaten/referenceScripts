@@ -78,6 +78,9 @@ class SequenceGraph:
         
     def getMatch(self, side):
         pass
+    
+    def mergeSequenceGraohs(self):
+        pass
         
     def addString(self, string):
         return None #Return the end of the string.
@@ -90,7 +93,7 @@ class SequenceGraph:
             #Graph vis
             if options.showContextSets:
                 addNodeToGraph(nodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | L=%s | %s | R=%s }" % (side.basePosition.getDotNodeName(), 
-                                                                                                                                                       " ".join(side.leftContextStrings), side.basePosition.base, " ".join(side.rightContextStrings)))
+                                                                                                                                                       " ".join(side.leftContextStrings()), side.basePosition.base, " ".join(side.rightContextStrings())))
             else:
                 addNodeToGraph(nodeName=refNodeName(i, j), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | %s }" % (side.basePosition.getDotNodeName(), side.basePosition.base))
         
