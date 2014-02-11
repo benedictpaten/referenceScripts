@@ -93,23 +93,27 @@ class SequenceGraph:
         def getUniquePrefixWithRespectToGraph(string):
             startPoints = [ (side, 0) for side in self.sides ]
             index = 0
-            while len(startPoints) > 1 and index < len(string):
-                print "Recursion", len(startPoints), index, string[index]
+            
+            while len(startPoints) > 0 and index < len(string):
                 l = []
                 for side, diff in startPoints:
                     diff += side.base() != string[index]
                     if diff <= mismatches:
-                        for adjSide in side.otherSide.adjacencies:
-                            l.append((adjSide, diff)) 
-                startPoints = l
+                        l.append((side, diff))
                 index += 1
-            print "End Recursion", len(startPoints), index
-            if len(startPoints) == 1:
-                if index < minContextLength:
-                    if len(string) < minContextLength:
-                        return None
-                    index = minContextLength
-                return string[:index]
+                
+                if len(l) == 1: #We have a unique match
+                    if index < minContextLength:
+                        if len(string) < minContextLength:
+                            return None
+                        return string[:minContextLength]
+                    return string[:index] 
+                   
+                startPoints = []
+                for side, diff in l:
+                    for adjSide in side.otherSide.adjacencies:
+                        startPoints.append((adjSide, diff)) 
+                        
             return None
         
         for side in self.sides:
