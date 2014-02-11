@@ -154,7 +154,7 @@ class SequenceGraph:
         return [ side for side in self.sides if side.orientation ]
     
     def mergeSequenceGraphs(self, sG2):
-        sG += sG2.sides
+        self.sides += sG2.sides
         sG2.sides = [] #Defensive
         
     def addString(self, string):
@@ -266,14 +266,14 @@ def main():
                 sG2.addString(string)
                 matches = []
                 for side in sG2.positiveSides():
-                    leftMatch = sGTarget.getMatch(side)
-                    rightMatch = sGTarget.getMatch(side.otherSide)
+                    leftMatch = sG.getMatch(side)
+                    rightMatch = sG.getMatch(side.otherSide)
                     if leftMatch != None:
                         if rightMatch == None or leftMatch.oppositeSide == rightMatch:
                             matches.append((side, leftSide))
                     elif rightMatch != None:
                             matches.append((side, leftSide))
-                sG.addSequenceGraph(sG2)
+                sG.mergeSequenceGraphs(sG2)
                 for targetSide, inputSide in matches:
                     sG.merge(targetSide, inputSide)
             else:
