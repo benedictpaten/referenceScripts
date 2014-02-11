@@ -1,6 +1,7 @@
 import sys
 from sonLib.bioio import addNodeToGraph, addEdgeToGraph, setupGraphFile, finishGraphFile
 from optparse import OptionParser
+import random
 
 """Script to calculate and display reference genome hierarchies
 """
@@ -42,7 +43,7 @@ class Side:
                 adjSide = list(side.adjacencies)[0]
                 prefix += adjSide.base()
                 side = adjSide.otherSide
-            if fn(side, prefix) or len(side.adjacencies) == 0:
+            if fn(prefix) or len(side.adjacencies) == 0:
                 continue
             assert len(side.adjacencies) > 1
             for adjSide in side.adjacencies:
@@ -93,6 +94,7 @@ class SequenceGraph:
             startPoints = [ (side, 0) for side in self.sides ]
             index = 0
             while len(startPoints) > 1 and index < len(string):
+                print "Recursion", len(startPoints), index, string[index]
                 l = []
                 for side, diff in startPoints:
                     diff += side.base() != string[index]
@@ -101,6 +103,7 @@ class SequenceGraph:
                             l.append((adjSide, diff)) 
                 startPoints = l
                 index += 1
+            print "End Recursion", len(startPoints), index
             if len(startPoints) == 1:
                 if index < minContextLength:
                     if len(string) < minContextLength:
@@ -112,8 +115,9 @@ class SequenceGraph:
         for side in self.sides:
             #Enumerate the threads
             contextSet = ContextSet(mismatches)
-            def fn(side, string):
+            def fn(string):
                 uniquePrefix = getUniquePrefixWithRespectToGraph(string)
+                print "For side ", side.basePosition.id, side.orientation, " we got the string ", string, " and the prefix ", uniquePrefix
                 if uniquePrefix == None:
                     return False
                 contextSet.addString(uniquePrefix)
@@ -128,7 +132,7 @@ class SequenceGraph:
         
     def getMatch(self, side):
         matches = set()
-        def fn(side, string):
+        def fn(string):
             for otherSide in self.sides:
                 if self.contextSets[otherSide].prefixInContextSet(string):
                     matches.add(otherSide)
@@ -147,6 +151,7 @@ class SequenceGraph:
                 assert side2 in adjSide.adjacencies
                 adjSide.adjacencies.remove(side2)
                 adjSide.adjacencies.add(side1)
+                side1.adjacencies.add(adjSide)
         fn(side1, side2)
         fn(side1.otherSide, side2.otherSide)
                 
@@ -155,7 +160,6 @@ class SequenceGraph:
     
     def mergeSequenceGraphs(self, sG2):
         self.sides += sG2.sides
-        sG2.sides = [] #Defensive
         
     def addString(self, string):
         pSide = None
@@ -183,9 +187,15 @@ class SequenceGraph:
         for side in self.positiveSides():
             #Graph vis
             if showContextSets:
+                leftContextString = " ".join([ Side.getReverseComplement(i[1:]) for i in self.contextSets[side].minimalUniqueStrings ])
+                if len(self.contextSets[side].minimalUniqueStrings) == 0:
+                    leftContextString = "None"
+                rightContextString = " ".join([ i[1:] for i in self.contextSets[side.otherSide].minimalUniqueStrings ])
+                if len(self.contextSets[side.otherSide].minimalUniqueStrings) == 0:
+                    rightContextString = "None"
                 addNodeToGraph(nodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, 
                                shape="record", label="{ ID=%i | L=%s | %s | R=%s }" % (side.basePosition.id, 
-                                                                                       " ".join(self.contextSets[side].minimalUniqueStrings), side.basePosition.base, " ".join(self.contextSets[side.otherSide].minimalUniqueStrings)))
+                                                                                       leftContextString, side.basePosition.base, rightContextString))
             else:
                 addNodeToGraph(nodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | %s }" % (side.basePosition.id, side.basePosition.base))
         #Add edges
@@ -193,14 +203,16 @@ class SequenceGraph:
         for side in self.sides:
             for adjSide in side.adjacencies:
                 if not (adjSide, side) in seen:
+                    assert (side, adjSide) not in seen
                     def arrowShape(side):
                         if side.orientation:
-                            return "arrow"
+                            return "normal"
                         return "inv"
-                    addEdgeToGraph(parentNodeName=adjSide.basePosition.getDotNodeName(), 
-                                   childNodeName=side.basePosition.getDotNodeName(), 
-                                   graphFileHandle=graphVizFileHandle, colour="black", weight="100", dir="both, arrowtail=%s, arrowhead=%s" % 
-                                   (arrowShape(side), arrowShape(adjSide)), style="solid", length="1")
+                    addEdgeToGraph(parentNodeName=side.basePosition.getDotNodeName(), 
+                                   childNodeName=adjSide.basePosition.getDotNodeName(), 
+                                   graphFileHandle=graphVizFileHandle, colour="black", #weight="1", 
+                                   dir="both, arrowtail=%s, arrowhead=%s" % 
+                                   (arrowShape(side), arrowShape(adjSide)), style="solid", length="10")
                     seen.add((side, adjSide))
 
 def main():
@@ -269,15 +281,20 @@ def main():
                     leftMatch = sG.getMatch(side)
                     rightMatch = sG.getMatch(side.otherSide)
                     if leftMatch != None:
-                        if rightMatch == None or leftMatch.oppositeSide == rightMatch:
-                            matches.append((side, leftSide))
+                        if rightMatch == None or leftMatch.otherSide == rightMatch:
+                            print "Got a left match", leftMatch, rightMatch
+                            matches.append((leftMatch, side))
                     elif rightMatch != None:
-                            matches.append((side, leftSide))
+                        print "Got a right match"
+                        matches.append((rightMatch.otherSide, side))
                 sG.mergeSequenceGraphs(sG2)
+                print "We found %i merges" % len(matches)
                 for targetSide, inputSide in matches:
                     sG.merge(targetSide, inputSide)
             else:
                 sG.addString(string)
+            print "Graph now has %i nodes" % len(sG.sides)
+            sG.renumber(0)
             sG.computeContextSets(options.mismatches, options.minContextLength)
      
     #Now reindex them and print them
