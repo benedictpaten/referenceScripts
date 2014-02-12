@@ -72,11 +72,9 @@ class ContextSet:
         return diffs
 
     def prefixInContextSet(self, string):
-        for i in xrange(1, len(string)):
-            prefix = string[:i]
-            for uniqueString in self.minimalUniqueStrings:
-                if self.hamDist(prefix, uniqueString) <= self.mismatches:
-                    return True
+        for uniqueString in self.minimalUniqueStrings:
+            if len(uniqueString) <= len(string) and self.hamDist(string, uniqueString) <= self.mismatches:
+                return True
         return False  
         
 class SequenceGraph:
@@ -121,9 +119,8 @@ class SequenceGraph:
             contextSet = ContextSet(mismatches)
             def fn(string):
                 uniquePrefix = getUniquePrefixWithRespectToGraph(string)
-                print "For side ", side.basePosition.id, side.orientation, " we got the string ", string, " and the prefix ", uniquePrefix
                 if uniquePrefix == None:
-                    return False
+                    return False #len(string) > 10 #
                 contextSet.addString(uniquePrefix)
                 return True #Return true stops the traversal on that thread
             side.enumerateThreads(fn)
@@ -135,6 +132,7 @@ class SequenceGraph:
                     self.maxContextSetLength = maxContextStringLength   
         
     def getMatch(self, side):
+        assert side not in self.sides
         matches = set()
         def fn(string):
             for otherSide in self.sides:
@@ -211,7 +209,7 @@ class SequenceGraph:
                     def arrowShape(side):
                         if side.orientation:
                             return "normal"
-                        return "inv"
+                        return "crow"
                     addEdgeToGraph(parentNodeName=side.basePosition.getDotNodeName(), 
                                    childNodeName=adjSide.basePosition.getDotNodeName(), 
                                    graphFileHandle=graphVizFileHandle, colour="black", #weight="1", 
@@ -284,21 +282,21 @@ def main():
                 for side in sG2.positiveSides():
                     leftMatch = sG.getMatch(side)
                     rightMatch = sG.getMatch(side.otherSide)
+                    def fn(side):
+                        if side is None:
+                            return "None"
+                        return "%s_%s" % (side.basePosition.id, side.orientation)
                     if leftMatch != None:
                         if rightMatch == None or leftMatch.otherSide == rightMatch:
-                            print "Got a left match", leftMatch, rightMatch
                             matches.append((leftMatch, side))
                     elif rightMatch != None:
-                        print "Got a right match"
                         matches.append((rightMatch.otherSide, side))
                 sG.mergeSequenceGraphs(sG2)
-                print "We found %i merges" % len(matches)
                 for targetSide, inputSide in matches:
                     sG.merge(targetSide, inputSide)
             else:
                 sG.addString(string)
             print "Graph now has %i nodes" % len(sG.sides)
-            sG.renumber(0)
             sG.computeContextSets(options.mismatches, options.minContextLength)
      
     #Now reindex them and print them
@@ -328,7 +326,8 @@ def main():
                 def addMatchEdge(colour, label, matchingSide):
                     if not options.showOnlyLowestMaps or not haveMatched:
                         addEdgeToGraph(parentNodeName=matchingSide.basePosition.getDotNodeName(), 
-                                       childNodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, colour=colour, weight="100", dir="%s, arrowtail=inv, arrowhead=normal" % label, style="solid", length="1")
+                                       childNodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, colour=colour, 
+                                       weight="100", label=label, dir="both, arrowtail=normal, arrowhead=none", style="solid", length="1")
                 if leftMatch != None:
                     if rightMatch != None:
                         if leftMatch.otherSide == rightMatch: 
