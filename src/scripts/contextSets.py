@@ -179,27 +179,33 @@ class SequenceGraph:
             self.sides.append(rightSide)
         self.renumber(0) #Make sure everyone has a decent id.
     
-    def renumber(self, startID):
+    def renumber(self, startID=0, prefix=""):
         for side in self.positiveSides():
-            side.basePosition.id = startID
+            if prefix != "":
+                side.basePosition.id = str(prefix) + "_" + str(startID)
+            else:
+                side.basePosition.id = str(startID)
             startID += 1
     
-    def printDotFile(self, graphVizFileHandle, showContextSets):
+    def printDotFile(self, graphVizFileHandle, showContextSets, showIDs, number, label):
+        graphVizFileHandle.write('subgraph cluster_%s {\nstyle=filled;\ncolor=lightgrey;label = "%s";\n' % (number,label))
         #Add nodes
         for side in self.positiveSides():
             #Graph vis
             if showContextSets:
-                leftContextString = " ".join([ Side.getReverseComplement(i[1:]) for i in self.contextSets[side].minimalUniqueStrings ])
+                leftContextString = ",".join([ Side.getReverseComplement(i[1:]) for i in self.contextSets[side].minimalUniqueStrings ])
                 if len(self.contextSets[side].minimalUniqueStrings) == 0:
                     leftContextString = "None"
-                rightContextString = " ".join([ i[1:] for i in self.contextSets[side.otherSide].minimalUniqueStrings ])
+                rightContextString = ",".join([ i[1:] for i in self.contextSets[side.otherSide].minimalUniqueStrings ])
                 if len(self.contextSets[side.otherSide].minimalUniqueStrings) == 0:
                     rightContextString = "None"
                 addNodeToGraph(nodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, 
-                               shape="record", label="{ ID=%i | L=%s | %s | R=%s }" % (side.basePosition.id, 
+                               shape="record", label="{ ID=%s | L=%s | %s | R=%s }" % (side.basePosition.id, 
                                                                                        leftContextString, side.basePosition.base, rightContextString))
+            elif showIDs:
+                addNodeToGraph(nodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%s | %s }" % (side.basePosition.id, side.basePosition.base))
             else:
-                addNodeToGraph(nodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, shape="record", label="{ ID=%i | %s }" % (side.basePosition.id, side.basePosition.base))
+                addNodeToGraph(nodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, shape="record", label="{ %s }" % (side.basePosition.base))
         #Add edges
         seen = set()
         for side in self.sides:
@@ -216,6 +222,7 @@ class SequenceGraph:
                                    dir="both, arrowtail=%s, arrowhead=%s" % 
                                    (arrowShape(side), arrowShape(adjSide)), style="solid", length="10")
                     seen.add((side, adjSide))
+        graphVizFileHandle.write("}\n")
 
 def main():
     ##########################################
@@ -235,6 +242,10 @@ def main():
     
     parser.add_option("--showContextSets", dest="showContextSets", type="string",
                      help="Show the context sets for the selected graphs (enumerated starting from 0)",
+                     default="")
+    
+    parser.add_option("--showIDs", dest="showIDs", type="string",
+                     help="Show the IDs for the selected graphs (enumerated starting from 0)",
                      default="")
     
     parser.add_option("--mergeContigs", dest="mergeContigs", type="string",
@@ -301,16 +312,18 @@ def main():
      
     #Now reindex them and print them
     showContextSets = [ int(i) for i in options.showContextSets.split() ]  
-    graphVizFileHandle = open(options.graphVizFile, 'w')           
+    showIDs = [ int(i) for i in options.showIDs.split() ]  
+    graphVizFileHandle = open(options.graphVizFile, 'w')      
     setupGraphFile(graphVizFileHandle)
+    graphVizFileHandle.write("splines=false;\n")   
     
-    i = 0
+    #i = 0
     for index in xrange(len(sequenceGraphs)):
         sG = sequenceGraphs[index]
-        sG.renumber(i)
+        sG.renumber(prefix=index)
         print "Renumbering graph %i with %i sides" % (index, len(sG.positiveSides()))
-        i += len(sG.positiveSides())
-        sG.printDotFile(graphVizFileHandle, index in showContextSets)
+        #i += len(sG.positiveSides())
+        sG.printDotFile(graphVizFileHandle, index in showContextSets, index in showIDs, index, "Sequence Graph %s" % index)
         
     #Now print the matching edges between the graphs
     for index in xrange(1, len(sequenceGraphs)):
