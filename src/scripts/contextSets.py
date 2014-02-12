@@ -316,6 +316,7 @@ def main():
     graphVizFileHandle = open(options.graphVizFile, 'w')      
     setupGraphFile(graphVizFileHandle)
     graphVizFileHandle.write("splines=false;\n")   
+    #graphVizFileHandle.write("rankdir=LR;\n")   
     
     #i = 0
     for index in xrange(len(sequenceGraphs)):
