@@ -31,6 +31,9 @@ class Side:
             return i
         return "".join([ fn(i) for i in string[::-1] ])
     
+    def nonNAdjacencies(self):
+        return [ adjSide for adjSide, ns in list(self.adjacencies) if ns == '' ]
+    
     def base(self):
         if self.orientation:
             return self.basePosition.base
@@ -40,19 +43,26 @@ class Side:
         stack = [ (side, side.otherSide.base()) for side in self.mappedSides ] #Add preceding base
         while len(stack) > 0:
             side, prefix = stack.pop()
-            while len(side.adjacencies) == 1:
-                adjSide = list(side.adjacencies)[0]
+            while len(side.nonNAdjacencies()) == 1:
+                adjSide = side.nonNAdjacencies()[0]
                 prefix += adjSide.base()
                 side = adjSide.otherSide
-            if fn(prefix) or len(side.adjacencies) == 0:
+            if fn(prefix) or len(side.nonNAdjacencies()) == 0:
                 continue
-            assert len(side.adjacencies) > 1
-            for adjSide in side.adjacencies:
+            assert len(side.nonNAdjacencies()) > 1
+            for adjSide in side.nonNAdjacencies():
                 stack.append((adjSide.otherSide, prefix + adjSide.base()))  
 
+def hamDist(str1, str2):
+    """Count the # of differences between equal length strings str1 and str2"""
+    diffs = 0
+    for ch1, ch2 in zip(str1, str2):
+        if ch1 != ch2:
+            diffs += 1
+    return diffs
+
 class ContextSet:
-    def __init__(self, mismatches):
-        self.mismatches = mismatches
+    def __init__(self):
         self.minimalUniqueStrings = set()
     
     def addString(self, string):
@@ -62,19 +72,10 @@ class ContextSet:
             if prefix in self.minimalUniqueStrings:
                 return
         self.minimalUniqueStrings.add(string)
-    
-    @staticmethod
-    def hamDist(str1, str2):
-        """Count the # of differences between equal length strings str1 and str2"""
-        diffs = 0
-        for ch1, ch2 in zip(str1, str2):
-            if ch1 != ch2:
-                diffs += 1
-        return diffs
 
     def prefixInContextSet(self, string):
         for uniqueString in self.minimalUniqueStrings:
-            if len(uniqueString) <= len(string) and self.hamDist(string, uniqueString) <= self.mismatches:
+            if len(uniqueString) <= len(string) and hamDist(string, uniqueString) <= 0:
                 return True
         return False  
         
@@ -89,45 +90,48 @@ class SequenceGraph:
             self.mappedSequenceGraph = SequenceGraph(usePhasedContexts=False)
         else:
             self.mappedSequenceGraph = self
+            
+    def getUniquePrefix(self, string, mismatches):
+        startPoints = sum([ [ (side, mappedSide, 0)  for mappedSide in side.mappedSides ] for side in self.sides ], [])
+        index = 0
         
-    def computeContextSets(self, mismatches, minContextLength):
+        while len(startPoints) > 0 and index < len(string):
+            l = []
+            for side, mappedSide, diff in startPoints:
+                diff += mappedSide.base() != string[index]
+                if diff <= mismatches:
+                    l.append((side, mappedSide, diff))
+            index += 1
+            
+            if len(set([ side for side, mappedSide, diff in l ])) == 1: #We have a unique match to one node
+                return string[:index], [ side for side, mappedSide, diff in l ][0].otherSide
+               
+            startPoints = []
+            for side, mappedSide, diff in l:
+                for adjMappedSide in mappedSide.otherSide.nonNAdjacencies():
+                    startPoints.append((side, adjMappedSide, diff)) 
+                    
+        return (None, None)
+        
+    def computeContextSets(self, minContextLength, maxContextLength):
         """This function should be called on a graph before matching or printing is done"""
         self.contextSets = {}
         
-        def getUniquePrefix(string):
-            startPoints = sum([ [ (side, mappedSide, 0)  for mappedSide in side.mappedSides ] for side in self.sides ], [])
-            index = 0
-            
-            while len(startPoints) > 0 and index < len(string):
-                l = []
-                for side, mappedSide, diff in startPoints:
-                    diff += mappedSide.base() != string[index]
-                    if diff <= mismatches:
-                        l.append((side, mappedSide, diff))
-                index += 1
-                
-                if len(set([ side for side, mappedSide, diff in l ])) == 1: #We have a unique match to one node
-                    if index < minContextLength:
-                        if len(string) < minContextLength:
-                            return None
-                        return string[:minContextLength]
-                    return string[:index] 
-                   
-                startPoints = []
-                for side, mappedSide, diff in l:
-                    for adjMappedSide in mappedSide.otherSide.adjacencies:
-                        startPoints.append((side, adjMappedSide, diff)) 
-                        
-            return None
-        
         for side in self.sides:
             #Enumerate the threads
-            contextSet = ContextSet(mismatches)
+            contextSet = ContextSet()
             def fn(string):
-                uniquePrefix = getUniquePrefix(string)
+                uniquePrefix, otherSide = self.getUniquePrefix(string, 0)
                 if uniquePrefix == None:
-                    return False #len(string) > 10 #
-                contextSet.addString(uniquePrefix)
+                    return len(string) > maxContextLength #
+                assert otherSide == side
+                if len(uniquePrefix) < minContextLength:
+                    if len(string) >= minContextLength:
+                        contextSet.addString(string[:minContextLength])
+                    else:
+                        return False
+                else:
+                    contextSet.addString(uniquePrefix)
                 return True #Return true stops the traversal on that thread
             side.enumerateThreads(fn)
             self.contextSets[side] = contextSet
@@ -137,14 +141,14 @@ class SequenceGraph:
                 if maxContextStringLength > self.maxContextStringLength:
                     self.maxContextSetLength = maxContextStringLength   
         
-    def getMatch(self, side):
+    def getMatch(self, side, mismatches):
         assert side not in self.sides
         matches = set()
         def fn(string):
-            for otherSide in self.sides:
-                if self.contextSets[otherSide].prefixInContextSet(string):
-                    matches.add(otherSide)
-                    return True
+            uniquePrefix, otherSide = self.getUniquePrefix(string, mismatches)
+            if uniquePrefix != None:
+                matches.add(otherSide)
+                return True
             return len(string) > self.maxContextStringLength
         side.enumerateThreads(fn)
         if len(matches) != 1:
@@ -155,11 +159,12 @@ class SequenceGraph:
         self.sides.remove(side2)
         self.sides.remove(side2.otherSide)
         def fn(side1, side2):
-            for adjSide in side2.adjacencies:
-                assert side2 in adjSide.adjacencies
-                adjSide.adjacencies.remove(side2)
-                adjSide.adjacencies.add(side1)
-                side1.adjacencies.add(adjSide)
+            for adjSide, ns in side2.adjacencies:
+                assert (side2, ns) in adjSide.adjacencies
+                adjSide.adjacencies.remove((side2, ns))
+                assert (side2, ns) not in adjSide.adjacencies
+                adjSide.adjacencies.add((side1, ns))
+                side1.adjacencies.add((adjSide, ns))
         fn(side1, side2)
         fn(side1.otherSide, side2.otherSide)
         
@@ -179,25 +184,34 @@ class SequenceGraph:
     def addString(self, string):
         pSide = None
         phasedPSide = None
-        for base in string:            
-            def makeLinkedSides(base, pSide, sides):
+        def tokenise(string):
+            string = string.upper()
+            ns = ""
+            for i in string:
+                if i != 'N':
+                    yield i, ns
+                    ns = ""
+                else:
+                    ns += 'N'
+        for base, ns in tokenise(string):            
+            def makeLinkedSides(base, ns, pSide, sides):
                 bP = BasePosition(0, base)
                 leftSide = Side(bP, 1)
                 rightSide = Side(bP, 0)
                 leftSide.otherSide = rightSide
                 rightSide.otherSide = leftSide
                 if pSide != None:
-                    leftSide.adjacencies.add(pSide)
-                    pSide.adjacencies.add(leftSide)
+                    leftSide.adjacencies.add((pSide, ns))
+                    pSide.adjacencies.add((leftSide, ns))
                 sides.append(leftSide)
                 sides.append(rightSide)
                 return leftSide, rightSide
                     
-            leftSide, rightSide = makeLinkedSides(base, pSide, self.sides)
+            leftSide, rightSide = makeLinkedSides(base, ns, pSide, self.sides)
             pSide = rightSide
     
             if self.usePhasedContexts:
-                mappedLeftSide, mappedRightSide = makeLinkedSides(base, phasedPSide, self.mappedSequenceGraph.sides)
+                mappedLeftSide, mappedRightSide = makeLinkedSides(base, ns, phasedPSide, self.mappedSequenceGraph.sides)
                 leftSide.mappedSides = [ mappedLeftSide ]
                 rightSide.mappedSides = [ mappedRightSide ]
                 phasedPSide = mappedRightSide
@@ -213,7 +227,6 @@ class SequenceGraph:
             startID += 1
         if self.usePhasedContexts:
             self.mappedSequenceGraph.renumber(startID=startID, prefix=prefix)
-        
     
     def printDotFile(self, graphVizFileHandle, showContextSets, showIDs, number, label):
         graphVizFileHandle.write('subgraph cluster_%s {\nstyle=filled;\ncolor=lightgrey;label = "%s";\n' % (number,label))
@@ -237,9 +250,9 @@ class SequenceGraph:
         #Add edges
         seen = set()
         for side in self.sides:
-            for adjSide in side.adjacencies:
-                if not (adjSide, side) in seen:
-                    assert (side, adjSide) not in seen
+            for adjSide, ns in side.adjacencies:
+                if not (adjSide, side, ns) in seen:
+                    assert (side, adjSide, ns) not in seen
                     def arrowShape(side):
                         if side.orientation:
                             return "normal"
@@ -248,8 +261,8 @@ class SequenceGraph:
                                    childNodeName=adjSide.basePosition.getDotNodeName(), 
                                    graphFileHandle=graphVizFileHandle, colour="black", #weight="1", 
                                    dir="both, arrowtail=%s, arrowhead=%s" % 
-                                   (arrowShape(side), arrowShape(adjSide)), style="solid", length="10")
-                    seen.add((side, adjSide))
+                                   (arrowShape(side), arrowShape(adjSide)), style="solid", length="10", label=ns)
+                    seen.add((side, adjSide, ns))
         graphVizFileHandle.write("}\n")
 
 def main():
@@ -285,8 +298,12 @@ def main():
                      default=0)
     
     parser.add_option("--minContextLength", dest="minContextLength", type="int", 
-                     help="Minimum length of a context set",
+                     help="Minimum length of a string in a context set",
                      default=0)
+    
+    parser.add_option("--maxContextLength", dest="maxContextLength", type="int", 
+                     help="Maximum length of a string in a context set",
+                     default=10)
     
     parser.add_option("--showDoubleMaps", dest="showDoubleMaps", action="store_true",
                      help="Show doubly mapped match edges",
@@ -312,7 +329,7 @@ def main():
     sequenceGraphs = []
     
     for index in xrange(len(args)):
-        print "Processing sequence graph", index
+        print "Processing sequence graph", index, options.mismatches
         assembly = args[index]
         sG = SequenceGraph(options.usePhasedContexts)
         sequenceGraphs.append(sG)
@@ -323,8 +340,8 @@ def main():
                 sG2.addString(string)
                 matches = []
                 for side in sG2.positiveSides():
-                    leftMatch = sG.getMatch(side)
-                    rightMatch = sG.getMatch(side.otherSide)
+                    leftMatch = sG.getMatch(side, mismatches=options.mismatches)
+                    rightMatch = sG.getMatch(side.otherSide, mismatches=options.mismatches)
                     def fn(side):
                         if side is None:
                             return "None"
@@ -340,7 +357,6 @@ def main():
             else:
                 sG.addString(string)
             print "Graph now has %i nodes" % len(sG.sides)
-            sG.computeContextSets(options.mismatches, options.minContextLength)
      
     #Now reindex them and print them
     showContextSets = [ int(i) for i in options.showContextSets.split() ]  
@@ -355,8 +371,14 @@ def main():
         sG = sequenceGraphs[index]
         sG.renumber(prefix=index)
         print "Renumbering graph %i with %i sides" % (index, len(sG.positiveSides()))
+        if showContextSets:
+            if options.mismatches == 0:
+                print "Calculating context sets for graph %i with %i sides" % (index, len(sG.positiveSides()))
+                sG.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength)
+            else:
+                print "Can't display context sets with mismatches, they end up really big"
         #i += len(sG.positiveSides())
-        sG.printDotFile(graphVizFileHandle, index in showContextSets, index in showIDs, index, "Sequence Graph %s" % index)
+        sG.printDotFile(graphVizFileHandle, index in showContextSets and options.mismatches == 0, index in showIDs, index, "Sequence Graph %s" % index)
         
     #Now print the matching edges between the graphs
     for index in xrange(1, len(sequenceGraphs)):
@@ -366,8 +388,8 @@ def main():
             for pIndex in xrange(index-1, -1, -1):
                 sGTarget = sequenceGraphs[pIndex]
                 
-                leftMatch = sGTarget.getMatch(side)
-                rightMatch = sGTarget.getMatch(side.otherSide)
+                leftMatch = sGTarget.getMatch(side, mismatches=options.mismatches)
+                rightMatch = sGTarget.getMatch(side.otherSide, mismatches=options.mismatches)
                 
                 def addMatchEdge(colour, label, matchingSide):
                     if not options.showOnlyLowestMaps or not haveMatched:
