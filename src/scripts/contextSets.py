@@ -412,8 +412,8 @@ def main():
                     addMatchEdge("blue", "R", rightMatch)
                     haveMatched = True
         
-    finishGraphFile(graphVizFileHandle)   
-    graphVizFileHandle.close()  
+    finishGraphFile(graphVizFileHandle)
+    graphVizFileHandle.close()
 
 if __name__ == '__main__':
     exit(main())  
