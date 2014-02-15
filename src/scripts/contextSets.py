@@ -93,7 +93,8 @@ class SequenceGraph:
         else:
             self.mappedSequenceGraph = self
             
-    def getUniquePrefix(self, string, mismatches):
+    def getUniquePrefix(self, string, mismatches, dissimilarity=1):
+        assert dissimilarity >= 1
         startPoints = sum([ [ (side, mappedSide, 0)  for mappedSide in side.mappedSides ] for side in self.sides ], [])
         index = 0
         
@@ -101,12 +102,14 @@ class SequenceGraph:
             l = []
             for side, mappedSide, diff in startPoints:
                 diff += mappedSide.base() != string[index]
-                if diff <= mismatches:
+                if diff <= mismatches + dissimilarity - 1:
                     l.append((side, mappedSide, diff))
             index += 1
             
-            if len(set([ side for side, mappedSide, diff in l ])) == 1: #We have a unique match to one node
-                return string[:index], [ side for side, mappedSide, diff in l ][0].otherSide
+            s2 = set([ side for side, mappedSide, diff in l if diff <= mismatches + dissimilarity - 1 ]) 
+            s = set([ side for side, mappedSide, diff in l if diff <= mismatches ]) 
+            if len(s2) == 1 and len(s) == 1: #We have a unique match to one node
+                return string[:index], s.pop().otherSide
                
             startPoints = []
             for side, mappedSide, diff in l:
@@ -115,7 +118,7 @@ class SequenceGraph:
                     
         return (None, None)
         
-    def computeContextSets(self, minContextLength, maxContextLength):
+    def computeContextSets(self, minContextLength, maxContextLength, dissimilarity=1):
         """This function should be called on a graph before matching or printing is done"""
         self.contextSets = {}
         
@@ -123,7 +126,7 @@ class SequenceGraph:
             #Enumerate the threads
             contextSet = ContextSet()
             def fn(string):
-                uniquePrefix, otherSide = self.getUniquePrefix(string, 0)
+                uniquePrefix, otherSide = self.getUniquePrefix(string, 0, dissimilarity=dissimilarity)
                 if uniquePrefix == None:
                     return len(string) > maxContextLength #
                 assert otherSide == side
@@ -143,11 +146,11 @@ class SequenceGraph:
                 if maxContextStringLength > self.maxContextStringLength:
                     self.maxContextSetLength = maxContextStringLength   
         
-    def getMatch(self, side, mismatches, maxMatchLength=100):
+    def getMatch(self, side, mismatches, maxMatchLength=100, dissimilarity=1):
         assert side not in self.sides
         matches = set()
         def fn(string):
-            uniquePrefix, otherSide = self.getUniquePrefix(string, mismatches)
+            uniquePrefix, otherSide = self.getUniquePrefix(string, mismatches, dissimilarity=dissimilarity)
             if uniquePrefix != None:
                 matches.add(otherSide)
                 return True
@@ -308,8 +311,12 @@ def main():
                      default="")
     
     parser.add_option("--mismatches", dest="mismatches", type="int", 
-                     help="Number of mismatches to allow",
+                     help="Number of mismatches to allow between context strings",
                      default=0)
+    
+    parser.add_option("--dissimilarity", dest="dissimilarity", type="int", 
+                     help="Number of differences to require to be defined as unique (e.g. dissimilarity=2 means a context string must be a hamming distance of 2 from all other context strings). Default=1",
+                     default=1)
     
     parser.add_option("--minContextLength", dest="minContextLength", type="int", 
                      help="Minimum length of a string in a context set",
@@ -354,8 +361,8 @@ def main():
                 sG2.addString(string)
                 matches = []
                 for side in sG2.positiveSides():
-                    leftMatch = sG.getMatch(side, mismatches=options.mismatches)
-                    rightMatch = sG.getMatch(side.otherSide, mismatches=options.mismatches)
+                    leftMatch = sG.getMatch(side, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
+                    rightMatch = sG.getMatch(side.otherSide, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
                     def fn(side):
                         if side is None:
                             return "None"
@@ -402,8 +409,8 @@ def main():
             for pIndex in xrange(index-1, -1, -1):
                 sGTarget = sequenceGraphs[pIndex]
                 
-                leftMatch = sGTarget.getMatch(side, mismatches=options.mismatches)
-                rightMatch = sGTarget.getMatch(side.otherSide, mismatches=options.mismatches)
+                leftMatch = sGTarget.getMatch(side, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
+                rightMatch = sGTarget.getMatch(side.otherSide, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
                 
                 def addMatchEdge(colour, label, matchingSide):
                     if not options.showOnlyLowestMaps or not haveMatched:
