@@ -3,7 +3,7 @@ from sonLib.bioio import addNodeToGraph, addEdgeToGraph, setupGraphFile, finishG
 from optparse import OptionParser
 import random
 
-"""Script to calculate and display reference genome hierarchies
+"""Script to calculate and display reference genome hierarchies and mappings
 """
 
 class BasePosition:
@@ -43,13 +43,13 @@ class Side:
         stack = [ (side, side.otherSide.base()) for side in self.mappedSides ] #Add preceding base
         while len(stack) > 0:
             side, prefix = stack.pop()
-            while len(side.nonNAdjacencies()) == 1:
-                adjSide = side.nonNAdjacencies()[0]
-                prefix += adjSide.base()
-                side = adjSide.otherSide
+            #while len(side.nonNAdjacencies()) == 1:
+            #    adjSide = side.nonNAdjacencies()[0]
+            #    prefix += adjSide.base()
+            #    side = adjSide.otherSide
             if fn(prefix) or len(side.nonNAdjacencies()) == 0:
                 continue
-            assert len(side.nonNAdjacencies()) > 1
+            #assert len(side.nonNAdjacencies()) > 1
             for adjSide in side.nonNAdjacencies():
                 stack.append((adjSide.otherSide, prefix + adjSide.base()))  
 
@@ -141,7 +141,7 @@ class SequenceGraph:
                 if maxContextStringLength > self.maxContextStringLength:
                     self.maxContextSetLength = maxContextStringLength   
         
-    def getMatch(self, side, mismatches):
+    def getMatch(self, side, mismatches, maxMatchLength=100):
         assert side not in self.sides
         matches = set()
         def fn(string):
@@ -149,7 +149,7 @@ class SequenceGraph:
             if uniquePrefix != None:
                 matches.add(otherSide)
                 return True
-            return len(string) > self.maxContextStringLength
+            return len(string) > maxMatchLength
         side.enumerateThreads(fn)
         if len(matches) != 1:
             return None
@@ -184,6 +184,10 @@ class SequenceGraph:
     def addString(self, string):
         pSide = None
         phasedPSide = None
+        firstSide = None
+        circular = string[-1:] == '!'
+        if circular:
+            string = string[:-1]
         def tokenise(string):
             string = string.upper()
             ns = ""
@@ -208,6 +212,8 @@ class SequenceGraph:
                 return leftSide, rightSide
                     
             leftSide, rightSide = makeLinkedSides(base, ns, pSide, self.sides)
+            if firstSide == None:
+                firstSide = leftSide
             pSide = rightSide
     
             if self.usePhasedContexts:
@@ -215,7 +221,13 @@ class SequenceGraph:
                 leftSide.mappedSides = [ mappedLeftSide ]
                 rightSide.mappedSides = [ mappedRightSide ]
                 phasedPSide = mappedRightSide
-                
+        
+        if circular: #Need to add an extra adjacency
+            firstSide.adjacencies.add((pSide, ''))
+            pSide.adjacencies.add((firstSide, ''))
+            if self.usePhasedContexts:
+                firstSide.mappedSides[0].adjacencies.add((phasedPSide, ''))
+                phasedPSide.adjacencies.add((firstSide.mappedSides[0], ''))
         self.renumber(0) #Make sure everyone has a decent id.
     
     def renumber(self, startID=0, prefix=""):
