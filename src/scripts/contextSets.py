@@ -43,10 +43,12 @@ class Side:
         stack = [ (side, side.otherSide.base()) for side in self.mappedSides ] #Add preceding base
         while len(stack) > 0:
             side, prefix = stack.pop()
-            #while len(side.nonNAdjacencies()) == 1:
-            #    adjSide = side.nonNAdjacencies()[0]
-            #    prefix += adjSide.base()
-            #    side = adjSide.otherSide
+            i = 0
+            while len(side.nonNAdjacencies()) == 1 and i < 10:
+                adjSide = side.nonNAdjacencies()[0]
+                prefix += adjSide.base()
+                side = adjSide.otherSide
+                i += 1
             if fn(prefix) or len(side.nonNAdjacencies()) == 0:
                 continue
             #assert len(side.nonNAdjacencies()) > 1
