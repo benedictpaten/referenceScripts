@@ -63,6 +63,13 @@ def hamDist(str1, str2):
             diffs += 1
     return diffs
 
+def sharedPrefix(str1, str2):
+    """Return shared prefix of the two strings"""
+    for i in xrange(min(len(str1), len(str2))):
+        if str1[i] != str2[i]:
+            return str1[:i]
+    return str1[:min(len(str1), len(str2))]
+
 class ContextSet:
     def __init__(self):
         self.minimalUniqueStrings = set()
@@ -80,9 +87,21 @@ class ContextSet:
             if len(uniqueString) <= len(string) and hamDist(string, uniqueString) <= 0:
                 return True
         return False  
+    
+    def maxLength(self):
+        return max([ 0 ] + [ len(i) for i in self.minimalUniqueStrings ])
+    
+    def maxSharedPrefixLength(self, otherContextSet):
+        i = ""
+        for uniqueString in self.minimalUniqueStrings:
+            for otherUniqueString in otherContextSet.minimalUniqueStrings:
+                j = sharedPrefix(uniqueString, otherUniqueString)
+                if len(j) > len(i):
+                    i = j
+        return len(i) 
         
 class SequenceGraph:
-    def __init__(self, usePhasedContexts):
+    def __init__(self, usePhasedContexts, label=""):
         self.id = 0
         self.sides = []
         self.contextSets = {}
@@ -92,6 +111,7 @@ class SequenceGraph:
             self.mappedSequenceGraph = SequenceGraph(usePhasedContexts=False)
         else:
             self.mappedSequenceGraph = self
+        self.label = label
             
     def getUniquePrefix(self, string, mismatches, dissimilarity=1):
         assert dissimilarity >= 1
@@ -141,10 +161,8 @@ class SequenceGraph:
             side.enumerateThreads(fn)
             self.contextSets[side] = contextSet
             #Set max
-            if len(contextSet.minimalUniqueStrings) > 0:
-                maxContextStringLength = max([len(i) for i in contextSet.minimalUniqueStrings ])
-                if maxContextStringLength > self.maxContextStringLength:
-                    self.maxContextSetLength = maxContextStringLength   
+            if contextSet.maxLength() > self.maxContextStringLength:
+                self.maxContextSetLength = contextSet.maxLength()  
         
     def getMatch(self, side, mismatches, maxMatchLength=100, dissimilarity=1):
         assert side not in self.sides
@@ -172,6 +190,8 @@ class SequenceGraph:
                 side1.adjacencies.add((adjSide, ns))
         fn(side1, side2)
         fn(side1.otherSide, side2.otherSide)
+        if side1.basePosition.id > side2.basePosition.id:
+            side1.basePosition.id = side2.basePosition.id
         
         if self.usePhasedContexts:
             side1.mappedSides = side1.mappedSides + side2.mappedSides
@@ -181,6 +201,7 @@ class SequenceGraph:
         return [ side for side in self.sides if side.orientation ]
     
     def mergeSequenceGraphs(self, sG2):
+        sG2.renumber(startID = len(self.positiveSides()))
         self.sides += sG2.sides
         if self.usePhasedContexts:
             assert sG2.usePhasedContexts
@@ -204,7 +225,7 @@ class SequenceGraph:
                     ns += 'N'
         for base, ns in tokenise(string):            
             def makeLinkedSides(base, ns, pSide, sides):
-                bP = BasePosition(0, base)
+                bP = BasePosition(len(sides)/2, base)
                 leftSide = Side(bP, 1)
                 rightSide = Side(bP, 0)
                 leftSide.otherSide = rightSide
@@ -233,20 +254,27 @@ class SequenceGraph:
             if self.usePhasedContexts:
                 firstSide.mappedSides[0].adjacencies.add((phasedPSide, ''))
                 phasedPSide.adjacencies.add((firstSide.mappedSides[0], ''))
-        self.renumber(0) #Make sure everyone has a decent id.
     
     def renumber(self, startID=0, prefix=""):
+        ids = [ int(side.basePosition.id) for side in self.positiveSides() ]
+        assert len(ids) == len(set(ids))
+        ids.sort()
         for side in self.positiveSides():
+            i = int(side.basePosition.id)
+            assert i in ids
+            i = ids.index(i) + startID
             if prefix != "":
-                side.basePosition.id = str(prefix) + "_" + str(startID)
+                side.basePosition.id = str(prefix) + "_" + str(i)
             else:
-                side.basePosition.id = str(startID)
-            startID += 1
+                side.basePosition.id = i
         if self.usePhasedContexts:
             self.mappedSequenceGraph.renumber(startID=startID, prefix=prefix)
     
-    def printDotFile(self, graphVizFileHandle, showContextSets, showIDs, number, label):
-        graphVizFileHandle.write('subgraph cluster_%s {\nstyle=filled;\ncolor=lightgrey;label = "%s";\n' % (number,label))
+    def printDotFile(self, graphVizFileHandle, showContextSets, showIDs, number, displayAsSubgraph):
+        if displayAsSubgraph:
+            graphVizFileHandle.write('subgraph cluster_%s {\nstyle=filled;\ncolor=lightgrey;label = "%s";\n' % (number,self.label))
+        else:
+            graphVizFileHandle.write('subgraph cluster_%s {\nlabel = "%s";\n' % (number,self.label))
         #Add nodes
         for side in self.positiveSides():
             #Graph vis
@@ -280,6 +308,7 @@ class SequenceGraph:
                                    dir="both, arrowtail=%s, arrowhead=%s" % 
                                    (arrowShape(side), arrowShape(adjSide)), style="solid", length="10", label=ns)
                     seen.add((side, adjSide, ns))
+        #if displayAsSubgraph:
         graphVizFileHandle.write("}\n")
 
 def main():
@@ -338,21 +367,29 @@ def main():
                      help="For each graph only allow context sets to be defined by the underlying sequences that serve as input to construct the sequence graph",
                      default=False)
     
+    parser.add_option("--mergeSymmetric", dest="mergeSymmetric", type="string",
+                     help="For each sequence graph indexed collapse to given m",
+                     default="")
+    
     options, args = parser.parse_args()
     
     if len(args) == 0:
         parser.print_help()
         return 1
     
-    mergeContigs = [ int(i) for i in options.mergeContigs.split() ]   
+    mergeContigs = [ int(i) for i in options.mergeContigs.split() ]  
+    mergeSymmetric = {} 
+    for i in options.mergeSymmetric.split():
+        mergeSymmetric[int(i.split("=")[0])] = int(i.split("=")[1])
     
     #First create the sequence graphs for each input graph
     sequenceGraphs = []
     
-    for index in xrange(len(args)):
-        print "Processing sequence graph", index, options.mismatches
+    for index in xrange(0, len(args), 2):
         assembly = args[index]
-        sG = SequenceGraph(options.usePhasedContexts)
+        label = args[index + 1]
+        print "Processing sequence graph", index, options.mismatches, label
+        sG = SequenceGraph(options.usePhasedContexts, label=label)
         sequenceGraphs.append(sG)
         for string in assembly.split():
             print "Adding string:", string, " of assembly:", index
@@ -378,6 +415,30 @@ def main():
             else:
                 sG.addString(string)
             print "Graph now has %i nodes" % len(sG.sides)
+            
+        if index in mergeSymmetric.keys():
+            m = mergeSymmetric[index]
+            sG.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength)
+            while True:
+                #Try and get node with context string longer than m
+                validSides = [ side for side in sG.sides if len([ side2 for side2 in sG.sides if (side2.base() == side.base() and side2 != side and side2.otherSide != side) ]) > 0  ] #Get sides which have a potential merge partner
+                if len(validSides) == 0:
+                    break
+                random.shuffle(validSides)
+                side1 = max(validSides, key=lambda side : sG.contextSets[side].maxLength())
+                contextSet1 = sG.contextSets[side1]
+                if contextSet1.maxLength()-1 < m:
+                    break #We are done
+                #Find other node with maximum suffix of long context string.
+                l = [ side for side in sG.sides if side != side1 and side != side1.otherSide and side.base() == side1.base() ]
+                assert len(l) != 0
+                #print "frarrr 2", [ (side.basePosition.base, side.basePosition.id, sG.contextSets[side].minimalUniqueStrings) for side in sG.sides ]
+                side2 = max(l, key=lambda side : contextSet1.maxSharedPrefixLength(sG.contextSets[side]))
+                #Merge sides
+                #print "Going to merge", side1.basePosition.id, side2.basePosition.id, contextSet1.maxSharedPrefixLength(sG.contextSets[side2])
+                sG.merge(side1, side2)
+                #Recompute context sets
+                sG.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength)
      
     #Now reindex them and print them
     showContextSets = [ int(i) for i in options.showContextSets.split() ]  
@@ -385,7 +446,8 @@ def main():
     graphVizFileHandle = open(options.graphVizFile, 'w')      
     setupGraphFile(graphVizFileHandle)
     graphVizFileHandle.write("splines=false;\n")   
-    graphVizFileHandle.write("rankdir=LR;\n")   
+    graphVizFileHandle.write("rankdir=LR;\n") 
+       
     
     #i = 0
     for index in xrange(len(sequenceGraphs)):
@@ -399,7 +461,7 @@ def main():
             else:
                 print "Can't display context sets with mismatches, they end up really big"
         #i += len(sG.positiveSides())
-        sG.printDotFile(graphVizFileHandle, index in showContextSets and options.mismatches == 0, index in showIDs, index, "Sequence Graph %s" % index)
+        sG.printDotFile(graphVizFileHandle, index in showContextSets and options.mismatches == 0, index in showIDs, index, len(sequenceGraphs) > 1)
         
     #Now print the matching edges between the graphs
     for index in xrange(1, len(sequenceGraphs)):
