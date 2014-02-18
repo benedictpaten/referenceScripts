@@ -1,0 +1,62 @@
+#!/bin/sh
+
+outDir=/Users/benedictpaten/Desktop
+
+g0Label="Linear Sequence Graph"
+g0='$AAGCTACTAGCT$ AGGNCT!' 
+
+g1Label="Sequence Graph"
+g1='$AAGCTACTAGCT$ $AATCTACTGCT$ AGGNCT!'
+
+#Figure 1: Oriented sequence graph, with Ns and circular contig?
+python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig1.dot "${g0}" "${g0Label}"  --showIDs 0 
+dot -Tpdf ${outDir}/fig1.dot > ${outDir}/fig1.pdf
+
+#Figure 2: Sequence graph (not linear)  - developed from first example.
+python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig2.dot "${g1}" "${g1Label}"  --showIDs 0 --mergeContigs 0
+dot -Tpdf ${outDir}/fig2.dot > ${outDir}/fig2.pdf
+
+#Here make the examples simpler to make it easier to follow..
+
+g2Label="Linear Input Sequence Graph"
+g2='XAAGCTACTAGCTY XAATCTACTGCTY' 
+
+g3Label="Input Sequence Graph"
+g3='XAAGCTACTAGCTY XAATCTACTGCTY' 
+
+g4Label="Linear Target Sequence Graph"
+g4='$AAGCTACTAGCT$ AGGNCT!' 
+
+g5Label="Target Sequence Graph"
+g5='$AAGCTACTAGCT$ $AATCTACTGCT$'
+
+#Figure 3: Linear genome context sets for simplicity shown for single scaffold.
+#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig3.dot "${g0}" "${g0Label}"  --showContextSets 0 
+#dot -Tpdf ${outDir}/fig3.dot > ${outDir}/fig3.pdf
+
+#Figure 4: Unique matching examples - isomorphic and variant mapping of linear input sequence grapgs to linear target sequence graphs
+#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig4.dot "${g0}" "${g0Label}" "${g1}" "{g1Label}" --showContextSets 0 
+#dot -Tpdf ${outDir}/fig4.dot > ${outDir}/fig4.pdf
+
+#Figure 5: Mapping of a linear sequence graph to a non-linear graph. 
+#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig5.dot "${g1}" "${g3}" --mergeContigs 0 --showContextSets 0 
+#dot -Tpdf ${outDir}/fig5.dot > ${outDir}/fig5.pdf
+
+#Figure 6:Mapping of a non-linear graph to a non-linear graph
+#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig6.dot "${g1}" "${g3}" --mergeContigs "0 1" --showContextSets 0 
+#dot -Tpdf ${outDir}/fig6.dot > ${outDir}/fig6.pdf
+
+#Figure 7: Mismatching example
+#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig7.dot "${g0}" "${g1}" --mismatches 1
+#dot -Tpdf ${outDir}/fig7.dot > ${outDir}/fig7.pdf 
+
+#Figure 8:Symmetric vs. non-symmetric merging.
+#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig6.dot "${g1}" "${g3}" --mergeContigs "0 1" --showContextSets 0 
+#dot -Tpdf ${outDir}/fig6.dot > ${outDir}/fig6.pdf
+
+#Figure 9: Hierarchy example
+#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig8.dot "${g2}" "${g2}" "${g3}" --showDoubleMaps --mergeContigs 0 --showContextSets '0 1' --showIDs '0 1' --usePhasedContexts --showOnlyLowestMaps  
+#dot -Tpdf ${outDir}/fig8.dot > ${outDir}/fig8.pdf
+
+#Figure 10: Updating the reference?
+
