@@ -257,6 +257,7 @@ class SequenceGraph:
     
     def renumber(self, startID=0, prefix=""):
         ids = [ int(side.basePosition.id) for side in self.positiveSides() ]
+        print "oh dear", ids
         assert len(ids) == len(set(ids))
         ids.sort()
         for side in self.positiveSides():
