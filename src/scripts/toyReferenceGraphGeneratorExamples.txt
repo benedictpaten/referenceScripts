@@ -1,20 +1,28 @@
 #!/bin/sh
 
-outDir=/Users/benedictpaten/Desktop
+outDir=/Users/benedictpaten/Dropbox/Documents/work/myProjects/uniqueMatching/paperFigures
 
 g0Label="Linear Sequence Graph"
-g0='$AAGCTACTAGCT$ AGGNCT!' 
+g0='$AAGCTACTAGCT$ AGGNNCT!' 
 
 g1Label="Sequence Graph"
-g1='$AAGCTACTAGCT$ $AATCTACTGCT$ AGGNCT!'
+g1='$AAGCTACTAGC$ $AATCTACTGC$ AGGNNCT!'
 
 #Figure 1: Oriented sequence graph, with Ns and circular contig?
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig1.dot "${g0}" "${g0Label}"  --showIDs 0 
 dot -Tpdf ${outDir}/fig1.dot > ${outDir}/fig1.pdf
 
 #Figure 2: Sequence graph (not linear)  - developed from first example.
-python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig2.dot "${g1}" "${g1Label}"  --showIDs 0 --mergeContigs 0
+python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig2.dot "${g1}" "${g1Label}"  --showIDs 0 --mergeContigs 0 --showContextSets 0 --usePhasedContexts
 dot -Tpdf ${outDir}/fig2.dot > ${outDir}/fig2.pdf
+
+#Figure 3: Linear genome context sets for simplicity shown for single scaffold.
+python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig3.dot "${g0}" "${g0Label} with Unique Context Strings"  --showContextSets 0 
+dot -Tpdf ${outDir}/fig3.dot > ${outDir}/fig3.pdf
+
+#Figure 4: Unique matching examples - isomorphic and variant mapping of linear input sequence grapgs to linear target sequence graphs
+python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig4.dot "${g0}" "${g0Label}" "${g1}" "{g1Label}" --showContextSets 0 --showDoubleMaps
+dot -Tpdf ${outDir}/fig4.dot > ${outDir}/fig4.pdf
 
 #Here make the examples simpler to make it easier to follow..
 
@@ -30,13 +38,8 @@ g4='$AAGCTACTAGCT$ AGGNCT!'
 g5Label="Target Sequence Graph"
 g5='$AAGCTACTAGCT$ $AATCTACTGCT$'
 
-#Figure 3: Linear genome context sets for simplicity shown for single scaffold.
-#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig3.dot "${g0}" "${g0Label}"  --showContextSets 0 
-#dot -Tpdf ${outDir}/fig3.dot > ${outDir}/fig3.pdf
 
-#Figure 4: Unique matching examples - isomorphic and variant mapping of linear input sequence grapgs to linear target sequence graphs
-#python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig4.dot "${g0}" "${g0Label}" "${g1}" "{g1Label}" --showContextSets 0 
-#dot -Tpdf ${outDir}/fig4.dot > ${outDir}/fig4.pdf
+
 
 #Figure 5: Mapping of a linear sequence graph to a non-linear graph. 
 #python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig5.dot "${g1}" "${g3}" --mergeContigs 0 --showContextSets 0 

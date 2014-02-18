@@ -257,7 +257,6 @@ class SequenceGraph:
     
     def renumber(self, startID=0, prefix=""):
         ids = [ int(side.basePosition.id) for side in self.positiveSides() ]
-        print "oh dear", ids
         assert len(ids) == len(set(ids))
         ids.sort()
         for side in self.positiveSides():
@@ -413,6 +412,7 @@ def main():
                 sG.mergeSequenceGraphs(sG2)
                 for targetSide, inputSide in matches:
                     sG.merge(targetSide, inputSide)
+                sG.renumber()
             else:
                 sG.addString(string)
             print "Graph now has %i nodes" % len(sG.sides)
@@ -449,7 +449,6 @@ def main():
     graphVizFileHandle.write("splines=false;\n")   
     graphVizFileHandle.write("rankdir=LR;\n") 
        
-    
     #i = 0
     for index in xrange(len(sequenceGraphs)):
         sG = sequenceGraphs[index]
