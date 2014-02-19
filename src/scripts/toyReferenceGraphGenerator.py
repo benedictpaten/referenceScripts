@@ -182,7 +182,7 @@ class SequenceGraph:
         self.sides.remove(side2)
         self.sides.remove(side2.otherSide)
         def fn(side1, side2):
-            for adjSide, ns in side2.adjacencies:
+            for adjSide, ns in list(side2.adjacencies):
                 assert (side2, ns) in adjSide.adjacencies
                 adjSide.adjacencies.remove((side2, ns))
                 assert (side2, ns) not in adjSide.adjacencies
@@ -272,7 +272,7 @@ class SequenceGraph:
     
     def printDotFile(self, graphVizFileHandle, showContextSets, showIDs, number, displayAsSubgraph):
         if displayAsSubgraph:
-            graphVizFileHandle.write('subgraph cluster_%s {\nstyle=filled;\ncolor=lightgrey;label = "%s";\n' % (number,self.label))
+            graphVizFileHandle.write('subgraph cluster_%s {\nstyle=filled;\ncolor=lightgrey;label = "%s";\nsplines=false;\n' % (number,self.label))
         else:
             graphVizFileHandle.write('subgraph cluster_%s {\nlabel = "%s";\n' % (number,self.label))
         #Add nodes
@@ -310,6 +310,8 @@ class SequenceGraph:
                     seen.add((side, adjSide, ns))
         #if displayAsSubgraph:
         graphVizFileHandle.write("}\n")
+        
+    
 
 def main():
     ##########################################
@@ -371,6 +373,14 @@ def main():
                      help="For each sequence graph indexed collapse to given m",
                      default="")
     
+    parser.add_option("--targetSequenceGraphs", dest="targetSequenceGraphs", type="string",
+                     help="List of sequence graph indices to map to",
+                     default="")
+    
+    parser.add_option("--noMapping", dest="mapping", action="store_false",
+                     help="Do not show mapping",
+                     default=True)
+    
     options, args = parser.parse_args()
     
     if len(args) == 0:
@@ -378,6 +388,7 @@ def main():
         return 1
     
     mergeContigs = [ int(i) for i in options.mergeContigs.split() ]  
+    print "We got merege contigs", mergeContigs
     mergeSymmetric = {} 
     for i in options.mergeSymmetric.split():
         mergeSymmetric[int(i.split("=")[0])] = int(i.split("=")[1])
@@ -388,12 +399,13 @@ def main():
     for index in xrange(0, len(args), 2):
         assembly = args[index]
         label = args[index + 1]
+        seqGraphIndex = index/2
         print "Processing sequence graph", index, options.mismatches, label
         sG = SequenceGraph(options.usePhasedContexts, label=label)
         sequenceGraphs.append(sG)
         for string in assembly.split():
             print "Adding string:", string, " of assembly:", index
-            if index in mergeContigs: #Merge the new contig into the previous contigs
+            if seqGraphIndex in mergeContigs: #Merge the new contig into the previous contigs
                 sG2 = SequenceGraph(options.usePhasedContexts)
                 sG2.addString(string)
                 matches = []
@@ -417,8 +429,8 @@ def main():
                 sG.addString(string)
             print "Graph now has %i nodes" % len(sG.sides)
             
-        if index in mergeSymmetric.keys():
-            m = mergeSymmetric[index]
+        if seqGraphIndex in mergeSymmetric.keys():
+            m = mergeSymmetric[seqGraphIndex]
             sG.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength)
             while True:
                 #Try and get node with context string longer than m
@@ -464,36 +476,42 @@ def main():
         sG.printDotFile(graphVizFileHandle, index in showContextSets and options.mismatches == 0, index in showIDs, index, len(sequenceGraphs) > 1)
         
     #Now print the matching edges between the graphs
-    for index in xrange(1, len(sequenceGraphs)):
-        sGInput = sequenceGraphs[index]
-        for side in sGInput.positiveSides():
-            haveMatched = False
-            for pIndex in xrange(index-1, -1, -1):
-                sGTarget = sequenceGraphs[pIndex]
+    if options.mapping:
+        targetSequenceGraphs = [ int(i) for i in options.targetSequenceGraphs.split() ]  
+        if len(targetSequenceGraphs) == 0:
+            targetSequenceGraphs = range(len(sequenceGraphs))
+        for index in xrange(1, len(sequenceGraphs)):
+            sGInput = sequenceGraphs[index]
+            for side in sGInput.positiveSides():
+                haveMatched = False
                 
-                leftMatch = sGTarget.getMatch(side, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
-                rightMatch = sGTarget.getMatch(side.otherSide, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
-                
-                def addMatchEdge(colour, label, matchingSide):
-                    if not options.showOnlyLowestMaps or not haveMatched:
-                        addEdgeToGraph(parentNodeName=matchingSide.basePosition.getDotNodeName(), 
-                                       childNodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, colour=colour, 
-                                       weight="100", label=label, dir="both, arrowtail=normal, arrowhead=none", style="solid", length="1")
-                if leftMatch != None:
-                    if rightMatch != None:
-                        if leftMatch.otherSide == rightMatch: 
-                            addMatchEdge("red", "B", leftMatch)
+                for pIndex in xrange(index-1, -1, -1):
+                    if pIndex in targetSequenceGraphs:
+                        sGTarget = sequenceGraphs[pIndex]
+                        
+                        leftMatch = sGTarget.getMatch(side, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
+                        rightMatch = sGTarget.getMatch(side.otherSide, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
+                        
+                        def addMatchEdge(colour, label, matchingSide):
+                            if not options.showOnlyLowestMaps or not haveMatched:
+                                addEdgeToGraph(parentNodeName=matchingSide.basePosition.getDotNodeName(), 
+                                               childNodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, colour=colour, 
+                                               weight="100", label=label, dir="both, arrowtail=normal, arrowhead=none", style="solid", length="1")
+                        if leftMatch != None:
+                            if rightMatch != None:
+                                if leftMatch.otherSide == rightMatch: 
+                                    addMatchEdge("red", "B", leftMatch)
+                                    haveMatched = True
+                                else:
+                                    if options.showDoubleMaps:
+                                        addMatchEdge("orange", "L", leftMatch)
+                                        addMatchEdge("orange", "R", rightMatch)
+                            else:
+                                addMatchEdge("blue", "L", leftMatch)
+                                haveMatched = True
+                        elif rightMatch != None:
+                            addMatchEdge("blue", "R", rightMatch)
                             haveMatched = True
-                        else:
-                            if options.showDoubleMaps:
-                                addMatchEdge("orange", "L", leftMatch)
-                                addMatchEdge("orange", "R", rightMatch)
-                    else:
-                        addMatchEdge("blue", "L", leftMatch)
-                        haveMatched = True
-                elif rightMatch != None:
-                    addMatchEdge("blue", "R", rightMatch)
-                    haveMatched = True
         
     finishGraphFile(graphVizFileHandle)
     graphVizFileHandle.close()
