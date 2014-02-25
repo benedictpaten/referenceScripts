@@ -179,6 +179,10 @@ class SequenceGraph:
         return matches.pop()
     
     def merge(self, side1, side2):
+        if side1 == side2:
+            return
+        assert side1 != side2.otherSide
+        assert side1.otherSide != side2
         self.sides.remove(side2)
         self.sides.remove(side2.otherSide)
         def fn(side1, side2):
@@ -186,6 +190,10 @@ class SequenceGraph:
                 assert (side2, ns) in adjSide.adjacencies
                 adjSide.adjacencies.remove((side2, ns))
                 assert (side2, ns) not in adjSide.adjacencies
+                if adjSide == side2: #Self loop on one side
+                    adjSide = side1
+                elif adjSide == side2.otherSide: #Self loop connecting sides
+                    adjSide = side1.otherSide
                 adjSide.adjacencies.add((side1, ns))
                 side1.adjacencies.add((adjSide, ns))
         fn(side1, side2)
@@ -196,6 +204,14 @@ class SequenceGraph:
         if self.usePhasedContexts:
             side1.mappedSides = side1.mappedSides + side2.mappedSides
             side1.otherSide.mappedSides = side1.otherSide.mappedSides + side2.otherSide.mappedSides
+        
+        for side in self.sides:
+            for adjSide, ns in side.adjacencies:
+                assert side != side2
+                assert side != side2.otherSide
+                assert adjSide != side2
+                assert adjSide != side2.otherSide
+            
                 
     def positiveSides(self):
         return [ side for side in self.sides if side.orientation ]
@@ -388,7 +404,7 @@ def main():
         return 1
     
     mergeContigs = [ int(i) for i in options.mergeContigs.split() ]  
-    print "We got merege contigs", mergeContigs
+    print "We got merge-contigs", mergeContigs
     mergeSymmetric = {} 
     for i in options.mergeSymmetric.split():
         mergeSymmetric[int(i.split("=")[0])] = int(i.split("=")[1])
@@ -424,13 +440,20 @@ def main():
                                 matches.append((leftMatch, side))
                         elif rightMatch != None:
                             matches.append((rightMatch.otherSide, side))
-                sGs.append(sG)
+                sGs.append(sG2)
+
+            for sG2 in sGs:
                 sG.mergeSequenceGraphs(sG2)
                 print "Graph now has %i nodes" % len(sG.sides)
             
             for targetSide, inputSide in matches:
-                targetSide = m[targetSide]
-                inputSide = m[inputSide]
+                while targetSide != m[targetSide]:
+                    targetSide = m[targetSide]
+                print inputSide, m[inputSide]
+                while inputSide != m[inputSide]:
+                    inputSide = m[inputSide]
+                assert targetSide in sG.sides
+                assert inputSide in sG.sides
                 m[inputSide] = targetSide
                 m[inputSide.otherSide] = targetSide.otherSide
                 sG.merge(targetSide, inputSide)
@@ -472,10 +495,11 @@ def main():
     graphVizFileHandle.write("splines=false;\n")   
     graphVizFileHandle.write("rankdir=LR;\n") 
        
-    #i = 0
+    i = 1
     for index in xrange(len(sequenceGraphs)):
         sG = sequenceGraphs[index]
-        sG.renumber(prefix=index)
+        sG.renumber(startID=i)
+        i += len(sG.positiveSides())
         print "Renumbering graph %i with %i sides" % (index, len(sG.positiveSides()))
         if showContextSets:
             if options.mismatches == 0:

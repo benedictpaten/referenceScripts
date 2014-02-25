@@ -6,7 +6,7 @@ g0Label="Linear Sequence Graph"
 g0='$AAGCTACTAGC$ AGGCT!' 
 
 g1Label="Sequence Graph"
-g1='$AAGCTACTAGC$ $AATCTACTGC$ AGGCT!'
+g1='AAGCTACTAGCC AATCTACTGCC'
 
 #Figure 1: Oriented sequence graph, with Ns and circular contig?
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig1.dot "${g0}" "${g0Label}"  --showIDs 0 
@@ -21,44 +21,44 @@ python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig3.d
 dot -Tpdf ${outDir}/fig3.dot > ${outDir}/fig3.pdf
 
 g2Label="Target Linear Sequence Graph"
-g2='$AAGCTACTAGC$' 
+g2='AAGCTACTAGCC' 
 
 g3Label="Input Linear Sequence Graph"
-g3='$AATCTACTGC$'
+g3='AATCTACTGCC'
 
 g4Label="Input Linear Sequence Graph"
-g4='$AAGCTACTAGC$' 
+g4='AAGCTACTAGCC' 
 
 #Figure 4: Unique matching examples - isomorphic and variant mapping of linear input sequence grapgs to linear target sequence graphs
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig4.dot "${g2}" "${g2Label}" "${g3}" "${g3Label}" "${g4}" "${g4Label}" --showContextSets 0 --showDoubleMaps --targetSequenceGraphs 0
 dot -Tpdf ${outDir}/fig4.dot > ${outDir}/fig4.pdf
 
 g5Label="Input Linear Sequence Graph"
-g5='$AAGTCTACTAAGC$'
+g5='AAGCTACTAAGCC'
 
 g6Label="Target Sequence Graph"
-g6='$AAGCTACTAGC$ $AATCTACTGC$' 
+g6='AAGCTACTAGCC AATCTACTGCC' 
 
 #Figure 5: Mapping of a linear sequence graph to a non-linear graph. 
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig5.dot "${g6}" "${g6Label}" "${g3}" "${g3Label}" "${g4}" "${g4Label}" "${g5}" "${g5Label}" --showContextSets 0 --mergeContigs 0 --usePhasedContexts --targetSequenceGraphs 0
 dot -Tpdf ${outDir}/fig5.dot > ${outDir}/fig5.pdf
 
 g7Label="Input Sequence Graph"
-g7='$AAGTCTACTAAGC$ $AATCTACTGC$ $AAGCTACTAGC$'
+g7='AAGCTACTAAGCC AATCTACTGCC AAGCTACTAGCC'
 
 #Figure 6:Mapping of a non-linear graph to a non-linear graph
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig6.dot "${g6}" "${g6Label}" "${g7}" "${g7Label}"  --showContextSets 0 --mergeContigs="0 1" --usePhasedContexts --targetSequenceGraphs 0
 dot -Tpdf ${outDir}/fig6.dot > ${outDir}/fig6.pdf
 
 g8Label="Sequence Graph"
-g8='$AAGCTACTAGC$ $AATCTACTGC$'
+g8='AAGCTACTAGCC AATCTACTGCC'
 
 #Figure 7:Symmetric merging.
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig7.dot "${g8}" "${g8Label} m=1" "${g8}" "${g8Label} m=3" "${g8}" "${g8Label} m=5" "${g8}" "${g8Label}" --mergeSymmetric "0=1 1=3 2=5" --showContextSets "0 1 2 3" --noMapping --usePhasedContexts
 dot -Tpdf ${outDir}/fig7.dot > ${outDir}/fig7.pdf
 
 g9Label="Input Sequence Graph"
-g9='$AAGCTACTGC$'
+g9='AAGCTACTGCCT'
 
 #Figure 8: Hierarchy example
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig8.dot "${g8}" "${g8Label} m=3" "${g8}" "${g8Label}" "${g8}" "${g8Label}" "${g9}" "${g9Label}" --showDoubleMaps --mergeContigs "0 1" --mergeSymmetric "0=3" --showContextSets '0 1 2' --showIDs '0 1' --usePhasedContexts --showOnlyLowestMaps  
