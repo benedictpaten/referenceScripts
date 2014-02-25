@@ -3,10 +3,10 @@
 outDir=/Users/benedictpaten/Dropbox/Documents/work/myProjects/uniqueMatching/paperFigures
 
 g0Label="Linear Sequence Graph"
-g0='$AAGCTACTAGC$ AGGNNCT!' 
+g0='$AAGCTACTAGC$ AGGCT!' 
 
 g1Label="Sequence Graph"
-g1='$AAGCTACTAGC$ $AATCTACTGC$ AGGNNCT!'
+g1='$AAGCTACTAGC$ $AATCTACTGC$ AGGCT!'
 
 #Figure 1: Oriented sequence graph, with Ns and circular contig?
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig1.dot "${g0}" "${g0Label}"  --showIDs 0 

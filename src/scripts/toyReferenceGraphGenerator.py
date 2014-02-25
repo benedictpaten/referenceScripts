@@ -403,29 +403,40 @@ def main():
         print "Processing sequence graph", index, options.mismatches, label
         sG = SequenceGraph(options.usePhasedContexts, label=label)
         sequenceGraphs.append(sG)
-        for string in assembly.split():
-            print "Adding string:", string, " of assembly:", index
-            if seqGraphIndex in mergeContigs: #Merge the new contig into the previous contigs
+        if seqGraphIndex in mergeContigs:
+            #First identify merges.
+            sGs = []
+            matches = []
+            m = {}
+            for string in assembly.split():
+                print "Adding string:", string, " of assembly:", index
                 sG2 = SequenceGraph(options.usePhasedContexts)
                 sG2.addString(string)
-                matches = []
                 for side in sG2.positiveSides():
-                    leftMatch = sG.getMatch(side, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
-                    rightMatch = sG.getMatch(side.otherSide, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
-                    def fn(side):
-                        if side is None:
-                            return "None"
-                        return "%s_%s" % (side.basePosition.id, side.orientation)
-                    if leftMatch != None:
-                        if rightMatch == None or leftMatch.otherSide == rightMatch:
-                            matches.append((leftMatch, side))
-                    elif rightMatch != None:
-                        matches.append((rightMatch.otherSide, side))
+                    m[side] = side
+                    m[side.otherSide] = side.otherSide
+                for sG3 in sGs:
+                    for side in sG2.positiveSides():
+                        leftMatch = sG3.getMatch(side, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
+                        rightMatch = sG3.getMatch(side.otherSide, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
+                        if leftMatch != None:
+                            if rightMatch == None or leftMatch.otherSide == rightMatch:
+                                matches.append((leftMatch, side))
+                        elif rightMatch != None:
+                            matches.append((rightMatch.otherSide, side))
+                sGs.append(sG)
                 sG.mergeSequenceGraphs(sG2)
-                for targetSide, inputSide in matches:
-                    sG.merge(targetSide, inputSide)
-                sG.renumber()
-            else:
+                print "Graph now has %i nodes" % len(sG.sides)
+            
+            for targetSide, inputSide in matches:
+                targetSide = m[targetSide]
+                inputSide = m[inputSide]
+                m[inputSide] = targetSide
+                m[inputSide.otherSide] = targetSide.otherSide
+                sG.merge(targetSide, inputSide)
+            sG.renumber()     
+        else:
+            for string in assembly.split():
                 sG.addString(string)
             print "Graph now has %i nodes" % len(sG.sides)
             
