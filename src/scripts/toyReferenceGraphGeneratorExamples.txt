@@ -64,6 +64,10 @@ g9='AAGCTACTGCCT'
 python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig8.dot "${g8}" "${g8Label} k=3" "${g8}" "${g8Label}" "${g8}" "${g8Label}" "${g9}" "${g9Label}" --showDoubleMaps --mergeContigs "0 1" --mergeSymmetric "0=3" --showContextSets '0 1 2' --showIDs '0 1' --usePhasedContexts --showOnlyLowestMaps  
 dot -Tpdf ${outDir}/fig8.dot > ${outDir}/fig8.pdf
 
+#Figure 7:Symmetric merging - hierarchy
+python src/scripts/toyReferenceGraphGenerator.py --graphVizFile ${outDir}/fig9.dot "${g8}" "${g8Label} k=1" "${g8}" "${g8Label} k=3" "${g8}" "${g8Label} k=5" "${g8}" "${g8Label}" --mergeSymmetric "0=1 1=3 2=5" --showContextSets "0 1 2 3" --usePhasedContexts --showOnlyLowestMaps  
+dot -Tpdf ${outDir}/fig9.dot > ${outDir}/fig9.pdf
+
 ####
 
 #Figure 7: Mismatching example
