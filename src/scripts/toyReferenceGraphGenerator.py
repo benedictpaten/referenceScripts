@@ -99,13 +99,19 @@ class ContextSet:
                 if len(j) > len(i):
                     i = j
         return len(i) 
+    
+    def tooShort(self, string):
+        for uniqueString in self.minimalUniqueStrings:
+            if len(uniqueString) > len(string):
+                return True
+        return False  
+        
         
 class SequenceGraph:
     def __init__(self, usePhasedContexts, label=""):
         self.id = 0
         self.sides = []
         self.contextSets = {}
-        self.maxContextStringLength  = 0
         self.usePhasedContexts = usePhasedContexts
         if self.usePhasedContexts:
             self.mappedSequenceGraph = SequenceGraph(usePhasedContexts=False)
@@ -160,23 +166,34 @@ class SequenceGraph:
                 return True #Return true stops the traversal on that thread
             side.enumerateThreads(fn)
             self.contextSets[side] = contextSet
-            #Set max
-            if contextSet.maxLength() > self.maxContextStringLength:
-                self.maxContextSetLength = contextSet.maxLength()  
+    
+    def computeContextSetsForMmers(self, m):
+        """Computes contexts of upstream m-mers. """
+        self.contextSets = {}
+        for side in self.sides:
+            #Enumerate the threads
+            contextSet = ContextSet()
+            def fn(string):
+                if len(string) >= m:
+                    contextSet.addString(string[:m])
+                    return True
+                return False 
+            side.enumerateThreads(fn)
+            self.contextSets[side] = contextSet
         
-    def getMatch(self, side, mismatches, maxMatchLength=100, dissimilarity=1):
-        assert side not in self.sides
+    def getMatches(self, side):
+        #assert side not in self.sides
         matches = set()
         def fn(string):
-            uniquePrefix, otherSide = self.getUniquePrefix(string, mismatches, dissimilarity=dissimilarity)
-            if uniquePrefix != None:
-                matches.add(otherSide)
-                return True
-            return len(string) > maxMatchLength
+            longEnough = True
+            for otherSide in self.sides:
+                if self.contextSets[otherSide].prefixInContextSet(string):
+                    matches.add(otherSide)
+                if self.contextSets[otherSide].tooShort(string):
+                    longEnough = False
+            return longEnough
         side.enumerateThreads(fn)
-        if len(matches) != 1:
-            return None
-        return matches.pop()
+        return list(matches)
     
     def merge(self, side1, side2):
         if side1 == side2:
@@ -211,7 +228,6 @@ class SequenceGraph:
                 assert side != side2.otherSide
                 assert adjSide != side2
                 assert adjSide != side2.otherSide
-            
                 
     def positiveSides(self):
         return [ side for side in self.sides if side.orientation ]
@@ -303,7 +319,7 @@ class SequenceGraph:
                     rightContextString = "None"
                 addNodeToGraph(nodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, 
                                shape="record", label="ID=%s | L=%s | %s | R=%s" % (side.basePosition.id, 
-                                                                                       leftContextString, side.basePosition.base, rightContextString))
+                                                                                   leftContextString, side.basePosition.base, rightContextString))
             elif showIDs:
                 addNodeToGraph(nodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, shape="record", label="ID=%s | %s" % (side.basePosition.id, side.basePosition.base))
             else:
@@ -357,6 +373,7 @@ def main():
                      help="Merge the contig in the selected graphs (enumerated starting from 0)",
                      default="")
     
+    #This feature is not working
     parser.add_option("--mismatches", dest="mismatches", type="int", 
                      help="Number of mismatches to allow between context strings",
                      default=0)
@@ -373,7 +390,7 @@ def main():
                      help="Maximum length of a string in a context set",
                      default=10)
     
-    parser.add_option("--showDoubleMaps", dest="showDoubleMaps", action="store_true",
+    parser.add_option("--showMultiMaps", dest="showMultiMaps", action="store_true",
                      help="Show doubly mapped match edges",
                      default=False)
     
@@ -385,9 +402,17 @@ def main():
                      help="For each graph only allow context sets to be defined by the underlying sequences that serve as input to construct the sequence graph",
                      default=False)
     
-    parser.add_option("--mergeSymmetric", dest="mergeSymmetric", type="string",
-                     help="For each sequence graph indexed collapse to given m",
+    parser.add_option("--mergeForM", dest="mergeForM", type="string",
+                     help="For each sequence graph indexed collapse to given m, requiring matching only on one side",
                      default="")
+    
+    parser.add_option("--mergeSymmetric", dest="mergeSymmetric", action="store_true",
+                     help="When merging for m require mapping on both sides",
+                     default=False)
+    
+    parser.add_option("--mapSymmetric", dest="mapSymmetric", action="store_true",
+                     help="When mapping require matching on both sides",
+                     default=False)
     
     parser.add_option("--targetSequenceGraphs", dest="targetSequenceGraphs", type="string",
                      help="List of sequence graph indices to map to",
@@ -405,9 +430,9 @@ def main():
     
     mergeContigs = [ int(i) for i in options.mergeContigs.split() ]  
     print "We got merge-contigs", mergeContigs
-    mergeSymmetric = {} 
-    for i in options.mergeSymmetric.split():
-        mergeSymmetric[int(i.split("=")[0])] = int(i.split("=")[1])
+    mergeForM = {} 
+    for i in options.mergeForM.split():
+        mergeForM[int(i.split("=")[0])] = int(i.split("=")[1])
     
     #First create the sequence graphs for each input graph
     sequenceGraphs = []
@@ -419,73 +444,70 @@ def main():
         print "Processing sequence graph", index, options.mismatches, label
         sG = SequenceGraph(options.usePhasedContexts, label=label)
         sequenceGraphs.append(sG)
+        
+        matches = []
+        m = {}
         if seqGraphIndex in mergeContigs:
             #First identify merges.
             sGs = []
-            matches = []
-            m = {}
             for string in assembly.split():
                 print "Adding string:", string, " of assembly:", index
                 sG2 = SequenceGraph(options.usePhasedContexts)
                 sG2.addString(string)
-                for side in sG2.positiveSides():
-                    m[side] = side
-                    m[side.otherSide] = side.otherSide
+                sG2.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength, 
+                                      dissimilarity=options.dissimilarity)
                 for sG3 in sGs:
                     for side in sG2.positiveSides():
-                        leftMatch = sG3.getMatch(side, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
-                        rightMatch = sG3.getMatch(side.otherSide, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
-                        if leftMatch != None:
-                            if rightMatch == None or leftMatch.otherSide == rightMatch:
-                                matches.append((leftMatch, side))
-                        elif rightMatch != None:
-                            matches.append((rightMatch.otherSide, side))
+                        leftMatches = sG3.getMatches(side)
+                        rightMatches = sG3.getMatches(side.otherSide)
+                        if len(leftMatches) == 1:
+                            if rightMatches == [] or (leftMatches[0].otherSide == rightMatches[0] and len(rightMatches) == 1):
+                                matches.append((leftMatches[0], side))
+                        elif len(rightMatches) == 1 and len(leftMatches) == 0:
+                            matches.append((rightMatches[0].otherSide, side))
                 sGs.append(sG2)
-
             for sG2 in sGs:
                 sG.mergeSequenceGraphs(sG2)
                 print "Graph now has %i nodes" % len(sG.sides)
-            
-            for targetSide, inputSide in matches:
-                while targetSide != m[targetSide]:
-                    targetSide = m[targetSide]
-                print inputSide, m[inputSide]
-                while inputSide != m[inputSide]:
-                    inputSide = m[inputSide]
-                assert targetSide in sG.sides
-                assert inputSide in sG.sides
-                m[inputSide] = targetSide
-                m[inputSide.otherSide] = targetSide.otherSide
-                sG.merge(targetSide, inputSide)
-            sG.renumber()     
         else:
             for string in assembly.split():
                 sG.addString(string)
             print "Graph now has %i nodes" % len(sG.sides)
+        
+        for side in sG.positiveSides():
+            m[side] = side
+            m[side.otherSide] = side.otherSide
+               
+        if seqGraphIndex in mergeForM:
+            sG.computeContextSetsForMmers(m=mergeForM[seqGraphIndex])
+            for side in sG.positiveSides():
+                leftMatches = sG.getMatches(side)
+                rightMatches = sG.getMatches(side.otherSide)
+                if options.mergeSymmetric:
+                    for matchingSide in leftMatches:
+                        if matchingSide.otherSide in rightMatches:
+                            matches.append((matchingSide, side))
+                else:
+                    for matchingSide in leftMatches + [ rightMatch.otherSide for rightMatch in rightMatches ]:
+                        matches.append((matchingSide, side))
             
-        if seqGraphIndex in mergeSymmetric.keys():
-            m = mergeSymmetric[seqGraphIndex]
-            sG.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength)
-            while True:
-                #Try and get node with context string longer than m
-                validSides = [ side for side in sG.sides if len([ side2 for side2 in sG.sides if (side2.base() == side.base() and side2 != side and side2.otherSide != side) ]) > 0  ] #Get sides which have a potential merge partner
-                if len(validSides) == 0:
-                    break
-                random.shuffle(validSides)
-                side1 = max(validSides, key=lambda side : sG.contextSets[side].maxLength())
-                contextSet1 = sG.contextSets[side1]
-                if contextSet1.maxLength()-1 < m:
-                    break #We are done
-                #Find other node with maximum suffix of long context string.
-                l = [ side for side in sG.sides if side != side1 and side != side1.otherSide and side.base() == side1.base() ]
-                assert len(l) != 0
-                #print "frarrr 2", [ (side.basePosition.base, side.basePosition.id, sG.contextSets[side].minimalUniqueStrings) for side in sG.sides ]
-                side2 = max(l, key=lambda side : contextSet1.maxSharedPrefixLength(sG.contextSets[side]))
-                #Merge sides
-                #print "Going to merge", side1.basePosition.id, side2.basePosition.id, contextSet1.maxSharedPrefixLength(sG.contextSets[side2])
-                sG.merge(side1, side2)
-                #Recompute context sets
-                sG.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength)
+        for targetSide, inputSide in matches:
+            while targetSide != m[targetSide]:
+                targetSide = m[targetSide]
+            print inputSide, m[inputSide]
+            while inputSide != m[inputSide]:
+                inputSide = m[inputSide]
+            assert targetSide in sG.sides
+            assert inputSide in sG.sides
+            m[inputSide] = targetSide
+            m[inputSide.otherSide] = targetSide.otherSide
+            sG.merge(targetSide, inputSide)
+        sG.renumber()   
+        if seqGraphIndex in mergeForM:
+            sG.computeContextSetsForMmers(m=mergeForM[seqGraphIndex])
+        else:
+            sG.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength, 
+                                  dissimilarity=options.dissimilarity)
      
     #Now reindex them and print them
     showContextSets = [ int(i) for i in options.showContextSets.split() ]  
@@ -500,13 +522,7 @@ def main():
         sG = sequenceGraphs[index]
         sG.renumber(startID=i)
         i += len(sG.positiveSides())
-        print "Renumbering graph %i with %i sides" % (index, len(sG.positiveSides()))
-        if showContextSets:
-            if options.mismatches == 0:
-                print "Calculating context sets for graph %i with %i sides" % (index, len(sG.positiveSides()))
-                sG.computeContextSets(minContextLength=options.minContextLength, maxContextLength=options.maxContextLength)
-            else:
-                print "Can't display context sets with mismatches, they end up really big"
+        print "Renumbered graph %i with %i sides" % (index, len(sG.positiveSides()))
         #i += len(sG.positiveSides())
         sG.printDotFile(graphVizFileHandle, index in showContextSets and options.mismatches == 0, index in showIDs, index, len(sequenceGraphs) > 1)
         
@@ -524,29 +540,39 @@ def main():
                     if pIndex in targetSequenceGraphs:
                         sGTarget = sequenceGraphs[pIndex]
                         
-                        leftMatch = sGTarget.getMatch(side, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
-                        rightMatch = sGTarget.getMatch(side.otherSide, mismatches=options.mismatches, dissimilarity=options.dissimilarity)
+                        leftMatches = sGTarget.getMatches(side)
+                        rightMatches = sGTarget.getMatches(side.otherSide)
                         
                         def addMatchEdge(colour, label, matchingSide):
                             if not options.showOnlyLowestMaps or not haveMatched:
                                 addEdgeToGraph(parentNodeName=matchingSide.basePosition.getDotNodeName(), 
                                                childNodeName=side.basePosition.getDotNodeName(), graphFileHandle=graphVizFileHandle, colour=colour, 
                                                weight="100", label=label, dir="both, arrowtail=normal, arrowhead=none", style="solid", length="1")
-                        if leftMatch != None:
-                            if rightMatch != None:
-                                if leftMatch.otherSide == rightMatch: 
-                                    addMatchEdge("red", "B", leftMatch)
-                                    haveMatched = True
-                                else:
-                                    if options.showDoubleMaps:
-                                        addMatchEdge("orange", "L", leftMatch)
-                                        addMatchEdge("orange", "R", rightMatch)
-                            else:
-                                addMatchEdge("blue", "L", leftMatch)
+                        if options.mapSymmetric:
+                            matches = [ leftMatch for leftMatch in leftMatches if leftMatch.otherSide in rightMatches ]
+                            if len(matches) == 1:
+                                addMatchEdge("red", "", matches[0])
                                 haveMatched = True
-                        elif rightMatch != None:
-                            addMatchEdge("blue", "R", rightMatch)
-                            haveMatched = True
+                            elif not haveMatched and options.showMultiMaps:
+                                for matchingSide in matches:
+                                    addMatchEdge("orange", "", matchingSide)
+                        else:
+                            if len(leftMatches) == 1:
+                                if len(rightMatches) == 1 and leftMatches[0].otherSide == rightMatches[0]: 
+                                        addMatchEdge("red", "B", leftMatches[0])
+                                        haveMatched = True
+                                elif len(rightMatches) == 0:
+                                    addMatchEdge("blue", "L", leftMatches[0])
+                                    haveMatched = True
+                            elif len(leftMatches) == 0 and len(rightMatches) == 1:
+                                addMatchEdge("blue", "L", rightMatches[0])
+                                haveMatched = True
+                        
+                            if not haveMatched and options.showMultiMaps:
+                                for matchingSide in set(leftMatches):
+                                    addMatchEdge("orange", "L", matchingSide)
+                                for matchingSide in set(rightMatches):
+                                    addMatchEdge("orange", "R", matchingSide)
         
     finishGraphFile(graphVizFileHandle)
     graphVizFileHandle.close()
